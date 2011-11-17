@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Symmetry</title>
+    <style type="text/css">
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      .left, .right { text-align: right; display: inline-block; }
+      .right {
+        -o-transform: scale(-1, 1);
+        -moz-transform: scale(-1, 1);
+        -webkit-transform: scale(-1, 1);
+      }
+      canvas { background-color: #ccc; }
+      canvas.drag { background-color: #fcad00 !important; }
+    </style>
+  </head>
+  <body>
+    <h1><div class="left">Symmetry</div>
+      <div class="right">Symmetry</div></h1>
+    <canvas width="640" height="640"></canvas>
+    <ol>
+      <li>Drag and drop a picture in the gray box above.</li>
+      <li>Click and drag the line inside the box above.</li>
+      <li>Release (and wait a bit.)</li>
+      <li><a id="save" href="javascript:save()">Save</a> the result, or...</li>
+      <li>... try again! (Hint: results differ if you move from right to left or
+      left to right.)</li>
+    </ol>
+    <script src="symmetry.js"></script>
+  </body>
+</html>
+
