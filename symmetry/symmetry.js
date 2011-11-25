@@ -2,6 +2,9 @@
 // if('draggable' in document.createElement('span'))
 // replace with file upload?
 
+var sorry = document.getElementById("sorry");
+if ("draggable" in sorry) sorry.parentNode.removeChild(sorry);
+
 // Simple format function for messages and templates. Use {0}, {1}...
 // as slots for parameters. Missing parameters are replaced with the empty
 // string.
