@@ -1,10 +1,3 @@
-// TODO test drag/drop support with:
-// if('draggable' in document.createElement('span'))
-// replace with file upload?
-
-var sorry = document.getElementById("sorry");
-if ("draggable" in sorry) sorry.parentNode.removeChild(sorry);
-
 // Simple format function for messages and templates. Use {0}, {1}...
 // as slots for parameters. Missing parameters are replaced with the empty
 // string.
@@ -62,7 +55,12 @@ function event_page_pos(e)
 	}
 };
 
+var w, h, ratio;
+var img = null;
+
 var canvas = document.querySelector("canvas");
+var w_orig = canvas.width;
+var h_orig = canvas.height;
 var context = canvas.getContext("2d");
 
 canvas.addEventListener("dragenter", dragenter, false);
@@ -98,17 +96,23 @@ function drop(e)
     img.src = window.webkitURL ? window.webkitURL.createObjectURL(file) :
       window.URL ? window.URL.createObjectURL(file) :
       createObjectURL(file);
-    img.onload = function() {
-      w = img.width * canvas.height / img.height;
-      h = canvas.height;
-      if (w > canvas.width) {
-        w = canvas.width;
-        h = img.height * canvas.width / img.width;
-      }
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(img, 0, 0, w, h);
-    };
+    img.onload = draw_img;
   }
+}
+
+function draw_img()
+{
+  w = img.width * h_orig / img.height;
+  h = h_orig;
+  var max_w = window.innerWidth / 3;
+  if (w > max_w) {
+    w = max_w;
+    h = img.height * max_w / img.width;
+  }
+  canvas.width = 3 * w;
+  canvas.height = h;
+  context.drawImage(img, 0, 0, img.width, img.height, w, 0, w, h);
+  ratio = img.width / w;
 }
 
 document.addEventListener("mousedown", mousedown, false);
@@ -117,63 +121,44 @@ document.addEventListener("mousedown", mousedown, false);
       function(e) { e.stopPropagation(); }, false);
   });
 
-var w, h, x, x0;
-var moving = false;
-var img = null;
+var x0;
 
-function move_line(e)
+function move_line(e, set_x0)
 {
-  x = event_page_pos(e).x - canvas.offsetLeft;
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.strokeStyle = "#fcad00";
-  context.drawImage(img, 0, 0, w, h);
-  context.beginPath();
-  context.moveTo(x, 0);
-  context.lineTo(x, canvas.height);
-  context.stroke();
-}
-
-function mirror()
-{
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(img, 0, 0, w, h);
-  if (x < 0 || x > w) return;
-  setTimeout(function() {
-    if (x0 < x) {
-      context.clearRect(x + 1, 0, canvas.width - x, canvas.height);
-      var image_data = context.getImageData(0, 0, canvas.width, canvas.height);
-      for (var y_ = 0; y_ < h; ++y_) {
-        for (var x_ = 0; x_ < x; ++x_) {
-          var dest = 4 * (canvas.width * y_ + 2 * x - x_);
-          var src = 4 * (canvas.width * y_ + x_);
-          for (var i = 0; i < 4; ++i) {
-            image_data.data[dest + i] = image_data.data[src + i];
-          }
-        }
-      }
-    } else {
-      context.clearRect(0, 0, x, canvas.height);
-      var image_data = context.getImageData(0, 0, canvas.width, canvas.height);
-      for (var y_ = 0; y_ < h; ++y_) {
-        for (var x_ = x; x_ < w; ++x_) {
-          var dest = 4 * (canvas.width * y_ + 2 * x - x_);
-          var src = 4 * (canvas.width * y_ + x_);
-          for (var i = 0; i < 4; ++i) {
-            image_data.data[dest + i] = image_data.data[src + i];
-          }
-        }
-      }
-    }
-    context.putImageData(image_data, 0, 0);
-  }, 0);
+  var x = event_page_pos(e).x - canvas.offsetLeft;
+  if (set_x0) x0 = x;
+  context.clearRect(0, 0, 3 * w, h);
+  context.globalAlpha = 0.1;
+  context.drawImage(img, 0, 0, img.width, img.height, w, 0, w, h);
+  context.globalAlpha = 1;
+  var dx = x - x0;
+  if (dx < 0) {
+    var x_ = Math.max(x - w, 0);
+    var w_ = Math.min(-dx, x0 - w);
+    context.drawImage(img, x_ * ratio, 0, w_ * ratio, img.height, x_ + w, 0, w_, h);
+    context.save();
+    context.scale(-1, 1);
+    context.drawImage(img, x_ * ratio, 0, w_ * ratio,
+        img.height, -w_ - x0, 0, w_, h);
+    context.restore();
+  } else if (dx > 0) {
+    var x_ = Math.max(x - w, w);
+    var w_ = Math.min(dx, 2 * w - x0);
+    context.drawImage(img, (x0 - w) * ratio, 0, w_ * ratio, img.height, x0, 0,
+        w_, h);
+    context.save();
+    context.scale(-1, 1);
+    context.drawImage(img, (x0 - w) * ratio, 0, w_ * ratio, img.height, -x0,
+        0, w_, h);
+    context.restore();
+  }
 }
 
 function mousedown(e)
 {
   e.preventDefault();
   if (img) {
-    move_line(e);
-    x0 = x;
+    move_line(e, true);
     document.addEventListener("mousemove", move_line, false);
     document.addEventListener("mouseup", mouseup, false);
   }
@@ -183,10 +168,15 @@ function mouseup(e)
 {
   document.removeEventListener("mousemove", move_line, false);
   document.removeEventListener("mouseup", mouseup, false);
-  mirror();
 };
 
-function save()
+// "Save" the current image by opening it in a different window
+window.save_image = function()
 {
   if (img) window.open(canvas.toDataURL());
+};
+
+window.retry = function()
+{
+  if (img) draw_img();
 };

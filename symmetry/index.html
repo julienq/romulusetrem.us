@@ -4,7 +4,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Symmetry</title>
     <style type="text/css">
+      html, body { margin: 0 }
       body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      a { text-decoration: none; color: #f80; }
+      .center { text-align: center; }
       .left, .right { text-align: right; display: inline-block; }
       .right {
         -o-transform: scale(-1, 1);
@@ -12,26 +15,32 @@
         -webkit-transform: scale(-1, 1);
         transform: scale(-1, 1);
       }
-      canvas { background-color: #ccc; }
+      canvas { background-color: #ccc; margin: 1em 0; }
       canvas.drag { background-color: #fcad00 !important; }
-      #sorry { font-style: italic; }
+      p, ol { margin: 1em; }
+      #drag { text-decoration: line-through; }
     </style>
   </head>
   <body>
-    <h1><div class="left">Symmetry</div>
-      <div class="right">Symmetry</div></h1>
-    <p id="sorry">Sorry, your browser doesn't seem to support drag and
-    drop. We'll find a workaround later... or you can try with a different
-    browser.</p>
-    <canvas width="640" height="640"></canvas>
+    <div class="center">
+      <h1><div class="left">Symmetry</div>
+        <div class="right">Symmetry</div></h1>
+      <canvas width="640" height="640"></canvas>
+    </div>
     <ol>
-      <li>Drag and drop a picture in the gray box above.</li>
-      <li>Click and drag the line inside the box above.</li>
-      <li>Release (and wait a bit.)</li>
-      <li><a id="save" href="javascript:save()">Save</a> the result, or...</li>
-      <li>... try again! (Hint: results differ if you move from right to left or
-      left to right.)</li>
+      <li id="drag">Drag and drop a picture in the gray box above.</li>
+      <script>
+        var drag = document.getElementById("drag");
+        if ("draggable" in drag) drag.style.textDecoration = "none";
+      </script>
+      <li>Click and drag inside the box above.</li>
+      <li><a id="save" href="javascript:window.save_image()">Save</a> the
+      result, or...</li>
+      <li>... <a id="reset" href="javascript:window.retry()">try again</a>!
+      (Hint: results differ if you move from right to left or left to
+      right.)</li>
     </ol>
+    <p>Check it out on <a href="https://github.com/julienq/romulusetrem.us/tree/master/symmetry">Github</a>!</p>
     <script src="symmetry.js"></script>
   </body>
 </html>
