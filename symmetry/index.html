@@ -19,6 +19,7 @@
       canvas.drag { background-color: #fcad00 !important; }
       p, ol { margin: 1em; }
       #drag { text-decoration: line-through; }
+      input { width: 40em; }
     </style>
   </head>
   <body>
@@ -35,13 +36,15 @@
       </script>
       <li>Click and drag inside the box above.</li>
       <li><a id="save" href="javascript:window.save_image()">Save</a> the
-      result, or...</li>
-      <li>... <a id="reset" href="javascript:window.retry()">try again</a>!
-      (Hint: results differ if you move from right to left or left to
-      right.)</li>
+      result*, or...</li>
+      <li>... <a id="reset" href="javascript:window.retry()">try
+        again</a>!</li>
     </ol>
+    <p>Hint: results differ if you move from right to left or left to
+      right. (*) Saving may fail due to security reasons :(</li>
+    </ol>
+    <p>You may also give an image URL here: <input type="text"></p>
     <p>Check it out on <a href="https://github.com/julienq/romulusetrem.us/tree/master/symmetry">Github</a>!</p>
     <script src="symmetry.js"></script>
   </body>
 </html>
-

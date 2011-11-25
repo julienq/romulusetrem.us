@@ -94,7 +94,6 @@ function drop(e)
   if (file && file.type.match(/^image\/.*/)) {
     can_save = false;
     img = document.createElement("img")
-    img.setAttribute("alt", file.name);
     img.src = window.webkitURL ? window.webkitURL.createObjectURL(file) :
       window.URL ? window.URL.createObjectURL(file) :
       createObjectURL(file);
@@ -119,14 +118,23 @@ function draw_img()
 }
 
 document.addEventListener("mousedown", mousedown, false);
+function stop(e) { e.stopPropagation(); }
 [].forEach.call(document.querySelectorAll("a"), function(a) {
-    a.addEventListener("mousedown",
-      function(e) { e.stopPropagation(); }, false);
+    a.addEventListener("mousedown", stop, false);
   });
+var input = document.querySelector("input");
+input.addEventListener("mousedown", stop, false);
+input.addEventListener("change", function(e) {
+    can_save = false;
+    img = document.createElement("img")
+    img.src = input.value;
+    img.onload = draw_img;
+  }, false);
 
 function move_line(e, set_x0)
 {
   x = event_page_pos(e).x - canvas.offsetLeft;
+  if (x < w || x > 2 * w) return;
   if (set_x0) {
     x0 = x;
     can_save = true;
@@ -204,9 +212,13 @@ window.save_image = function()
           -w_, 0, w_, h);
       context.restore();
     }
-
-    window.open(canvas.toDataURL());
-}
+    try {
+      window.open(canvas.toDataURL());
+      canvas = null;
+    } catch (e) {
+      alert(e);
+    }
+  }
 };
 
 window.retry = function()
