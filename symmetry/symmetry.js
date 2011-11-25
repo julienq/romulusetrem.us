@@ -55,7 +55,8 @@ function event_page_pos(e)
 	}
 };
 
-var w, h, ratio;
+var w, h, ratio, x, x0;
+var can_save = false;
 var img = null;
 
 var canvas = document.querySelector("canvas");
@@ -91,6 +92,7 @@ function drop(e)
   remove_class(e.target, "drag");
   var file = e.dataTransfer.files[0];
   if (file && file.type.match(/^image\/.*/)) {
+    can_save = false;
     img = document.createElement("img")
     img.setAttribute("alt", file.name);
     img.src = window.webkitURL ? window.webkitURL.createObjectURL(file) :
@@ -113,6 +115,7 @@ function draw_img()
   canvas.height = h;
   context.drawImage(img, 0, 0, img.width, img.height, w, 0, w, h);
   ratio = img.width / w;
+  can_save = false;
 }
 
 document.addEventListener("mousedown", mousedown, false);
@@ -121,12 +124,13 @@ document.addEventListener("mousedown", mousedown, false);
       function(e) { e.stopPropagation(); }, false);
   });
 
-var x0;
-
 function move_line(e, set_x0)
 {
-  var x = event_page_pos(e).x - canvas.offsetLeft;
-  if (set_x0) x0 = x;
+  x = event_page_pos(e).x - canvas.offsetLeft;
+  if (set_x0) {
+    x0 = x;
+    can_save = true;
+  }
   context.clearRect(0, 0, 3 * w, h);
   context.globalAlpha = 0.1;
   context.drawImage(img, 0, 0, img.width, img.height, w, 0, w, h);
@@ -173,7 +177,36 @@ function mouseup(e)
 // "Save" the current image by opening it in a different window
 window.save_image = function()
 {
-  if (img) window.open(canvas.toDataURL());
+  if (can_save) {
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+    canvas.height = h;
+    var dx = x - x0;
+    if (dx < 0) {
+      var x_ = Math.max(x - w, 0);
+      var w_ = Math.min(-dx, x0 - w);
+      canvas.width = 2 * w_;
+      context.drawImage(img, x_ * ratio, 0, w_ * ratio, img.height, 0, 0, w_, h);
+      context.save();
+      context.scale(-1, 1);
+      context.drawImage(img, x_ * ratio, 0, w_ * ratio,
+          img.height, -2 * w_, 0, w_, h);
+      context.restore();
+    } else if (dx > 0) {
+      var x_ = Math.max(x - w, w);
+      var w_ = Math.min(dx, 2 * w - x0);
+      canvas.width = 2 * w_;
+      context.drawImage(img, (x0 - w) * ratio, 0, w_ * ratio, img.height,
+          w_, 0, w_, h);
+      context.save();
+      context.scale(-1, 1);
+      context.drawImage(img, (x0 - w) * ratio, 0, w_ * ratio, img.height,
+          -w_, 0, w_, h);
+      context.restore();
+    }
+
+    window.open(canvas.toDataURL());
+}
 };
 
 window.retry = function()
