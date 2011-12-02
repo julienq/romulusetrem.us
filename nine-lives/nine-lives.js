@@ -1,3 +1,72 @@
+var IMG_DIR = "img/";
+var IMG_SUFFIX = ".png";
+var IMG_NAMES = ["cat1", "cat2", "cat3", "cat4", "bush1", "bush2", "bush3",
+    "bush4"];
+var IMAGES = {};
+
+var LOADED = 0;
+IMG_NAMES.forEach(function(name) {
+    var img = document.createElement("img");
+    img.src = IMG_DIR + name + IMG_SUFFIX;
+    img.onload = function() {
+      IMAGES[name] = img;
+      if (++LOADED === IMG_NAMES.length) ready();
+    };
+  });
+
+function ready()
+{
+  for (var i = 0; i < 12; ++i) {
+    var b = document.createElement("img");
+    b.src = IMG_DIR + "bush" + flexo.random_int(1, 4).toString() + IMG_SUFFIX;
+    b.className = "scenery";
+    b.style.left = flexo.random_int(0, window.innerWidth - b.width).toString()
+      + "px";
+    var t = flexo.random_int(0, window.innerHeight - b.height);
+    b.style.top = t.toString() + "px";
+    b.style.zIndex = t;
+    document.documentElement.appendChild(b);
+  }
+
+  var cat = document.createElement("img");
+  cat.id = "cat";
+
+  Object.defineProperty(cat, "frame", { enumerable: true,
+    get: function() { return cat._frame },
+    set: function(i) {
+      cat._frame = i;
+      cat.src = IMG_DIR + "cat" + i + IMG_SUFFIX;
+    } });
+
+  Object.defineProperty(cat, "x", { enumerable: true,
+    get: function() { return cat._x; },
+    set: function(x) {
+      cat._x = x;
+      cat.style.left = (x - cat.width / 2).toString() + "px";
+    } });
+
+  Object.defineProperty(cat, "y", { enumberable: true,
+    get: function() { return cat._y; },
+    set: function(y) {
+      cat._y = y;
+      cat.style.top = (y - cat.height).toString() + "px";
+      cat.style.zIndex = y - cat.height;
+    } });
+
+  cat.frame = 1;
+  cat.x = window.innerWidth / 2;
+  cat.y = window.innerHeight / 2;
+  document.documentElement.appendChild(cat);
+
+  document.addEventListener("mousedown", function(e) {
+      e.preventDefault();
+      cat.x = e.pageX;
+      cat.y = e.pageY;
+    }, false);
+}
+
+
+/*
 var canvas_bg, canvas_fg, bg, fg, n_images, block_size;
 var loaded_images = 0;
 var ANIM_RATE_MS = 150;
@@ -164,3 +233,4 @@ function run()
   }
   requestAnimationFrame(run);
 }
+*/

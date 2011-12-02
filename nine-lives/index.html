@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Cat</title>
+    <title>Nine Lives</title>
     <meta charset="UTF-8">
     <style>
-      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
-        margin: auto; width: 480px; }
-      h1 { font-weight: normal; text-align: center; }
-      #canvases { position: relative; height: 320px; margin: 32px 0; }
-      canvas { position: absolute; top: 0; left: 0; }
-      img { display: none; }
+      body { margin: 0; padding: 0; background-color: #fef9f0; }
+      .scenery { position: absolute; }
+      #cat { position: absolute; }
     </style>
     <script src="flexo.js"></script>
     <script src="nine-lives.js"></script>
   </head>
   <body>
-    <div id="canvases">
-      <canvas width="480" height="320" id="bg"></canvas>
-      <canvas width="480" height="320" id="fg"></canvas>
-    </div>
-    <img id="cat1" src="cat1.png" onload="loaded_image(event);">
-    <img id="cat2" src="cat2.png" onload="loaded_image(event);">
-    <img id="blocks" src="blocks.png" onload="loaded_image(event);">
-    <p>Move with left and right arrow keys.</p>
   </body>
 </html>
