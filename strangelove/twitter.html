@@ -13,7 +13,8 @@
       input { border: none; font-size: 16px; padding: 4px;
         font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
       #who { background-color: #ffd; }
-      img { position: absolute; top: 8px; right: 8px; }
+      #thumbnail { position: absolute; top: 8px; right: 8px; }
+      img { border: 0; }
     </style>
   </head>
   <body>
@@ -29,6 +30,9 @@
       <text id="word" fill="white"
         font-family="Univers, 'Helvetica Neue', Helvetica, sans-serif"/>
     </svg>
+    <div id="thumbnail">
+      <a id="link"/>
+    </div>
 
     <script>
 
@@ -38,6 +42,7 @@
       var who = document.getElementById("who");
       var svg = document.querySelector("svg");
       var word = document.getElementById("word");
+      var link = document.getElementById("link");
       var img;
       var timeout;
 
@@ -88,7 +93,8 @@
             show_word("@" + t.from_user, "#08f");
             if (img && img.parentNode) img.parentNode.removeChild(img);
             img = document.createElement("img");
-            document.body.appendChild(img);
+            link.appendChild(img);
+            link.href = "https://twitter.com/#!/" + t.from_user;
             img.src = t.profile_image_url;
             img.onload = function() {
               timeout = setTimeout(function() {
