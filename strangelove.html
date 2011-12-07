@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Dr. Strangelove credits</title>
+    <meta charset="UTF-8">
+    <style>
+      body, html { height: 100%; }
+      body { margin: 0; padding: 0; }
+      p { margin: 0; padding: 8px; }
+      svg { background-color: black; height: 90%; width: 100% }
+      input { border: none; font-size: 16px; padding: 4px;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      #what { width: 80%; background-color: #ffd; }
+    </style>
+  </head>
+  <body>
+    <p>
+      <input type="button" value="Say:" id="button">
+      <input type="text" id="what" placeholder="Say anything here!" autofocus>
+    </p>
+    <svg>
+      <text id="word" fill="white"
+        font-family="Univers, 'Helvetica Neue', Helvetica, sans-serif"/>
+    </svg>
+    <script>
+
+      var DUR = 300;
+
+      var button = document.getElementById("button");
+      var what = document.getElementById("what");
+      var svg = document.querySelector("svg");
+      var rect = document.querySelector("rect");
+      var word = document.getElementById("word");
+      var timeout;
+
+      var argstr = typeof window === "object" &&
+        typeof window.location === "object" &&
+        typeof window.location.search === "string" ?
+        window.location.search.substring(1) : "";
+      argstr.split("&").forEach(function(q) {
+        var sep = q.indexOf("=");
+        var arg = q.substr(0, sep);
+        if (arg === "dur") {
+          var d = parseFloat(q.substr(sep + 1));
+          if (d > 0) DUR = d;
+        } else if (arg === "what") {
+          what.value = unescape(q.substr(sep + 1));
+        }
+      });
+
+      function say() {
+        var words = what.value.replace(/\s+/, " ").replace(/^ /, "")
+          .replace(/ $/, "").split(" ");
+
+        var set_word = function()
+        {
+          var w = words.shift();
+          if (w) {
+            word.textContent = w;
+            var bbox = word.getBBox();
+            svg.setAttribute("viewBox", bbox.x + " " + bbox.y + " " +
+              bbox.width + " " + bbox.height);
+            timeout = setTimeout(set_word, DUR);
+          } else {
+            word.textContent = "";
+            timeout = null;
+          }
+        };
+
+        if (timeout) clearTimeout(timeout);
+        set_word();
+      }
+
+      button.addEventListener("click", say, false);
+      what.addEventListener("change", say, false);
+      what.addEventListener("keyup", function(e) {
+          if (e.keyCode === 13) say();
+        }, false);
+
+      if (what.value) say();
+
+    </script>
+  </body>
+</html>
+
