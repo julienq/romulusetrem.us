@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Tweet it like Kubrick</title>
+    <meta charset="UTF-8">
+    <style>
+      body, html { height: 100%; }
+      body { margin: 0; padding: 0; font-size: 16px; background-color: black;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        color: white; }
+      p { margin: 0; padding: 8px; }
+      svg { height: 90%; width: 100%; }
+      input { border: none; font-size: 16px; padding: 4px;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      #who { background-color: #ffd; }
+      img { position: absolute; top: 8px; right: 8px; }
+    </style>
+  </head>
+  <body>
+
+    <p>
+      <label>
+        Twitter user name:
+        <input type="text" id="who" placeholder="some user name" autofocus>
+      </label>
+      <input type="button" value="Show tweets" id="button">
+    </p>
+    <svg>
+      <text id="word" fill="white"
+        font-family="Univers, 'Helvetica Neue', Helvetica, sans-serif"/>
+    </svg>
+
+    <script>
+
+      var DUR = 300;
+
+      var button = document.getElementById("button");
+      var who = document.getElementById("who");
+      var svg = document.querySelector("svg");
+      var word = document.getElementById("word");
+      var img;
+      var timeout;
+
+      var argstr = typeof window === "object" &&
+        typeof window.location === "object" &&
+        typeof window.location.search === "string" ?
+        window.location.search.substring(1) : "";
+      argstr.split("&").forEach(function(q) {
+        var sep = q.indexOf("=");
+        var arg = q.substr(0, sep);
+        if (arg === "dur") {
+          var d = parseFloat(q.substr(sep + 1));
+          if (d > 0) DUR = d;
+        } else if (arg === "who") {
+          who.value = unescape(q.substr(sep + 1));
+        }
+      });
+
+      function show_word(w, fill)
+      {
+        word.textContent = w;
+        word.setAttribute("fill", fill);
+        var bbox = word.getBBox();
+        svg.setAttribute("viewBox", bbox.x + " " + bbox.y + " " +
+          bbox.width + " " + bbox.height);
+      }
+
+      function tweet(tweets) {
+
+        (function show_tweet(i) {
+          var t = tweets.results[i];
+          if (t) {
+            var words = t.text.replace(/\s+/, " ").replace(/^ /, "")
+              .replace(/ $/, "").split(" ");
+            var set_word = function()
+            {
+              var w = words.shift();
+              if (w) {
+                show_word(w, "white");
+                timeout = setTimeout(set_word, DUR);
+              } else {
+                word.textContent = "";
+                if (img && img.parentNode) img.parentNode.removeChild(img);
+                timeout = setTimeout(function() { show_tweet(i + 1) }, DUR);
+              }
+            };
+            if (timeout) clearTimeout();
+            show_word("@" + t.from_user, "#08f");
+            if (img && img.parentNode) img.parentNode.removeChild(img);
+            img = document.createElement("img");
+            document.body.appendChild(img);
+            img.src = t.profile_image_url;
+            img.onload = function() {
+              timeout = setTimeout(function() {
+                  timeout = setTimeout(set_word, DUR);
+                }, DUR);
+            };
+          } else {
+            timeout = null;
+          }
+        })(0);
+
+      }
+
+      function set_user()
+      {
+        if (timeout) clearTimeout();
+        var script = document.createElement("script");
+        document.body.appendChild(script);
+        script.src = "http://search.twitter.com/search.json?q=" + who.value +
+          "&rpp=100&callback=tweet";
+      }
+
+      button.addEventListener("click", set_user, false);
+      who.addEventListener("change", set_user, false);
+      who.addEventListener("keyup", function(e) {
+          if (e.keyCode === 13) set_user();
+        }, false);
+
+      if (who.value) set_user();
+
+    </script>
+
+  </body>
+</html>
