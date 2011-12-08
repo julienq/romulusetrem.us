@@ -21,7 +21,7 @@
 
     <p>
       <label>
-        Twitter user name:
+        Twitter search term:
         <input type="text" id="who" placeholder="some user name" autofocus>
       </label>
       <input type="button" value="Show tweets" id="button">
@@ -89,18 +89,14 @@
                 timeout = setTimeout(function() { show_tweet(i + 1) }, DUR);
               }
             };
-            if (timeout) clearTimeout();
-            show_word("@" + t.from_user, "#08f");
             if (img && img.parentNode) img.parentNode.removeChild(img);
             img = document.createElement("img");
             link.appendChild(img);
             link.href = "https://twitter.com/#!/" + t.from_user;
             img.src = t.profile_image_url;
-            img.onload = function() {
-              timeout = setTimeout(function() {
-                  timeout = setTimeout(set_word, DUR);
-                }, DUR);
-            };
+            if (timeout) clearTimeout();
+            show_word("@" + t.from_user, "#08f");
+            timeout = setTimeout(set_word, DUR);
           } else {
             timeout = null;
           }
