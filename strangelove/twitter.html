@@ -3,33 +3,28 @@
   <head>
     <title>Tweet it like Kubrick</title>
     <meta charset="UTF-8">
-    <style>
-      body, html { height: 100%; }
-      body { margin: 0; padding: 0; font-size: 16px; background-color: black;
-        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
-        color: white; }
-      p { margin: 0; padding: 8px; }
-      svg { height: 90%; width: 100%; }
-      input { border: none; font-size: 16px; padding: 4px;
-        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
-      #who { background-color: #ffd; }
-      #thumbnail { position: absolute; top: 8px; right: 8px; }
-      img { border: 0; }
-    </style>
+    <link rel="stylesheet" href="strangelove.css">
   </head>
   <body>
 
     <p>
       <label>
-        Twitter search term:
+        Twitter search query:
         <input type="text" id="who" placeholder="some user name" autofocus>
       </label>
       <input type="button" value="Show tweets" id="button">
+      (or <a href="say.html">say anything</a>)
     </p>
     <svg>
       <text id="word" fill="white"
         font-family="Univers, 'Helvetica Neue', Helvetica, sans-serif"/>
+      <image id="image"/>
     </svg>
+    <footer>
+    Copyright © 2011, <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄
+    Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/strangelove/twitter.html">Github</a>
+    </footer>
     <div id="thumbnail">
       <a id="link"/>
     </div>
@@ -42,8 +37,9 @@
       var who = document.getElementById("who");
       var svg = document.querySelector("svg");
       var word = document.getElementById("word");
+      var image = document.getElementById("image");
       var link = document.getElementById("link");
-      var img;
+      var profile_img;
       var timeout;
 
       var argstr = typeof window === "object" &&
@@ -63,6 +59,8 @@
 
       function show_word(w, fill)
       {
+        word.style.visibility = "visible";
+        image.style.visibility = "hidden";
         word.textContent = w;
         word.setAttribute("fill", fill);
         var bbox = word.getBBox();
@@ -70,30 +68,59 @@
           bbox.width + " " + bbox.height);
       }
 
+      function show_image(img)
+      {
+        word.style.visibility = "hidden";
+        image.style.visibility = "visible";
+        image.setAttributeNS("http://www.w3.org/1999/xlink", "href", img.src);
+        image.setAttribute("width", img.width);
+        image.setAttribute("height", img.height);
+        svg.setAttribute("viewBox", "0 0 " + img.width + " " + img.height);
+      }
+
       function tweet(tweets) {
+
+        if (timeout) clearTimeout(timeout);
+        timeout = null;
 
         (function show_tweet(i) {
           var t = tweets.results[i];
           if (t) {
+
+            if (t.entities.hasOwnProperty("media")) {
+              t.entities.media.forEach(function(media) {
+                var img = document.createElement("img");
+                img.src = media.media_url;
+                img.onload = function() { words.push(img); }
+              });
+            }
+
             var words = t.text.replace(/\s+/, " ").replace(/^ /, "")
               .replace(/ $/, "").split(" ");
             var set_word = function()
             {
               var w = words.shift();
-              if (w) {
+              if (typeof w === "string") {
                 show_word(w, "white");
+                timeout = setTimeout(set_word, DUR);
+              } else if (typeof w === "object") {
+                show_image(w);
                 timeout = setTimeout(set_word, DUR);
               } else {
                 word.textContent = "";
-                if (img && img.parentNode) img.parentNode.removeChild(img);
+                if (profile_img && profile_img.parentNode) {
+                  profile_img.parentNode.removeChild(profile_img);
+                }
                 timeout = setTimeout(function() { show_tweet(i + 1) }, DUR);
               }
             };
-            if (img && img.parentNode) img.parentNode.removeChild(img);
-            img = document.createElement("img");
-            link.appendChild(img);
+            if (profile_img && profile_img.parentNode) {
+              profile_img.parentNode.removeChild(profile_img);
+            }
+            profile_img = document.createElement("img");
+            link.appendChild(profile_img);
             link.href = "https://twitter.com/#!/" + t.from_user;
-            img.src = t.profile_image_url;
+            profile_img.src = t.profile_image_url;
             if (timeout) clearTimeout();
             show_word("@" + t.from_user, "#08f");
             timeout = setTimeout(set_word, DUR);
@@ -104,22 +131,24 @@
 
       }
 
-      function set_user()
+      function search()
       {
-        if (timeout) clearTimeout();
+        if (timeout) clearTimeout(timeout);
+        timeout = null;
         var script = document.createElement("script");
         document.body.appendChild(script);
-        script.src = "http://search.twitter.com/search.json?q=" + who.value +
-          "&rpp=100&callback=tweet";
+        script.src = "http://search.twitter.com/search.json?q=" +
+          encodeURI(who.value) +
+          "&rpp=100&include_entities=true&callback=tweet";
       }
 
-      button.addEventListener("click", set_user, false);
-      who.addEventListener("change", set_user, false);
+      button.addEventListener("click", search, false);
+      who.addEventListener("change", search, false);
       who.addEventListener("keyup", function(e) {
-          if (e.keyCode === 13) set_user();
+          if (e.keyCode === 13) search();
         }, false);
 
-      if (who.value) set_user();
+      if (who.value) search();
 
     </script>
 

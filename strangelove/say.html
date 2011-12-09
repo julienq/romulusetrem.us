@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Dr. Strangelove credits</title>
+    <title>Say it like Kubrick!</title>
     <meta charset="UTF-8">
-    <style>
-      body, html { height: 100%; }
-      body { margin: 0; padding: 0; background-color: black }
-      p { margin: 0; padding: 8px; }
-      svg { height: 90%; width: 100% }
-      input { border: none; font-size: 16px; padding: 4px;
-        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
-      #what { width: 80%; background-color: #ffd; }
-    </style>
+    <link rel="stylesheet" href="strangelove.css">
   </head>
   <body>
+
     <p>
       <input type="button" value="Say:" id="button">
-      <input type="text" id="what" placeholder="Say anything here!" autofocus>
+      <input type="text" id="what" placeholder="Say it like Kubrick!" autofocus>
+      (or <a href="twitter.html">search Twitter</a>)
     </p>
     <svg>
       <text id="word" fill="white"
         font-family="Univers, 'Helvetica Neue', Helvetica, sans-serif"/>
     </svg>
+    <footer>
+      Copyright © 2011, <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄
+      Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/strangelove/say.html">Github</a>
+    </footer>
+
     <script>
 
       var DUR = 300;
