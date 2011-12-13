@@ -1,29 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Boot beep</title>
+    <title>Macintosh Classic Boot Beep</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="../romulusetremus.css">
     <style>
-      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      #iterations, #rate { text-align: right; width: 6em; }
+      .center { text-align: center; }
     </style>
   </head>
   <body>
-    <p>From the <a
-      href="http://folklore.org/StoryView.py?story=Boot_Beep.txt">Boot
-      Beep</a> story by Andy Hertzfeld on <a
-      href="http://folklore.org/">folklore.org</a>.</p>
-    <p><a href="bootbeep.c">C source code</a> that produced the sample
-    below.</p>
-    <p><a href="bootbeep.wav">Sample</a> (40 iterations, 22,050Hz)</p>
 
-    <p>
+    <h1>Macintosh Classic Boot Beep</h1>
+
+    <p class="center"><img src="icon.png" alt="Macintosh classic icon"
+      onclick="gen()"></p>
+
+    <p>On <a href="http://folklore.org/">folklore.org</a>, there is a story by
+    Andy Hertzfeld about the Macintosh Classic <a
+      href="http://folklore.org/StoryView.py?story=Boot_Beep.txt">Boot
+      Beep</a>, complete with <a
+      href="http://folklore.org/projects/Macintosh/more/BootBeep.txt">68000
+      source code</a>. One thing was missing though: the actual sound! So I made
+    a quick <a href="bootbeep.c">C translation</a> that produced the following
+    <a href="bootbeep.wav">sample</a>.</p>
+
+    <p><strong>CAUTION</strong>: this sound is pretty loud! If you're using
+    headphones, you may want to turn the volume down a notch.</p>
+
+    <p>But here's the fun part: since this sound is algorithmically generated
+    we can generate at will and play with some parameters. Namely, the number of
+    iterations: the original sound used 40; but we can make it longer by
+    changing this number. We can also play with the sample rate (which will
+    affect the length as well as the pitch of the sound.) If your browser
+    supports the HTML5 audio element (about any modern browser, including IE
+    since IE9, does) you can listen right here:</p>
+
+    <p class="center">
       <label>Iterations:
         <input type="text" value="40" id="iterations"
-        onkeyup="gen(event)"/></label>
+          onkeyup="if (event.keyCode === 13) gen()">
+      </label>
       <label>Sample rate:
-        <input type="text" value="22050" id="rate" onkeyup="gen(event)"/>
+        <input type="text" value="22050" id="rate"
+          onkeyup="if (event.keyCode === 13) gen()">
         Hz</label>
-      <audio controls></p>
+      <input type="button" value="Play" onclick="gen()">
+    </p>
+
+    <p>Technical note: in this example, just like in the C version, we generate
+    an actual uncompressed RIFF/WAVE file, then convert it to base 64 and set
+    it as the URL of an audio element. The next step is now to try to use the
+    new <a
+      href="https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html">Web
+      Audio API</a> which is starting to see some support in recent
+    browsers.</p>
+
+    <footer>
+    Copyright © <span class="roman">mmxi</span>,
+    <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄
+    Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/bootbeep">Github</a>
+    </footer>
+
+    <audio></audio>
 
     <script>
 
@@ -31,35 +71,10 @@
       var ITERATIONS = document.getElementById("iterations");
       var RATE = document.getElementById("rate");
 
-      function gen(event)
-      {
-        if (!event || event.keyCode === 13) {
-          AUDIO.src = beep(parseFloat(ITERATIONS.value),
-            parseFloat(RATE.value));
-          if (event) {
-            var p = function() {
-              AUDIO.removeEventListener("canplay", p, false);
-              AUDIO.play();
-            }
-            AUDIO.addEventListener("canplay", p, false);
-          }
-        }
-      }
-
-      gen();
-
-      // Write a 32-bit integer byte by byte in little endian order
-      function pack_32(x)
-      {
-        return String.fromCharCode(x & 255) +
-          String.fromCharCode((x >> 8) & 255) +
-          String.fromCharCode((x >> 16) & 255) +
-          String.fromCharCode((x >> 24) & 255);
-      }
-
       function beep(iterations, rate, play)
       {
         var length = iterations * 370;
+
         // Header of the WAV file
         var wav = "RIFF" + pack_32(36 + length) + "WAVE" +
           "fmt " + pack_32(16) + pack_32((1 << 16) + 1) +
@@ -73,6 +88,7 @@
             for (var k = 0; k < 19; ++k) buffer.push(table[j]);
           }
         }
+
         for (var i = 0; i < iterations; ++i) {
           for (j = 0; j < 74; ++j) {
             buffer[j] = ((buffer[j + 73] + 2 * buffer[j + 74] +
@@ -83,6 +99,32 @@
         }
         // Return a data URL
         return "data:audio/wav;base64," + btoa(wav);
+      }
+
+      // Write a 32-bit integer byte by byte in little endian order
+      function pack_32(x)
+      {
+        return String.fromCharCode(x & 255) +
+          String.fromCharCode((x >> 8) & 255) +
+          String.fromCharCode((x >> 16) & 255) +
+          String.fromCharCode((x >> 24) & 255);
+      }
+
+      // Get the iterations and rate parameters and if they seem correct,
+      // generate the sound. If the autoplay flag is set
+      function gen()
+      {
+        var iterations = parseInt(ITERATIONS.value, 10);
+        var rate = parseInt(RATE.value, 10);
+        if (rate > 0 && iterations > 0) {
+          AUDIO.src = beep(parseFloat(ITERATIONS.value),
+            parseFloat(RATE.value));
+          var p = function() {
+            AUDIO.removeEventListener("canplay", p, false);
+            AUDIO.play();
+          }
+          AUDIO.addEventListener("canplay", p, false);
+        }
       }
 
     </script>

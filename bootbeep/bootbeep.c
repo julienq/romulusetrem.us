@@ -4,11 +4,12 @@
  * For more info, see:
  *   http://folklore.org/StoryView.py?story=Boot_Beep.txt
  *
- * This outputs a WAV file on STDOUT. You can change the duration (given by the
- * number of iterations) and the sample rate (this will change both pitch and
- * duration.) The original hardware could do an 8-bit sample every 44ms, for a
- * rate of about 22,727Hz but 22,050 is probably more practical for current
- * audio devices.
+ * This outputs a WAV file to stdout, so simply redirect the output to a file
+ * named e.g. "beep.wav". You can change the duration (given by the number of
+ * iterations) and the sample rate (this will change both pitch and duration.)
+ * The original hardware could do an 8-bit sample every 44ms, for a rate of
+ * about 22,727Hz but 22,050 is probably more practical for current audio
+ * devices.
  *
  * Julien Quint <pom@romulusetrem.us> 2011-12-13
  *
