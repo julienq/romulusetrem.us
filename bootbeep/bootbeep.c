@@ -6,8 +6,9 @@
  *
  * This outputs a WAV file on STDOUT. You can change the duration (given by the
  * number of iterations) and the sample rate (this will change both pitch and
- * duration.) The ITERATIONS value was given in the source code; the sample rate
- * seems close enough from a few Youtube videos that I have seen.
+ * duration.) The original hardware could do an 8-bit sample every 44ms, for a
+ * rate of about 22,727Hz but 22,050 is probably more practical for current
+ * audio devices.
  *
  * Julien Quint <pom@romulusetrem.us> 2011-12-13
  *
@@ -17,7 +18,7 @@
 #include <stdint.h>
 
 #define ITERATIONS 40      /* number of iterations of the filtering */
-#define SAMPLE_RATE 22050  /* sample rate in Hz (assume 8 bit samples) */
+#define SAMPLE_RATE 22050  /* sample rate in Hz */
 
 /* Macros to print 32 and 16 bit integers in little endian order */
 #define PRINT32(n) printf("%c%c%c%c", (n) & 0xff, ((n) >> 8) & 0xff, \
@@ -58,11 +59,11 @@ int main(int argc, char *argv[])
   for (i = 0; i < ITERATIONS; ++i) {
     bp = buffer;
     for (j = 0; j < 74; ++j) {
-      uint16_t acc = (uint16_t)(bp[146]) + 2 * (uint16_t)(bp[148]) +
-        (uint16_t)(bp[150]);
+      uint16_t acc = (uint16_t)(bp[73]) + 2 * (uint16_t)(bp[74]) +
+        (uint16_t)(bp[75]);
       (*bp++) = (uint8_t)(acc / 4);
     }
-    for (j = 74; j < 370; ++j) (*bp++) = bp[-74];
+    for (j = 74; j < 370; ++j) buffer[j] = buffer[j - 74];
     for (j = 0; j < 370; ++j) printf("%c", buffer[j]);
   }
   return 0;

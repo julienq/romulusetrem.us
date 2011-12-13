@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Boot beep</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <p>From the <a
+      href="http://folklore.org/StoryView.py?story=Boot_Beep.txt">Boot
+      Beep</a> story by Andy Hertzfeld on <a
+      href="http://folklore.org/">folklore.org</a>.</p>
+    <p><a href="bootbeep.c">C source code</a> that produced the sample
+    below.</p>
+    <p><a href="bootbeep.wav">Sample</a> (40 iterations, 22,050Hz)</p>
+
+    <p>
+      <label>Iterations:
+        <input type="text" value="40" id="iterations"
+        onkeyup="gen(event)"/></label>
+      <label>Sample rate:
+        <input type="text" value="22050" id="rate" onkeyup="gen(event)"/>
+        Hz</label>
+      <audio controls></p>
+
+    <script>
+
+      var AUDIO = document.querySelector("audio");
+      var ITERATIONS = document.getElementById("iterations");
+      var RATE = document.getElementById("rate");
+
+      function gen(event)
+      {
+        if (!event || event.keyCode === 13) {
+          AUDIO.src = beep(parseFloat(ITERATIONS.value),
+            parseFloat(RATE.value));
+          if (event) {
+            var p = function() {
+              AUDIO.removeEventListener("canplay", p, false);
+              AUDIO.play();
+            }
+            AUDIO.addEventListener("canplay", p, false);
+          }
+        }
+      }
+
+      gen();
+
+      // Write a 32-bit integer byte by byte in little endian order
+      function pack_32(x)
+      {
+        return String.fromCharCode(x & 255) +
+          String.fromCharCode((x >> 8) & 255) +
+          String.fromCharCode((x >> 16) & 255) +
+          String.fromCharCode((x >> 24) & 255);
+      }
+
+      function beep(iterations, rate, play)
+      {
+        var length = iterations * 370;
+        // Header of the WAV file
+        var wav = "RIFF" + pack_32(36 + length) + "WAVE" +
+          "fmt " + pack_32(16) + pack_32((1 << 16) + 1) +
+          pack_32(rate) + pack_32(rate) + pack_32((8 << 16) + 1) +
+          "data" + pack_32(length);
+
+        var table = [0x06, 0xc0, 0x40, 0xfa];
+        var buffer = [];
+        for (var i = 0; i < 5; ++i) {
+          for (var j = 0; j < 4; ++j) {
+            for (var k = 0; k < 19; ++k) buffer.push(table[j]);
+          }
+        }
+        for (var i = 0; i < iterations; ++i) {
+          for (j = 0; j < 74; ++j) {
+            buffer[j] = ((buffer[j + 73] + 2 * buffer[j + 74] +
+              buffer[j + 75])) / 4;
+          }
+          for (j = 74; j < 370; ++j) buffer[j] = buffer[j - 74];
+          for (j = 0; j < 370; ++j) wav += String.fromCharCode(buffer[j]);
+        }
+        // Return a data URL
+        return "data:audio/wav;base64," + btoa(wav);
+      }
+
+    </script>
+
+  </body>
+</html>
+
