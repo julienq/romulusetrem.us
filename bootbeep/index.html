@@ -14,7 +14,7 @@
     <h1>Macintosh Classic Boot Beep</h1>
 
     <p class="center"><img src="icon.png" alt="Macintosh classic icon"
-      onclick="gen()"></p>
+      onclick="gen(true)"></p>
 
     <p>On <a href="http://folklore.org/">folklore.org</a>, there is a story by
     Andy Hertzfeld about the Macintosh Classic <a
@@ -39,13 +39,16 @@
     <p class="center">
       <label>Iterations:
         <input type="text" value="40" id="iterations"
-          onkeyup="if (event.keyCode === 13) gen()">
+          onkeyup="if (event.keyCode === 13) gen(true)">
       </label>
       <label>Sample rate:
         <input type="text" value="22050" id="rate"
-          onkeyup="if (event.keyCode === 13) gen()">
+          onkeyup="if (event.keyCode === 13) gen(true)">
         Hz</label>
-      <input type="button" value="Play" onclick="gen()">
+      <input type="button" value="Generate" onclick="gen(true)">
+    </p>
+    <p class="center">
+      <audio controls>
     </p>
 
     <p>Technical note: in this example, just like in the C version, we generate
@@ -63,13 +66,13 @@
         href="https://github.com/julienq/romulusetrem.us/blob/master/bootbeep">Github</a>
     </footer>
 
-    <audio></audio>
-
     <script>
 
       var AUDIO = document.querySelector("audio");
       var ITERATIONS = document.getElementById("iterations");
       var RATE = document.getElementById("rate");
+
+      gen();
 
       function beep(iterations, rate, play)
       {
@@ -112,18 +115,20 @@
 
       // Get the iterations and rate parameters and if they seem correct,
       // generate the sound. If the autoplay flag is set
-      function gen()
+      function gen(autoplay)
       {
         var iterations = parseInt(ITERATIONS.value, 10);
         var rate = parseInt(RATE.value, 10);
         if (rate > 0 && iterations > 0) {
+          if (autoplay) {
+            var p = function() {
+              AUDIO.removeEventListener("canplay", p, false);
+              AUDIO.play();
+            }
+            AUDIO.addEventListener("canplay", p, false);
+          }
           AUDIO.src = beep(parseFloat(ITERATIONS.value),
             parseFloat(RATE.value));
-          var p = function() {
-            AUDIO.removeEventListener("canplay", p, false);
-            AUDIO.play();
-          }
-          AUDIO.addEventListener("canplay", p, false);
         }
       }
 
