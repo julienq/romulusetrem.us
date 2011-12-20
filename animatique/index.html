@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Animatic</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; margin: 0;
+        background-color: #888; overflow: hidden; }
+      audio { display: none; }
+      #wave { width: 100%; height: 160px; background-color: white; overflow:
+        auto; position: relative; }
+      #wave-c, #wave-m { position: absolute; top: 0; left: 0; }
+      #time { font-size: 32px; color: #ff4040; position: fixed; top: 8px; right:
+      8px; }
+      #video { background-color: white; width: 640px; height: 360px; position:
+        relative; }
+      #video * { position: absolute; top: 0; left: 0 }
+      #video img { opacity: 0.3; }
+      #thumbnails img { background-color: white; width: 96px; }
+    </style>
+    <script src="flexo.js"></script>
+    <script src="draw.js"></script>
+  </head>
+  <body>
+
+    <!-- Video -->
+    <div id="video">
+      <canvas id="bg" width="640" height="360"></canvas>
+      <canvas id="fg" width="640" height="360"></canvas>
+    </div>
+
+    <!-- Audio -->
+    <div id="wave">
+      <img alt="Wave form" id="wave-img">
+      <canvas height="144" id="wave-m"></canvas>
+      <canvas height="144" id="wave-c"></canvas>
+      <div id="time"></div>
+      <audio></audio>
+    </div>
+
+    <div id="thumbnails"></div>
+
+
+    <script>
+
+      var args = flexo.get_args({ fps: 9, scale: 4 });
+
+      var wave_c = document.getElementById("wave-c");
+      var wave_m = document.getElementById("wave-m");
+      var gc = wave_c.getContext("2d");
+      var mc = wave_m.getContext("2d");
+      var h = wave_c.height / 2;
+      var img = document.getElementById("wave-img");
+      var time = document.getElementById("time");
+
+      var audio = document.querySelector("audio");
+      var ac = new webkitAudioContext();
+
+      draw.init(document.getElementById("fg"), document.getElementById("bg"));
+
+      var thumbnails = document.getElementById("thumbnails");
+      var thumb;
+      var onion;
+
+      var frames = [];
+
+      function clear()
+      {
+        if (onion) {
+          onion.parentNode.removeChild(onion);
+          onion = null;
+        }
+        draw.resize();
+      }
+
+      draw.canvas_fg.addEventListener("dragover", function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }, false);
+
+      wave_c.addEventListener("dragover", function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }, false);
+
+      draw.canvas_fg.addEventListener("drop", function(e) {
+          clear();
+          onion = document.createElement("img");
+          onion.alt = "Onion skin";
+          onion.src = thumb.src;
+          draw.canvas_bg.parentNode.insertBefore(onion, draw.canvas_bg);
+        }, false);
+
+      function load(url, f)
+      {
+        audio.src = url;
+        var req = new XMLHttpRequest();
+        req.open("GET", url, true);
+        req.responseType = "arraybuffer";
+        req.onload = function() {
+          setTimeout(function() { f(ac.createBuffer(req.response, true)); }, 0);
+        }
+        req.send();
+      }
+
+      if (args.url) {
+        load(args.url, function(buffer) {
+            var w = buffer.duration * args.fps * args.scale;
+            wave_c.width = w;
+            wave_m.width = w;
+            gc.fillStyle = "#444";
+            mc.fillStyle = "#0f8";
+            var sz = Math.ceil(buffer.length / w);
+            for (var x = 0, j = 0; x < wave_c.width; ++x) {
+              var min = 1;
+              var max = -1;
+              for (var i = 0; i < sz; ++i) {
+                var val = buffer.getChannelData(0)[j++];
+                if (val < min) min = val;
+                if (val > max) max = val;
+              }
+              gc.fillRect(x, h * (1 - max), 1, h * (max - min));
+            }
+            gc.fillStyle = "#ff4040";
+            img.src = wave_c.toDataURL();
+            function cursor()
+            {
+              gc.clearRect(0, 0, wave_c.width, wave_c.height);
+              var frame = Math.floor(audio.currentTime * args.fps);
+              time.textContent = frame.toString();
+              var x = (audio.currentTime * buffer.sampleRate) / sz;
+              gc.fillRect(x, 0, 1, wave_c.height);
+              if (!audio.paused) {
+                for (var i = 0, n = frames.length; i < n &&
+                  frame >= frames[i][0]; ++i);
+                if (frames[i - 1]) {
+                  draw.context_fg.clearRect(0, 0,
+                    draw.canvas_fg.width, draw.canvas_fg.height);
+                  draw.context_fg.drawImage(frames[i - 1][1], 0, 0,
+                    draw.canvas_fg.width, draw.canvas_fg.height);
+                }
+              }
+              webkitRequestAnimationFrame(cursor);
+            };
+            webkitRequestAnimationFrame(cursor);
+
+            var x;
+            var p;
+            var move = function(e) {
+              e.preventDefault();
+              x = e.clientX;
+              audio.currentTime = (x * sz) / buffer.sampleRate;
+            };
+            var up = function(e) {
+              wave_c.removeEventListener("mousemove", move, false);
+              wave_c.removeEventListener("mouseup", up, false);
+              if (p) audio.play();
+            };
+            wave_c.addEventListener("mousedown", function(e) {
+                p = !audio.paused;
+                audio.pause();
+                move(e);
+                wave_c.addEventListener("mousemove", move, false);
+                wave_c.addEventListener("mouseup", up, false);
+              }, false);
+            wave_c.addEventListener("drop", function(e) {
+                var frame = Math.round((e.clientX * sz) / buffer.sampleRate *
+                  args.fps);
+                var x = frame * args.scale;
+                mc.fillRect(x, 0, 1, wave_m.height);
+                for (var i = 0, n = frames.length; i < n; ++i) {
+                  if (frames[i][0] > frame) break;
+                }
+                frames.splice(i, 0, [frame, thumb]);
+                console.log(i, frame);
+              }, false);
+
+          });
+      }
+
+      document.addEventListener("keydown", function(e) {
+          if (e.keyCode === 32) {
+            if (audio.readyState === 4) {
+              if (audio.paused) {
+                audio.play();
+              } else {
+                audio.pause();
+              }
+            }
+            clear();
+          } else if (e.keyCode === 13) {
+            var img = document.createElement("img");
+            img.alt = "Frame";
+            img.draggable = true;
+            img.src = draw.canvas_bg.toDataURL();
+            img.addEventListener("dragstart", function() { thumb = img; },
+              false);
+            thumbnails.appendChild(img);
+            clear();
+          }
+        }, false);
+
+    </script>
+
+  </body>
+</html>
