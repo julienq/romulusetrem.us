@@ -42,7 +42,7 @@
           onkeyup="if (event.keyCode === 13) gen(true)">
       </label>
       <label>Sample rate:
-        <input type="text" value="22050" id="rate"
+        <input type="text" value="22727" id="rate"
           onkeyup="if (event.keyCode === 13) gen(true)">
         Hz</label>
       <input type="button" value="Generate" onclick="gen(true)">
@@ -94,8 +94,8 @@
 
         for (var i = 0; i < iterations; ++i) {
           for (j = 0; j < 74; ++j) {
-            buffer[j] = ((buffer[j + 73] + 2 * buffer[j + 74] +
-              buffer[j + 75])) / 4;
+            buffer[j] = Math.floor((buffer[j + 73] + 2 * buffer[j + 74] +
+              buffer[j + 75] + 3) / 4);
           }
           for (j = 74; j < 370; ++j) buffer[j] = buffer[j - 74];
           for (j = 0; j < 370; ++j) wav += String.fromCharCode(buffer[j]);
