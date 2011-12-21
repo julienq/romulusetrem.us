@@ -1,0 +1,11 @@
+body {
+  background-color: #888;
+  margin: 0;
+  padding: 0;
+}
+
+#wave {
+  background-color: white;
+  width: 100%;
+  overflow: auto;
+}

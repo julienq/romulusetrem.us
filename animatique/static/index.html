@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Animatique</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <script src="flexo.js"></script>
+    <script src="draw.js"></script>
+    <script src="wave.js"></script>
+  </head>
+  <body>
+
+    <div id="wave">
+    </div>
+
+    <script>
+
+      var args = flexo.get_args({ fps: 9, scale: 4, height: 160 });
+      flexo.listen(Wave, "error", function(e) { alert(e.message); });
+      flexo.listen(Wave, "loaded", function(e) {
+          var div_wave = document.getElementById("wave");
+          div_wave.style.height = "{0}px".fmt(args.height);
+          var img = Wave.draw();
+          div_wave.appendChild(img);
+        });
+      Wave.init(args);
+
+    </script>
+
+  </body>
+</html>

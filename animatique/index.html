@@ -78,11 +78,6 @@
           e.dataTransfer.dropEffect = "move";
         }, false);
 
-      wave_c.addEventListener("dragover", function(e) {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = "move";
-        }, false);
-
       draw.canvas_fg.addEventListener("drop", function(e) {
           clear();
           onion = document.createElement("img");
@@ -162,6 +157,12 @@
                 move(e);
                 wave_c.addEventListener("mousemove", move, false);
                 wave_c.addEventListener("mouseup", up, false);
+              }, false);
+            wave_c.addEventListener("dragover", function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                time.textContent = Math.round((e.clientX * sz) /
+                  buffer.sampleRate * args.fps);
               }, false);
             wave_c.addEventListener("drop", function(e) {
                 var frame = Math.round((e.clientX * sz) / buffer.sampleRate *
