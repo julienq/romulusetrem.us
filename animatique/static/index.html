@@ -10,20 +10,33 @@
   </head>
   <body>
 
-    <div id="wave">
-    </div>
+    <div class="wave"></div>
+    <div class="draw"></div>
 
     <script>
 
+      // Load and display sound
       var args = flexo.get_args({ fps: 9, scale: 4, height: 160 });
       flexo.listen(Wave, "error", function(e) { alert(e.message); });
       flexo.listen(Wave, "loaded", function(e) {
-          var div_wave = document.getElementById("wave");
-          div_wave.style.height = "{0}px".fmt(args.height);
-          var img = Wave.draw();
-          div_wave.appendChild(img);
+          var div_wave = document.querySelector("div.wave");
+          Wave.draw(div_wave);
         });
       Wave.init(args);
+      Draw.init(document.querySelector("div.draw"));
+
+      // Use space to play/pause
+      document.addEventListener("keydown", function(e) {
+          if (e.keyCode === 32) {
+            if (Wave.audio && Wave.audio.readyState === 4) {
+              if (Wave.audio.paused) {
+                Wave.audio.play();
+              } else {
+                Wave.audio.pause();
+              }
+            }
+          }
+        }, false);
 
     </script>
 

@@ -1,11 +1,13 @@
-var draw = {
+var Draw = {
   dragging: false,
   error: 4,
 
-  init: function(fg, bg)
+  init: function(div)
   {
-    this.canvas_bg = bg;
-    this.canvas_fg = fg;
+    this.canvas_bg = flexo.html("canvas");
+    div.appendChild(this.canvas_bg);
+    this.canvas_fg = flexo.html("canvas");
+    div.appendChild(this.canvas_fg);
     this.context_fg = this.canvas_fg.getContext("2d");
     this.context_bg = this.canvas_bg.getContext("2d");
     this.canvas_fg.addEventListener("mousedown", this, false);
@@ -28,6 +30,8 @@ var draw = {
     this.context_bg.lineCap = "round";
     this.context_bg.lineJoin = "round";
     this.context_bg.lineWidth = 4;
+    this.context_bg.fillStyle = "#fff";
+    this.context_bg.fillRect(0, 0, this.canvas_bg.width, this.canvas_bg.height);
     this.context_bg.strokeStyle = "#ff4040";
     this.offset_x = this.canvas_fg.offsetParent.offsetLeft;
     this.offset_y = this.canvas_fg.offsetParent.offsetTop;

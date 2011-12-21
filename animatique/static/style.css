@@ -4,8 +4,29 @@ body {
   padding: 0;
 }
 
-#wave {
+.wave {
   background-color: white;
-  width: 100%;
   overflow: auto;
+}
+
+.wave svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.draw, .draw canvas {
+  width: 640px;
+  height: 360px;
+}
+
+.draw {
+  position: absolute;
+  top: 160px;
+}
+
+.draw canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
