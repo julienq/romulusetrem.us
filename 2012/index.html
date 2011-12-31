@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>2012</title>
+    <meta charset="UTF-8">
+    <style>
+      body { text-align: center; margin-top: 4em }
+      #images { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="images">
+      <img src="2012_en.png" alt="2012">
+      <img src="2012_fr.png" alt="2012">
+      <img src="2012_ja.png" alt="2012">
+    </div>
+    <script>
+      var images = document.querySelectorAll("img");
+      var n = images.length;
+      [].forEach.call(images, function(img) {
+          img.addEventListener("load", function() {
+              if (--n === 0) {
+                var img_ = document.createElement("img");
+                document.body.appendChild(img_);
+                var i = 0;
+                setInterval(function() {
+                  img_.src = images[i].src;
+                  i = (i + 1) % images.length;
+                }, 150);
+              }
+            }, false);
+        });
+    </script>
+  </body>
+</html>
+

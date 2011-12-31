@@ -1,6 +1,7 @@
 body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
-  margin: 2em auto; width: 640px; text-align: left; background-color: white; }
+  margin: 0; padding: 0; background-color: white; }
 h1, h2 { text-align: center; font-weight: normal; font-size: 100% }
-a { text-decoration: none; color: #FF4040; }
+a { text-decoration: none; color: #ff4040; }
+section { display: inline-block; width: 160px; margin: 2em 1em; padding: 0; }
 .roman { font-variant: small-caps; }
 footer { margin-top: 4em; text-align: center; font-size: smaller }

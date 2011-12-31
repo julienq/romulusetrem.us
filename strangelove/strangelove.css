@@ -11,5 +11,6 @@ input { border: none; font-size: 16px; padding: 4px;
 #thumbnail { position: absolute; top: 8px; right: 8px; }
 img { border: 0; }
 a { color: #ff4040; text-decoration: none; }
+.roman { font-variant: small-caps; }
 footer { text-align: center; font-size: 12px; position: absolute; bottom: 8px;
   width: 100%; }
