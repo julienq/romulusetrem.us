@@ -1,3 +1,62 @@
+// TODO
+// [x] SVGfy
+// [ ] save
+// [ ] undo
+// [ ] redo
+
+var svg_draw =
+{
+  init: function(div, error)
+  {
+    this.error = error || 4;
+    this.svg = flexo.svg("svg");
+    this.svg.setAttribute("stroke-linejoin", "round");
+    this.svg.setAttribute("stroke-linecap", "round");
+    this.svg.setAttribute("stroke", "#ff4040");
+    this.svg.setAttribute("stroke-width", "4");
+    this.svg.setAttribute("fill", "none");
+    div.appendChild(this.svg);
+    this.svg.addEventListener("mousedown", this, false);
+    return this;
+  },
+
+  handleEvent: function(e)
+  {
+    e.preventDefault();
+    var p = flexo.event_svg_point(e, this.svg);
+    if (e.type === "mousedown") {
+      document.addEventListener("mousemove", this, false);
+      document.addEventListener("mouseup", this, false);
+      this.__points = [[p.x, p.y]];
+      this.__path = flexo.svg("path");
+      this.__path.setAttribute("d", "M{0},{1}".fmt(p.x, p.y));
+      this.svg.appendChild(this.__path);
+    } else if (e.type === "mousemove") {
+      this.__points.push([p.x, p.y]);
+      this.__path.setAttribute("d", "{0}L{1},{2}"
+          .fmt(this.__path.getAttribute("d"), p.x, p.y));
+    } else if (e.type === "mouseup") {
+      document.removeEventListener("mousemove", this, false);
+      document.removeEventListener("mouseup", this, false);
+      this.__path.setAttribute("d",
+          d_from_points(fit_curve(this.__points, this.error)));
+      delete this.__path;
+      delete this.__points;
+    }
+  },
+
+};
+
+function d_from_points(points)
+{
+  var d = "M{0},{1}".fmt(points[0][0], points[0][1]);
+  points.forEach(function(q, i) {
+      d += "C{0},{1} {2},{3} {4},{5}".fmt(q[1][0], q[1][1], q[2][0], q[2][1],
+        q[3][0], q[3][1]);
+    });
+  return d;
+}
+
 var Draw = {
   dragging: false,
   error: 4,
@@ -11,13 +70,14 @@ var Draw = {
     this.context_fg = this.canvas_fg.getContext("2d");
     this.context_bg = this.canvas_bg.getContext("2d");
     this.canvas_fg.addEventListener("mousedown", this, false);
-    this.canvas_fg.addEventListener("mousemove", this, false);
-    this.canvas_fg.addEventListener("mouseup", this, false);
+    document.addEventListener("mousemove", this, false);
+    document.addEventListener("mouseup", this, false);
     this.canvas_fg.addEventListener("touchstart", this, false);
     this.canvas_fg.addEventListener("touchmove", this, false);
     this.canvas_fg.addEventListener("touchend", this, false);
     window.addEventListener("resize", this, false);
     this.resize();
+    return this;
   },
 
   resize: function(e)

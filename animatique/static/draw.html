@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>TITLE</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      #canvas { width: 640px; height: 480px; border: solid thin black;
+        position: relative; }
+    </style>
+    <script src="flexo.js"></script>
+    <script src="draw.js"></script>
+  </head>
+  <body>
+    <div id="canvas"></div>
+    <script>
+
+      var draw = Object.create(svg_draw).init(document.getElementById("canvas"));
+
+    </script>
+  </body>
+</html>
+
