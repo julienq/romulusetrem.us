@@ -2,6 +2,7 @@ var fs = require("fs");
 var path = require("path");
 var util = require("util");
 var server = require("./server.js");
+var flexo = require("./flexo.js");
 
 var PORT = 8910;
 var IP = "";
@@ -46,20 +47,33 @@ server.run(IP, PORT, server.make_dispatcher([
     ["GET", /^\/favicon\.ico$/, function(req, response) {
         server.serve_error(req, response, 404, "Not found");
       }],
-    ["GET", /^\/$/, function(req, response) {
-        server.serve_file_raw(req, response,
-          path.join(server.DOCUMENTS, "draw.html"));
-      }],
     ["GET", /^\/flexo.js$/, function(req, response) {
         server.serve_file_raw(req, response, "flexo.js");
       }],
     ["GET", /^\/images\/(.+)$/, function(req, response, m) {
         server.serve_file_raw(req, response, path.join(IMAGES, m[1]));
       }],
+    ["GET", /^\/id\/?$/, function(req, response) {
+        get_id(req, response);
+      }],
     ["POST", /^\/save\/(.+)$/, function(req, response, m) {
         save(req, response, m[1]);
       }],
   ]));
+
+function get_id(req, response)
+{
+  (function get_id_() {
+    var id = flexo.random_id(6);
+    path.exists(path.join(IMAGES, id + ".svg"), function(exists) {
+        if (exists) {
+          get_id_();
+        } else {
+          server.serve_json(req, response, { id: id });
+        }
+      });
+  })();
+}
 
 function save(req, response, filename)
 {

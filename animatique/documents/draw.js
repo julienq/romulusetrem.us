@@ -11,6 +11,8 @@ var svg_draw =
   init: function(div, error)
   {
     this.error = error || 4;
+    this.defs = flexo.svg("defs");
+    div.parentNode.insertBefore(this.defs, div);
     this.svg = flexo.svg("svg");
     this.svg.setAttribute("stroke-linejoin", "round");
     this.svg.setAttribute("stroke-linecap", "round");
@@ -20,19 +22,26 @@ var svg_draw =
     this.svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(div.offsetWidth,
           div.offsetHeight))
     div.appendChild(this.svg);
-    this.new_image();
+    this.use = flexo.svg("use");
+    this.svg.appendChild(this.use);
     this.svg.addEventListener("mousedown", this, false);
     return this;
   },
 
   // Create a new image
-  new_image: function()
+  new_image: function(f)
   {
     this.image = flexo.svg("g");
     var redo = flexo.svg("g");
     redo.setAttribute("display", "none");
     this.image.appendChild(redo);
     this.svg.appendChild(this.image);
+    flexo.request_uri("/id", (function(req) {
+        this.image.setAttribute("id", JSON.parse(req.responseText).id);
+        this.defs.appendChild(this.image);
+        this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
+        f(this.image);
+      }).bind(this));
   },
 
   // Handle mouse events
@@ -86,8 +95,17 @@ var svg_draw =
       redo.removeChild(last);
       this.image.appendChild(last);
     }
-  }
+  },
 
+  // Save the current image
+  save: function()
+  {
+    var req = new XMLHttpRequest();
+    req.open("POST", "/save/" + this.image.id + ".svg");
+    req.setRequestHeader("Content-type", "image/svg+xml");
+    req.send(draw.svg.parentNode.innerHTML.replace(/<svg /,
+      "<svg xmlns=\"{0}\" ".fmt(flexo.SVG_NS)));
+  },
 };
 
 function d_from_points(points)
@@ -101,101 +119,6 @@ function d_from_points(points)
     });
   return d;
 }
-
-var Draw = {
-  dragging: false,
-  error: 4,
-
-  init: function(div)
-  {
-    this.canvas_bg = flexo.html("canvas");
-    div.appendChild(this.canvas_bg);
-    this.canvas_fg = flexo.html("canvas");
-    div.appendChild(this.canvas_fg);
-    this.context_fg = this.canvas_fg.getContext("2d");
-    this.context_bg = this.canvas_bg.getContext("2d");
-    this.canvas_fg.addEventListener("mousedown", this, false);
-    document.addEventListener("mousemove", this, false);
-    document.addEventListener("mouseup", this, false);
-    this.canvas_fg.addEventListener("touchstart", this, false);
-    this.canvas_fg.addEventListener("touchmove", this, false);
-    this.canvas_fg.addEventListener("touchend", this, false);
-    window.addEventListener("resize", this, false);
-    this.resize();
-    return this;
-  },
-
-  resize: function(e)
-  {
-    // TODO Save the bg canvas!
-    this.canvas_fg.width = this.canvas_fg.offsetWidth;
-    this.canvas_fg.height = this.canvas_fg.offsetHeight;
-    this.canvas_bg.width = this.canvas_bg.offsetWidth;
-    this.canvas_bg.height = this.canvas_bg.offsetHeight;
-    this.context_bg.lineCap = "round";
-    this.context_bg.lineJoin = "round";
-    this.context_bg.lineWidth = 4;
-    this.context_bg.fillStyle = "#fff";
-    this.context_bg.fillRect(0, 0, this.canvas_bg.width, this.canvas_bg.height);
-    this.context_bg.strokeStyle = "#ff4040";
-    this.offset_x = this.canvas_fg.offsetParent.offsetLeft;
-    this.offset_y = this.canvas_fg.offsetParent.offsetTop;
-    this.points = [];
-  },
-
-  // Handle DOM events for the canvas
-  handleEvent: function(e)
-  {
-    e.preventDefault();
-    if (e.type === "mousedown" || e.type === "touchstart") {
-      this.dragging = true;
-      this.context_fg.clearRect(0, 0, this.canvas_fg.width,
-          this.canvas_fg.height);
-      this.context_fg.beginPath();
-      this.points = [];
-      this.points.push(this.draw_line(e));
-    } else if ((e.type === "mousemove" || e.type === "touchmove") &&
-      this.dragging) {
-      this.points.push(this.draw_line(e));
-    } else if (e.type === "mouseup" || e.type === "touchend") {
-      this.dragging = false;
-      if (this.points.length > 1) {
-        this.context_fg.clearRect(0, 0, this.canvas_fg.width,
-            this.canvas_fg.height);
-        this.draw_curve(fit_curve(this.points, this.error));
-      }
-      this.points = [];
-    } else if (e.type === "resize") {
-      this.resize();
-    }
-  },
-
-  // Draw the result curve(s) from the point fitting
-  draw_curve: function(curve)
-  {
-    this.context_bg.beginPath();
-    curve.forEach((function(q, i) {
-        this.context_bg.moveTo(q[0][0], q[0][1]);
-        this.context_bg.bezierCurveTo(q[1][0], q[1][1], q[2][0], q[2][1],
-          q[3][0], q[3][1]);
-      }).bind(this));
-    this.context_bg.stroke();
-  },
-
-  // Add a point to a path and draw line from the last two points
-  draw_line: function(e)
-  {
-    var p_ = flexo.event_client_pos(e);
-    var p = [p_.x - this.offset_x, p_.y - this.offset_y];
-    var q = this.points[this.points.length - 1] || p;
-    this.context_fg.beginPath();
-    this.context_fg.moveTo(q[0], q[1]);
-    this.context_fg.lineTo(p[0], p[1]);
-    this.context_fg.stroke();
-    return p;
-  }
-};
-
 
 
 // An adaptation of paper.js's implementation of Schneider's method

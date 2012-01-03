@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Draw!</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
+        background-color: #444 }
+      #canvas { width: 768px; height: 480px; background-color: white; }
+      .thumb { width: 80px; height: 50px; background-color: white;
+        display: inline-block; }
+    </style>
+    <script src="flexo.js"></script>
+    <script src="draw.js"></script>
+  </head>
+  <body>
+    <div id="canvas"></div>
+    <script>
+
+      var args = flexo.get_args({ fps: 9 });
+      var draw = Object.create(svg_draw).init(document.getElementById("canvas"));
+      new_image();
+
+      function new_image()
+      {
+        var thumb = flexo.html("div", { "class": "thumb" });
+        document.body.appendChild(thumb);
+        var svg = draw.svg.cloneNode(false);
+        thumb.appendChild(svg);
+        draw.new_image(function(image) {
+            svg.appendChild(flexo.svg_href("use", "#" + image.id));
+          });
+      }
+
+      var keys = [];
+      keys[78] = function() { new_image(); };
+      keys[82] = function() { draw.redo(); };
+      keys[83] = function() { draw.save(); };
+      keys[85] = function() { draw.undo(); };
+
+      document.addEventListener("keydown", function(e) {
+          if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            var which = e.keyCode || e.which;
+            if (keys[which]) {
+              e.preventDefault();
+              keys[which]();
+            }
+          }
+        }, false);
+
+    </script>
+  </body>
+</html>
+
