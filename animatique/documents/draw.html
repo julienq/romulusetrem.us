@@ -4,9 +4,9 @@
     <title>Draw!</title>
     <meta charset="UTF-8">
     <style>
-      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
-      #canvas { width: 768px; height: 480px; border: solid thin black;
-        position: relative; }
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
+        background-color: #444 }
+      #canvas { width: 768px; height: 480px; background-color: white; }
     </style>
     <script src="flexo.js"></script>
     <script src="draw.js"></script>
@@ -23,6 +23,14 @@
             if (e.keyCode === 82) {
               // r redo
               draw.redo();
+            } else if (e.keyCode === 83) {
+              // s save
+              var req = new XMLHttpRequest();
+              req.open("POST", "/save/" + flexo.random_id(6) + ".svg");
+              req.setRequestHeader("Content-type", "image/svg+xml");
+              var src = draw.svg.parentNode.innerHTML.replace(/<svg /,
+                "<svg xmlns=\"{0}\" ".fmt(flexo.SVG_NS));
+              req.send(src);
             } else if (e.keyCode === 85) {
               // u undo
               draw.undo();

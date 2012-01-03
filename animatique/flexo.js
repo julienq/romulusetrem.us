@@ -12,7 +12,6 @@ String.prototype.fmt = function()
     });
 };
 
-
 // Bind the function f to the object x. Additional arguments can be provided to
 // specialize the bound function.
 if (typeof Function.prototype.bind !== "function") {
@@ -37,7 +36,6 @@ if (typeof Array.prototype.forEach !== "function") {
     }
   };
 }
-
 
 // Trampoline calls, adapted from
 // http://github.com/spencertipping/js-in-ten-minutes
@@ -65,6 +63,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   flexo.XLINK_NS = "http://www.w3.org/1999/xlink";
   flexo.XML_NS = "http://www.w3.org/1999/xml";
   flexo.XMLNS_NS = "http://www.w3.org/2000/xmlns/";
+
 
   // Solve a relative URI and return an absolute URI
   flexo.absolute_uri = function(base_uri, uri)

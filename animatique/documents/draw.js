@@ -1,12 +1,13 @@
 // TODO
 // [x] SVGfy
-// [ ] save
+// [x] save
 // [x] undo
 // [x] redo
 // [ ] several images
 
 var svg_draw =
 {
+  // Init a new SVG canvas for drawing
   init: function(div, error)
   {
     this.error = error || 4;
@@ -19,20 +20,19 @@ var svg_draw =
     this.svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(div.offsetWidth,
           div.offsetHeight))
     div.appendChild(this.svg);
+    this.new_image();
     this.svg.addEventListener("mousedown", this, false);
-    this.image = this.new_image();
-    this.svg.appendChild(this.image);
     return this;
   },
 
   // Create a new image
   new_image: function()
   {
-    var g = flexo.svg("g");
+    this.image = flexo.svg("g");
     var redo = flexo.svg("g");
     redo.setAttribute("display", "none");
-    g.appendChild(redo);
-    return g;
+    this.image.appendChild(redo);
+    this.svg.appendChild(this.image);
   },
 
   // Handle mouse events
@@ -67,6 +67,7 @@ var svg_draw =
     }
   },
 
+  // Undo the last stroke if any
   undo: function()
   {
     var last = this.image.lastElementChild;
@@ -76,6 +77,7 @@ var svg_draw =
     }
   },
 
+  // Redo the last undone stroke if any
   redo: function()
   {
     var redo = this.image.firstElementChild;
