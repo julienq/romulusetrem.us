@@ -447,12 +447,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   // Remove all children of an element
   flexo.remove_children = function(elem)
   {
-    var child = elem.firstElementChild;
-    while (child) {
-      var next = child.nextElementSibling;
-      elem.removeChild(child);
-      child = next;
-    }
+    while (elem.firstChild) elem.removeChild(elem.firstChild);
   };
 
   // requestAnimationFrame

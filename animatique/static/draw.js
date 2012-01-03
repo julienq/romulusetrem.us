@@ -1,8 +1,9 @@
 // TODO
 // [x] SVGfy
 // [ ] save
-// [ ] undo
-// [ ] redo
+// [x] undo
+// [x] redo
+// [ ] several images
 
 var svg_draw =
 {
@@ -15,22 +16,37 @@ var svg_draw =
     this.svg.setAttribute("stroke", "#ff4040");
     this.svg.setAttribute("stroke-width", "4");
     this.svg.setAttribute("fill", "none");
+    this.svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(div.offsetWidth,
+          div.offsetHeight))
     div.appendChild(this.svg);
     this.svg.addEventListener("mousedown", this, false);
+    this.image = this.new_image();
+    this.svg.appendChild(this.image);
     return this;
   },
 
+  // Create a new image
+  new_image: function()
+  {
+    var g = flexo.svg("g");
+    var redo = flexo.svg("g");
+    redo.setAttribute("display", "none");
+    g.appendChild(redo);
+    return g;
+  },
+
+  // Handle mouse events
   handleEvent: function(e)
   {
     e.preventDefault();
     var p = flexo.event_svg_point(e, this.svg);
-    if (e.type === "mousedown") {
+    if (e.type === "mousedown" && e.button === 0) {
       document.addEventListener("mousemove", this, false);
       document.addEventListener("mouseup", this, false);
       this.__points = [[p.x, p.y]];
       this.__path = flexo.svg("path");
       this.__path.setAttribute("d", "M{0},{1}".fmt(p.x, p.y));
-      this.svg.appendChild(this.__path);
+      this.image.appendChild(this.__path);
     } else if (e.type === "mousemove") {
       this.__points.push([p.x, p.y]);
       this.__path.setAttribute("d", "{0}L{1},{2}"
@@ -38,21 +54,48 @@ var svg_draw =
     } else if (e.type === "mouseup") {
       document.removeEventListener("mousemove", this, false);
       document.removeEventListener("mouseup", this, false);
-      this.__path.setAttribute("d",
+      if (this.__points.length > 1) {
+        this.__path.setAttribute("d",
           d_from_points(fit_curve(this.__points, this.error)));
+      } else {
+        this.__path.setAttribute("d", "{0}L{1},{2}"
+            .fmt(this.__path.getAttribute("d"), p.x, p.y));
+      }
       delete this.__path;
       delete this.__points;
+      flexo.remove_children(this.image.firstElementChild);
     }
   },
+
+  undo: function()
+  {
+    var last = this.image.lastElementChild;
+    if (last) {
+      this.image.removeChild(last);
+      this.image.firstChild.appendChild(last);
+    }
+  },
+
+  redo: function()
+  {
+    var redo = this.image.firstElementChild;
+    var last = redo.lastElementChild;
+    if (last) {
+      redo.removeChild(last);
+      this.image.appendChild(last);
+    }
+  }
 
 };
 
 function d_from_points(points)
 {
-  var d = "M{0},{1}".fmt(points[0][0], points[0][1]);
+  var d = "M{0},{1}".fmt(points[0][0][0].toPrecision(3),
+      points[0][0][1].toPrecision(3));
   points.forEach(function(q, i) {
-      d += "C{0},{1} {2},{3} {4},{5}".fmt(q[1][0], q[1][1], q[2][0], q[2][1],
-        q[3][0], q[3][1]);
+      d += "C{0},{1} {2},{3} {4},{5}".fmt(q[1][0].toPrecision(3),
+        q[1][1].toPrecision(3), q[2][0].toPrecision(3), q[2][1].toPrecision(3),
+        q[3][0].toPrecision(3), q[3][1].toPrecision(3));
     });
   return d;
 }
