@@ -1,7 +1,8 @@
 // TODO
-// [ ] onion skin
+// [x] onion skin
 // [ ] play/pause/stop
 // [ ] drag thumbs
+// [ ] select thumbs
 
 var args = flexo.get_args({ layers: "3", onion_skin: "true" });
 var layers = Math.max(1, parseInt(args.layers, 10));
@@ -10,10 +11,23 @@ var draw = Object.create(svg_draw).init(document.getElementById("canvas"),
     layers);
 new_image();
 
+var selection = null;
+
+function select_thumb(thumb)
+{
+  if (selection) flexo.remove_class(selection, "selected");
+  selection = thumb;
+  if (thumb) {
+    flexo.add_class(thumb, "selected");
+    draw.show_image(thumb.querySelector("use"));
+  }
+}
+
 function new_image()
 {
   var thumb = flexo.html("div", { "class": "thumb" });
-  document.body.appendChild(thumb);
+  thumb.addEventListener("click", function(e) { select_thumb(thumb); }, false);
+  document.getElementById("thumbnails").appendChild(thumb);
   var svg = draw.svg.cloneNode(false);
   thumb.appendChild(svg);
   draw.new_image();

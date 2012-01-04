@@ -5,7 +5,7 @@
 // [x] undo
 // [x] redo
 // [x] several images
-// [ ] layers (onion skin)
+// [x] layers (onion skin)
 
 var svg_draw =
 {
@@ -53,11 +53,17 @@ var svg_draw =
     this.update_layers();
   },
 
+  show_image: function(use)
+  {
+    var id = use.getAttributeNS(flexo.XLINK_NS, "href");
+    this.use.setAttributeNS(flexo.XLINK_NS, "href", id);
+    this.image = document.querySelector(id);
+    this.update_layers();
+  },
+
   update_layers: function()
   {
     flexo.remove_children(this.g_layers);
-    console.log("Update layers: layers to show: {0}, images: {1}"
-        .fmt(this.layers, this.defs.childElementCount));
     for (var i = 1, image = this.image.previousSibling, op = 0.3;
         image && i < this.layers;
         ++i, image = image.previousSibling, op -= 0.05) {
