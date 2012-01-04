@@ -1,9 +1,11 @@
 // TODO
 // [x] SVGfy
 // [x] save
+// [ ] load
 // [x] undo
 // [x] redo
-// [ ] several images
+// [x] several images
+// [ ] layers (onion skin)
 
 var svg_draw =
 {
