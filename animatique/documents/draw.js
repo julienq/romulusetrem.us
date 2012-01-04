@@ -29,19 +29,17 @@ var svg_draw =
   },
 
   // Create a new image
-  new_image: function(f)
+  new_image: function()
   {
     this.image = flexo.svg("g");
+    this.image.setAttribute("id", "i" + this.defs.childElementCount);
     var redo = flexo.svg("g");
     redo.setAttribute("display", "none");
     this.image.appendChild(redo);
     this.svg.appendChild(this.image);
-    flexo.request_uri("/id", (function(req) {
-        this.image.setAttribute("id", JSON.parse(req.responseText).id);
-        this.defs.appendChild(this.image);
-        this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
-        f(this.image);
-      }).bind(this));
+    this.defs.appendChild(this.image);
+    this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
+
   },
 
   // Handle mouse events
@@ -98,13 +96,28 @@ var svg_draw =
   },
 
   // Save the current image
-  save: function()
+  save: function(f)
   {
-    var req = new XMLHttpRequest();
-    req.open("POST", "/save/" + this.image.id + ".svg");
-    req.setRequestHeader("Content-type", "image/svg+xml");
-    req.send(draw.svg.parentNode.innerHTML.replace(/<svg /,
-      "<svg xmlns=\"{0}\" ".fmt(flexo.SVG_NS)));
+    if (!this.svg.id) {
+      flexo.request_uri("/id", (function(req) {
+          this.svg.setAttribute("id", JSON.parse(req.responseText).id);
+          this.save(f);
+        }).bind(this));
+    } else {
+      var svg = this.svg.cloneNode(false);
+      svg.setAttribute("xmlns", flexo.SVG_NS);
+      svg.setAttribute("xmlns:xlink", flexo.XLINK_NS);
+      svg.appendChild(this.defs.cloneNode(true));
+      svg.appendChild(flexo.svg("use", { "xlink:href":
+        this.use.getAttributeNS(flexo.XLINK_NS, "href") }));
+      var div = flexo.html("div");
+      div.appendChild(svg);
+      var req = new XMLHttpRequest();
+      req.open("POST", "/save/" + this.svg.id + ".svg");
+      req.setRequestHeader("Content-type", "image/svg+xml");
+      req.onreadystatechange = function() { if (req.readyState === 4) f(req); };
+      req.send(div.innerHTML);
+    }
   },
 };
 

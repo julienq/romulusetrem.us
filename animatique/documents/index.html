@@ -6,7 +6,7 @@
     <style>
       body { font-family: "Helvetica Neue", Helvetica, sans-serif;
         background-color: #444 }
-      #canvas { width: 768px; height: 480px; background-color: white; }
+      #canvas { width: 1280px; height: 720px; background-color: white; }
       .thumb { width: 80px; height: 50px; background-color: white;
         display: inline-block; }
     </style>
@@ -27,15 +27,22 @@
         document.body.appendChild(thumb);
         var svg = draw.svg.cloneNode(false);
         thumb.appendChild(svg);
-        draw.new_image(function(image) {
-            svg.appendChild(flexo.svg_href("use", "#" + image.id));
+        draw.new_image();
+        svg.appendChild(flexo.svg_href("use", "#" + draw.image.id));
+      }
+
+      function save()
+      {
+        draw.save(function(req) {
+            console.log(JSON.parse(req.responseText));
           });
       }
 
       var keys = [];
       keys[78] = function() { new_image(); };
+      // keys[80] = function() { play_pause(); };
       keys[82] = function() { draw.redo(); };
-      keys[83] = function() { draw.save(); };
+      keys[83] = function() { save(); };
       keys[85] = function() { draw.undo(); };
 
       document.addEventListener("keydown", function(e) {
