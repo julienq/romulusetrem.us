@@ -10,7 +10,7 @@
 var svg_draw =
 {
   // Init a new SVG canvas for drawing
-  init: function(div, error)
+  init: function(div, layers, error)
   {
     this.error = error || 4;
     this.defs = flexo.svg("defs");
@@ -24,9 +24,18 @@ var svg_draw =
     this.svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(div.offsetWidth,
           div.offsetHeight))
     div.appendChild(this.svg);
+    this.g_layers = flexo.svg("g");
+    this.svg.appendChild(this.g_layers);
+    this.svg.addEventListener("mousedown", this, false);
     this.use = flexo.svg("use");
     this.svg.appendChild(this.use);
-    this.svg.addEventListener("mousedown", this, false);
+    Object.defineProperty(this, "layers",
+        { enumerable: true, configurable: true,
+          get: function() { return layers; },
+          set: function(n) {
+              layers = n;
+              this.update_layers();
+            } });
     return this;
   },
 
@@ -41,7 +50,20 @@ var svg_draw =
     this.svg.appendChild(this.image);
     this.defs.appendChild(this.image);
     this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
+    this.update_layers();
+  },
 
+  update_layers: function()
+  {
+    flexo.remove_children(this.g_layers);
+    console.log("Update layers: layers to show: {0}, images: {1}"
+        .fmt(this.layers, this.defs.childElementCount));
+    for (var i = 1, image = this.image.previousSibling, op = 0.3;
+        image && i < this.layers;
+        ++i, image = image.previousSibling, op -= 0.05) {
+      var use = flexo.svg_href("use", "#" + image.id, { "stroke-opacity": op });
+      this.g_layers.insertBefore(use, this.g_layers.firstChild);
+    }
   },
 
   // Handle mouse events

@@ -3,9 +3,11 @@
 // [ ] play/pause/stop
 // [ ] drag thumbs
 
-var args = flexo.get_args({ fps: 9, layers: 0 });
-var layers = parseFloat(args.layers);
-var draw = Object.create(svg_draw).init(document.getElementById("canvas"));
+var args = flexo.get_args({ layers: "3", onion_skin: "true" });
+var layers = Math.max(1, parseInt(args.layers, 10));
+var show_onion_skin = flexo.is_true(args.onion_skin);
+var draw = Object.create(svg_draw).init(document.getElementById("canvas"),
+    layers);
 new_image();
 
 function new_image()
@@ -20,6 +22,8 @@ function new_image()
 
 function onion_skin()
 {
+  show_onion_skin = !show_onion_skin;
+  draw.layers = show_onion_skin ? layers : 1;
 }
 
 function play_pause()
