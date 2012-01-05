@@ -5,7 +5,7 @@
 // [x] select thumbs
 // [x] append/insert
 // [ ] undo add frame
-// [ ] remove frame
+// [x] remove frame
 
 var args = flexo.get_args({ layers: "3", onion_skin: "true" });
 var layers = Math.max(1, parseInt(args.layers, 10));
@@ -27,6 +27,19 @@ function select_thumb(thumb)
 }
 
 var thumbnails = document.getElementById("thumbnails");
+
+function delete_image()
+{
+  if (selection) {
+    var thumb = selection;
+    var next = thumb.nextSibling;
+    if (!next) next = thumb.previousSibling;
+    if (!next) return;
+    select_thumb(next);
+    thumb.parentNode.removeChild(thumb);
+    draw.delete_image(thumb.querySelector("use"));
+  }
+}
 
 function new_image(next)
 {
@@ -66,6 +79,7 @@ keys[79] = function() { onion_skin(); };     // O
 keys[82] = function() { draw.redo(); };      // R
 keys[83] = function() { save(); };           // S
 keys[85] = function() { draw.undo(); };      // U
+keys[88] = function() { delete_image(); };   // X
 
 document.addEventListener("keydown", function(e) {
     if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {

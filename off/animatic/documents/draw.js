@@ -13,6 +13,7 @@ var svg_draw =
   init: function(div, layers, error)
   {
     this.error = error || 4;
+    this.counter = 0;
     this.defs = flexo.svg("defs");
     div.parentNode.insertBefore(this.defs, div);
     this.svg = flexo.svg("svg");
@@ -39,11 +40,19 @@ var svg_draw =
     return this;
   },
 
+  // Delete an image
+  delete_image: function(use)
+  {
+    var id = use.getAttributeNS(flexo.XLINK_NS, "href");
+    var image = document.querySelector(id);
+    image.parentNode.removeChild(image);
+  },
+
   // Create a new image
   new_image: function(use)
   {
     this.image = flexo.svg("g");
-    this.image.setAttribute("id", "i" + this.defs.childElementCount);
+    this.image.setAttribute("id", "i" + (this.counter++).toString());
     var redo = flexo.svg("g");
     redo.setAttribute("display", "none");
     this.image.appendChild(redo);
