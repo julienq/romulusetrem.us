@@ -2,7 +2,10 @@
 // [x] onion skin
 // [ ] play/pause/stop
 // [ ] drag thumbs
-// [ ] select thumbs
+// [x] select thumbs
+// [x] append/insert
+// [ ] undo add frame
+// [ ] remove frame
 
 var args = flexo.get_args({ layers: "3", onion_skin: "true" });
 var layers = Math.max(1, parseInt(args.layers, 10));
@@ -11,7 +14,7 @@ var draw = Object.create(svg_draw).init(document.getElementById("canvas"),
     layers);
 new_image();
 
-var selection = null;
+var selection;
 
 function select_thumb(thumb)
 {
@@ -23,15 +26,19 @@ function select_thumb(thumb)
   }
 }
 
-function new_image()
+var thumbnails = document.getElementById("thumbnails");
+
+function new_image(next)
 {
   var thumb = flexo.html("div", { "class": "thumb" });
   thumb.addEventListener("click", function(e) { select_thumb(thumb); }, false);
-  document.getElementById("thumbnails").appendChild(thumb);
+  var ref = selection ? next ? selection.nextSibling : selection : null;
+  thumbnails.insertBefore(thumb, ref);
   var svg = draw.svg.cloneNode(false);
   thumb.appendChild(svg);
-  draw.new_image();
+  draw.new_image(ref ? ref.querySelector("use") : null);
   svg.appendChild(flexo.svg_href("use", "#" + draw.image.id));
+  select_thumb(thumb);
 }
 
 function onion_skin()
@@ -52,12 +59,13 @@ function save()
 }
 
 var keys = [];
-keys[32] = function() { play_pause(); };
-keys[78] = function() { new_image(); };
-keys[79] = function() { onion_skin(); };
-keys[82] = function() { draw.redo(); };
-keys[83] = function() { save(); };
-keys[85] = function() { draw.undo(); };
+keys[32] = function() { play_pause(); };     // space
+keys[65] = function() { new_image(true); };  // A
+keys[73] = function() { new_image(); };      // I
+keys[79] = function() { onion_skin(); };     // O
+keys[82] = function() { draw.redo(); };      // R
+keys[83] = function() { save(); };           // S
+keys[85] = function() { draw.undo(); };      // U
 
 document.addEventListener("keydown", function(e) {
     if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {

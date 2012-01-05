@@ -40,7 +40,7 @@ var svg_draw =
   },
 
   // Create a new image
-  new_image: function()
+  new_image: function(use)
   {
     this.image = flexo.svg("g");
     this.image.setAttribute("id", "i" + this.defs.childElementCount);
@@ -48,7 +48,9 @@ var svg_draw =
     redo.setAttribute("display", "none");
     this.image.appendChild(redo);
     this.svg.appendChild(this.image);
-    this.defs.appendChild(this.image);
+    var ref = use ?
+      document.querySelector(use.getAttributeNS(flexo.XLINK_NS, "href")) : null;
+    this.defs.insertBefore(this.image, ref);
     this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
     this.update_layers();
   },
