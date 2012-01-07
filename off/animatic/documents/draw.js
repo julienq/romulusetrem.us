@@ -4,7 +4,7 @@
 // [ ] load
 // [x] undo
 // [x] redo
-// [x] several images
+// [x] several frames
 // [x] layers (onion skin)
 
 var svg_draw =
@@ -40,45 +40,45 @@ var svg_draw =
     return this;
   },
 
-  // Delete an image
-  delete_image: function(use)
+  // Delete a frame
+  delete_frame: function(use)
   {
     var id = use.getAttributeNS(flexo.XLINK_NS, "href");
-    var image = document.querySelector(id);
-    image.parentNode.removeChild(image);
+    var frame = document.querySelector(id);
+    frame.parentNode.removeChild(frame);
   },
 
-  // Create a new image
-  new_image: function(use)
+  // Create a new frame
+  new_frame: function(use)
   {
-    this.image = flexo.svg("g");
-    this.image.setAttribute("id", "i" + (this.counter++).toString());
+    this.frame = flexo.svg("g");
+    this.frame.setAttribute("id", "i" + (this.counter++).toString());
     var redo = flexo.svg("g");
     redo.setAttribute("display", "none");
-    this.image.appendChild(redo);
-    this.svg.appendChild(this.image);
+    this.frame.appendChild(redo);
+    this.svg.appendChild(this.frame);
     var ref = use ?
       document.querySelector(use.getAttributeNS(flexo.XLINK_NS, "href")) : null;
-    this.defs.insertBefore(this.image, ref);
-    this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.image.id);
+    this.defs.insertBefore(this.frame, ref);
+    this.use.setAttributeNS(flexo.XLINK_NS, "href", "#" + this.frame.id);
     this.update_layers();
   },
 
-  show_image: function(use)
+  show_frame: function(use)
   {
     var id = use.getAttributeNS(flexo.XLINK_NS, "href");
     this.use.setAttributeNS(flexo.XLINK_NS, "href", id);
-    this.image = document.querySelector(id);
+    this.frame = document.querySelector(id);
     this.update_layers();
   },
 
   update_layers: function()
   {
     flexo.remove_children(this.g_layers);
-    for (var i = 1, image = this.image.previousSibling, op = 0.3;
-        image && i < this.layers;
-        ++i, image = image.previousSibling, op -= 0.05) {
-      var use = flexo.svg_href("use", "#" + image.id, { "stroke-opacity": op });
+    for (var i = 1, frame = this.frame.previousSibling, op = 0.3;
+        frame && i < this.layers;
+        ++i, frame = frame.previousSibling, op -= 0.05) {
+      var use = flexo.svg_href("use", "#" + frame.id, { "stroke-opacity": op });
       this.g_layers.insertBefore(use, this.g_layers.firstChild);
     }
   },
@@ -94,7 +94,7 @@ var svg_draw =
       this.__points = [[p.x, p.y]];
       this.__path = flexo.svg("path");
       this.__path.setAttribute("d", "M{0},{1}".fmt(p.x, p.y));
-      this.image.appendChild(this.__path);
+      this.frame.appendChild(this.__path);
     } else if (e.type === "mousemove") {
       this.__points.push([p.x, p.y]);
       this.__path.setAttribute("d", "{0}L{1},{2}"
@@ -111,32 +111,33 @@ var svg_draw =
       }
       delete this.__path;
       delete this.__points;
-      flexo.remove_children(this.image.firstElementChild);
+      flexo.remove_children(this.frame.firstElementChild);
+      flexo.notify(this, "@drawn");
     }
   },
 
   // Undo the last stroke if any
   undo: function()
   {
-    var last = this.image.lastElementChild;
+    var last = this.frame.lastElementChild;
     if (last) {
-      this.image.removeChild(last);
-      this.image.firstChild.appendChild(last);
+      this.frame.removeChild(last);
+      this.frame.firstChild.appendChild(last);
     }
   },
 
   // Redo the last undone stroke if any
   redo: function()
   {
-    var redo = this.image.firstElementChild;
+    var redo = this.frame.firstElementChild;
     var last = redo.lastElementChild;
     if (last) {
       redo.removeChild(last);
-      this.image.appendChild(last);
+      this.frame.appendChild(last);
     }
   },
 
-  // Save the current image
+  // Save the current drawing
   save: function(f)
   {
     if (!this.svg.id) {
