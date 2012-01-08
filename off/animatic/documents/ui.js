@@ -8,6 +8,7 @@
 // [/] undo/redo
 // [x] remove frame
 // [ ] show command
+// [ ] number thumbnails
 
 var undo_stack = [];
 var redo_stack = [];
