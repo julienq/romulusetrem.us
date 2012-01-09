@@ -7,6 +7,7 @@ var PORT = 8910;
 var IP = "";
 var HELP = false;
 var DICT = "JMdict_e";
+var KANJI = "kanjidic2.xml";
 
 // Parse arguments from the command line
 function parse_args(args)
@@ -23,6 +24,8 @@ function parse_args(args)
         server.DOCUMENTS = m[1];
       } else if (m = arg.match(/^dict=(\S+)/)) {
         DICT = m[1];
+      } else if (m = arg.match(/^kanji=(\S+)/)) {
+        KANJI = m[1];
       }
     });
 }
@@ -31,11 +34,12 @@ function parse_args(args)
 function show_help(node, name)
 {
   console.log("\nUsage: {0} {1} [options]\n\nOptions:".fmt(node, name));
-  console.log("  help:                  show this help message");
-  console.log("  ip=<ip address>:       IP address to listen to");
-  console.log("  port=<port number>:    port number for the server");
-  console.log("  documents=<apps dir>:  path to the documents directory");
-  console.log("  dict=<dictionary file: path to the dictionary file");
+  console.log("  help:                   show this help message");
+  console.log("  ip=<ip address>:        IP address to listen to");
+  console.log("  port=<port number>:     port number for the server");
+  console.log("  documents=<apps dir>:   path to the documents directory");
+  console.log("  dict=<dictionary file>: path to the dictionary file");
+  console.log("  kanji=<kanji file>:     path to the kanji dictionary file");
   console.log("");
   process.exit(0);
 }
@@ -48,7 +52,7 @@ var KEYS = {};
 
 // Open the dictionary file first
 // TODO replace this with a DB?
-fs.readFile(DICT, "UTF8", function(err, data) {
+fs.readFile(DICT, "UTF-8", function(err, data) {
     if (err) throw "Could not read dictionary file at {0}: {1}".fmt(DICT, err);
     var parser = new expat.Parser("UTF-8");
     var entry;
@@ -61,15 +65,19 @@ fs.readFile(DICT, "UTF8", function(err, data) {
     parser.addListener("startElement", function(name, attrs) {
         text = "";
         if (name === "entry") {
-          entry = { kanji: [], reading: [] };
+          entry = { kanji: [], reading: [], sense: [] };
         } else if (name === "k_ele") {
           entry.kanji.push(["", ""]);
         } else if (name === "r_ele") {
           entry.reading.push(["", ""]);
+        } else if (name === "sense") {
+          entry.sense.push({ pos: [], gloss: [] });
         }
       });
     parser.addListener("endElement", function(name) {
-        if (name === "keb") {
+        if (name === "ent_seq") {
+          entry.seq = parseInt(text, 10);
+        } else if (name === "keb") {
           entry.kanji[entry.kanji.length - 1][0] = text;
           add_key();
           // TODO _inf
@@ -81,13 +89,32 @@ fs.readFile(DICT, "UTF8", function(err, data) {
           entry.kanji[entry.kanji.length - 1][1] = text;
         } else if (name === "re_pri") {
           entry.reading[entry.reading.length - 1][1] = text;
+        } else if (name === "pos") {
+          entry.sense[entry.sense.length - 1].pos.push(text);
+        } else if (name === "gloss") {
+          entry.sense[entry.sense.length - 1].gloss.push(text);
         } else if (name === "entry") {
           ENTRIES.push(entry);
         }
       });
     parser.addListener("text", function(t) { text += t; });
     parser.parse(data);
-    start_server();
+    console.log("Reading kanji file...");
+    fs.readFile(KANJI, "UTF-8", function(err, data) {
+        if (err) {
+          throw "Could not read kanji dictionary file at {0}: {1}"
+            .fmt(KANJI, err);
+        }
+        var parser = new expat.Parser("UTF-8");
+        parser.addListener("startElement", function(name, attrs) {
+          });
+        parser.addListener("endElement", function(name) {
+          });
+        parser.addListener("text", function(t) {
+          });
+        parser.parse(data);
+        start_server();
+      });
   });
 
 function start_server()

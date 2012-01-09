@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>日本語</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      .primary { font-weight: bold; }
+    </style>
+    <script src="flexo.js"></script>
+  </head>
+  <body>
+    <p>
+      <label>Key:
+        <input type="text" id="key" placeholder="key" autofocus></label>
+      <input type="button" value="Lookup" id="button">
+    </p>
+    <div id="result"></div>
+    <script>
+      var key_input = document.getElementById("key");
+      var result = document.getElementById("result");
+
+      function lookup()
+      {
+        flexo.request_uri("/key/{0}".fmt(flexo.normalize(key_input.value)),
+          function(req) {
+            flexo.remove_children(result);
+            var results = JSON.parse(req.responseText);
+            var ol = flexo.html("ol", { "class": "entry" });
+            result.appendChild(ol);
+            results.forEach(function(result) {
+                var entry = flexo.html("li");
+                ol.appendChild(entry);
+                if (result.kanji) {
+                  var list = flexo.html("ul", { "class": "kanji" });
+                  entry.appendChild(list);
+                  result.kanji.forEach(function(k) {
+                      var li = flexo.html("li", {}, k[0]);
+                      if (k[1]) li.className = "primary";
+                      list.appendChild(li);
+                    });
+                }
+                if (result.reading) {
+                  var list = flexo.html("ul", { "class": "reading" });
+                  entry.appendChild(list);
+                  result.reading.forEach(function(r) {
+                      var li = flexo.html("li", {}, r[0]);
+                      if (r[1]) li.className = "primary";
+                      list.appendChild(li);
+                    });
+                }
+                if (result.sense) {
+                  var list = flexo.html("ol", { "class": "sense" });
+                  entry.appendChild(list);
+                  result.sense.forEach(function(s) {
+                      var li = flexo.html("li", {}, "({0}) {1}"
+                        .fmt(s.pos.join(", "), s.gloss.join(", ")));
+                      list.appendChild(li);
+                    });
+                }
+              });
+          });
+      }
+
+      button.addEventListener("click", lookup, false);
+      key_input.addEventListener("change", lookup, false);
+      key_input.addEventListener("keyup", function(e) {
+          if (e.keyCode === 13) lookup();
+        }, false);
+
+    </script>
+  </body>
+</html>
+
