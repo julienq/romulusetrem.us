@@ -3,7 +3,7 @@ var http = require("http");
 var path = require("path");
 var url = require("url");
 var util = require("util");
-var flexo = require("./flexo.js");
+var flexo = require("../flexo.js");
 
 
 // Known MIME types; the rest is served as text/plain

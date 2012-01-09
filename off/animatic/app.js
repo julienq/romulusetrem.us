@@ -1,8 +1,8 @@
 var fs = require("fs");
 var path = require("path");
 var util = require("util");
-var server = require("./server.js");
-var flexo = require("./flexo.js");
+var server = require("../spqr.js");
+var flexo = require("../../flexo.js");
 
 var PORT = 8910;
 var IP = "";
@@ -48,7 +48,7 @@ server.run(IP, PORT, server.make_dispatcher([
         server.serve_error(req, response, 404, "Not found");
       }],
     ["GET", /^\/flexo.js$/, function(req, response) {
-        server.serve_file_raw(req, response, "flexo.js");
+        server.serve_file_raw(req, response, "../../flexo.js");
       }],
     ["GET", /^\/images\/(.+)$/, function(req, response, m) {
         server.serve_file_raw(req, response, path.join(IMAGES, m[1]));

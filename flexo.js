@@ -12,6 +12,7 @@ String.prototype.fmt = function()
     });
 };
 
+
 // Bind the function f to the object x. Additional arguments can be provided to
 // specialize the bound function.
 if (typeof Function.prototype.bind !== "function") {
@@ -36,6 +37,7 @@ if (typeof Array.prototype.forEach !== "function") {
     }
   };
 }
+
 
 // Trampoline calls, adapted from
 // http://github.com/spencertipping/js-in-ten-minutes
@@ -65,28 +67,61 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   flexo.XMLNS_NS = "http://www.w3.org/2000/xmlns/";
 
 
-  // Solve a relative URI and return an absolute URI
-  flexo.absolute_uri = function(base_uri, uri)
+  // Return an absolute URI for the reference URI for a given base URI
+  flexo.absolute_uri = function(base, ref)
   {
-    if (!base_uri) base_uri = "";
-    // Start with a scheme: return as is
-    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/+/.test(uri)) return uri;
-    base_uri = base_uri.split(/[#?]/)[0];
-    // Absolute path: resolve with current host
-    if (/^\//.test(uri)) {
-      return base_uri.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/+[^\/]*/) + uri;
+    var r = flexo.split_uri(ref);
+    if (r.scheme) {
+      r.path = remove_dot_segments(r.path);
+    } else {
+      var b = flexo.split_uri(base);
+      r.scheme = b.scheme;
+      if (r.authority) {
+        r.path = remove_dot_segments(r.path);
+      } else {
+        r.authority = b.authority;
+        if (!r.path) {
+          r.path = b.path
+          if (!r.query) r.query = b.query;
+        } else {
+          if (r.path.substr(0, 1) === "/") {
+            r.path = remove_dot_segments(r.path);
+          } else {
+            r.path = b.authority && !b.path ? "/" + r.path :
+              remove_dot_segments(b.path.replace(/\/[^\/]*$/, "/") + r.path);
+          }
+        }
+      }
     }
-    // Relative path; split into path/fragment identifier
-    var abs = base_uri.replace(/#.*$/, "");
-    var p = uri.split("#");
-    if (p[0]) abs = abs.replace(/(\/?)[^\/]*$/, "$1" + p[0]);
-    var m;
-    while (m = /[^\/]+\/\.\.\//.exec(abs)) {
-      abs = abs.substr(0, m.index) + abs.substr(m.index + m[0].length);
+    return (r.scheme ? r.scheme + ":" : "") +
+      (r.authority ? "//" + r.authority : "") +
+      r.path +
+      (r.query ? "?" + r.query : "") +
+      (r.fragment ? "#" + r.fragment : "");
+  }
+
+  // Utility function for absolute_uri above
+  function remove_dot_segments(path)
+  {
+    for (var input = path, output = "", m; input;) {
+      if (m = input.match(/^\.\.?\//)) {
+        input = input.substr(m[0].length);
+      } else if (m = input.match(/^\/\.\/|\/\.$/)) {
+        input = "/" + input.substr(m[0].length);
+      } else if (m = input.match(/^\/\.\.\/|\/\.\.$/)) {
+        input = "/" + input.substr(m[0].length);
+        output = output.replace(/\/?[^\/]*$/, "");
+      } else if (input === "." || input === "..") {
+        input = "";
+      } else {
+        m = input.match(/^\/?[^\/]*/);
+        input = input.substr(m[0].length);
+        output += m[0];
+      }
     }
-    if (p[1]) abs += "#" + p[1];
-    return abs;
-  };
+    return output;
+  }
+
 
   // Identity function
   flexo.id = function(x) { return x; };
@@ -218,6 +253,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   flexo.pad = function(string, length, padding)
   {
     if (typeof padding !== "string") padding = "0";
+    if (typeof string !== "string") string = string.toString();
     var l = length + 1 - string.length;
     return l > 0 ? (Array(l).join(padding)) + string : string;
   };
@@ -229,6 +265,17 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
       var index = array.indexOf(item);
       if (index >= 0) return array.splice(item, 1);
     }
+  };
+
+  // Request an URI as an arraybuffer through XMLHttpRequest. The f callback is
+  // called with the response directly. TODO error handling
+  flexo.request_arraybuffer = function(uri, f)
+  {
+    var req = new XMLHttpRequest();
+    req.open("GET", uri, true);
+    req.responseType = "arraybuffer";
+    req.onload = function() { f(req.response); };
+    req.send("");
   };
 
   // Simple wrapper for XMLHttpRequest GET request with no data; call back with
@@ -249,6 +296,19 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     };
     req.send("");
   };
+
+  // Split an URI into an object with the five parts scheme, authority, path,
+  // query, and fragment (without the extra punctuation; i.e. query does not
+  // have a leading "?")
+  flexo.split_uri = function(uri)
+  {
+    var m = uri.match(/^(?:([a-zA-Z](?:[a-zA-Z0-9+.-]*)):(?:\/\/([^\/]*))?)?([^#?]*)(?:\?([^#]*))?(?:#(.*))?$/);
+    var u = {};
+    ["scheme", "authority", "path", "query", "fragment"].forEach(function(k, i) {
+        if (m && m[i + 1]) u[k] = m[i + 1];
+      });
+    return u;
+  }
 
   // Convert a string with dashes (as used in XML attributes) to camel case (as
   // used for property names)
