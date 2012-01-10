@@ -29,6 +29,32 @@ exports.DOCUMENTS = path.join(process.cwd(), "documents");
 exports.SERVER_NAME = "SPQR";
 
 
+exports.ok = function()
+{
+  process.stdout.write("\033[0;42m\033[1;33mOK\033[0m\t");
+  console.log.apply(console, arguments);
+};
+
+exports.warn = function()
+{
+  process.stdout.write("\033[0;43m\033[1;31mWARNING\033[0m\t");
+  console.log.apply(console, arguments);
+};
+
+exports.error = function()
+{
+  process.stdout.write("\033[0;41m\033[1;33mERROR\033[0m\t");
+  console.log.apply(console, arguments);
+};
+
+exports.debug = function(what)
+{
+  process.stdout.write("\033[0;44m\033[1;37m{0}\033[0m\t".fmt(what));
+  console.log.apply(console, [].slice.call(arguments, 1));
+};
+
+
+
 // Make a dispatcher function from a list of patterns suitable for feeding to
 // the run function
 exports.make_dispatcher = function(patterns)
@@ -42,7 +68,7 @@ exports.make_dispatcher = function(patterns)
     for (var i = 0, n = patterns.length; i < n; ++i) {
       var m;
       if (method === patterns[i][0] && (m = pathname.match(patterns[i][1]))) {
-        console.log("dispatch: found", patterns[i]);
+        exports.ok("dispatch: found", patterns[i]);
         patterns[i][2](req, response, m);
         return;
       }
@@ -55,7 +81,7 @@ exports.make_dispatcher = function(patterns)
 exports.run = function(ip, port, f)
 {
   http.createServer(f).listen(port, ip, function() {
-      util.log("*** http://{0}:{1} ready".fmt(ip || "localhost", port));
+      exports.ok("*** http://{0}:{1} ready".fmt(ip || "localhost", port));
     });
 };
 
@@ -90,6 +116,7 @@ function write_head(req, response, code, type, data, params)
 // Return an error as text with a code and a message
 exports.serve_error = function(req, response, code, msg)
 {
+  exports.warn("error {0}: {1}".fmt(code, msg));
   exports.serve_data(req, response, code, "text/plain",
       "{0} {1}\n".fmt(code, msg));
 };
@@ -104,7 +131,7 @@ exports.serve_file = function(req, response, uri, index)
   if (!check_path(p, exports.DOCUMENTS)) {
     exports.serve_error(req, response, 403, "Forbidden");
   }
-  util.log("serve_file({0})".fmt(p));
+  exports.ok("serve_file({0})".fmt(p));
   path.exists(p, function(exists) {
       if (!exists) {
         if (index) {

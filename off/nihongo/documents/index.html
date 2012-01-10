@@ -22,7 +22,7 @@
 
       function lookup()
       {
-        flexo.request_uri("/key/{0}".fmt(flexo.normalize(key_input.value)),
+        flexo.request_uri("/word/{0}".fmt(flexo.normalize(key_input.value)),
           function(req) {
             flexo.remove_children(result);
             var results = JSON.parse(req.responseText);

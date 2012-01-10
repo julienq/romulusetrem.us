@@ -7,7 +7,7 @@ var PORT = 8910;
 var IP = "";
 var HELP = false;
 var DICT = "JMdict_e";
-var KANJI = "kanjidic2.xml";
+var KANJI_F = "kanjidic2.xml";
 
 // Parse arguments from the command line
 function parse_args(args)
@@ -25,7 +25,7 @@ function parse_args(args)
       } else if (m = arg.match(/^dict=(\S+)/)) {
         DICT = m[1];
       } else if (m = arg.match(/^kanji=(\S+)/)) {
-        KANJI = m[1];
+        KANJI_F = m[1];
       }
     });
 }
@@ -47,71 +47,96 @@ function show_help(node, name)
 parse_args(process.argv.slice(2));
 if (HELP) show_help.apply(null, process.argv);
 
-var ENTRIES = [];
-var KEYS = {};
+var WORDS = [];
+var WORD_KEYS = {};
+
+var KANJI = [];
+var KANJI_KEYS = {};
+
 
 // Open the dictionary file first
 // TODO replace this with a DB?
 fs.readFile(DICT, "UTF-8", function(err, data) {
     if (err) throw "Could not read dictionary file at {0}: {1}".fmt(DICT, err);
     var parser = new expat.Parser("UTF-8");
-    var entry;
+    var word;
     var text;
-    var add_key = function()
+    var add_word_key = function()
     {
-      if (!KEYS.hasOwnProperty(text)) KEYS[text] = [];
-      KEYS[text].push(entry);
+      if (!WORD_KEYS.hasOwnProperty(text)) WORD_KEYS[text] = [];
+      WORD_KEYS[text].push(word);
     };
     parser.addListener("startElement", function(name, attrs) {
         text = "";
         if (name === "entry") {
-          entry = { kanji: [], reading: [], sense: [] };
+          word = { kanji: [], reading: [], sense: [] };
         } else if (name === "k_ele") {
-          entry.kanji.push(["", ""]);
+          word.kanji.push(["", ""]);
         } else if (name === "r_ele") {
-          entry.reading.push(["", ""]);
+          word.reading.push(["", ""]);
         } else if (name === "sense") {
-          entry.sense.push({ pos: [], gloss: [] });
+          word.sense.push({ pos: [], gloss: [] });
         }
       });
     parser.addListener("endElement", function(name) {
         if (name === "ent_seq") {
-          entry.seq = parseInt(text, 10);
+          word.seq = parseInt(text, 10);
         } else if (name === "keb") {
-          entry.kanji[entry.kanji.length - 1][0] = text;
-          add_key();
+          word.kanji[word.kanji.length - 1][0] = text;
+          add_word_key();
           // TODO _inf
         } else if (name === "reb") {
-          entry.reading[entry.reading.length - 1][0] = text;
-          add_key();
+          word.reading[word.reading.length - 1][0] = text;
+          add_word_key();
           // TODO _inf, _restr, _nokanji
         } else if (name === "ke_pri") {
-          entry.kanji[entry.kanji.length - 1][1] = text;
+          word.kanji[word.kanji.length - 1][1] = text;
         } else if (name === "re_pri") {
-          entry.reading[entry.reading.length - 1][1] = text;
+          word.reading[word.reading.length - 1][1] = text;
         } else if (name === "pos") {
-          entry.sense[entry.sense.length - 1].pos.push(text);
+          word.sense[word.sense.length - 1].pos.push(text);
         } else if (name === "gloss") {
-          entry.sense[entry.sense.length - 1].gloss.push(text);
+          word.sense[word.sense.length - 1].gloss.push(text);
         } else if (name === "entry") {
-          ENTRIES.push(entry);
+          WORDS.push(word);
         }
       });
     parser.addListener("text", function(t) { text += t; });
     parser.parse(data);
     console.log("Reading kanji file...");
-    fs.readFile(KANJI, "UTF-8", function(err, data) {
+    fs.readFile(KANJI_F, "UTF-8", function(err, data) {
         if (err) {
           throw "Could not read kanji dictionary file at {0}: {1}"
-            .fmt(KANJI, err);
+            .fmt(KANJI_F, err);
         }
         var parser = new expat.Parser("UTF-8");
+        var kanji;
+        var add_kanji_key = function()
+        {
+          if (!KANJI_KEYS.hasOwnProperty(text)) KANJI_KEYS[text] = [];
+          KANJI_KEYS[text].push(kanji);
+        };
         parser.addListener("startElement", function(name, attrs) {
+            if (name === "character") {
+              kanji = {};
+              text = "";
+            }
           });
         parser.addListener("endElement", function(name) {
+            if (name === "literal") {
+              kanji.literal = text;
+              add_kanji_key();
+            } else if (name === "grade") {
+              kanji.grade = parseInt(text, 10);
+            } else if (name === "freq") {
+              kanji.freq = parseInt(text, 10);
+            } else if (name === "jlpt") {
+              kanji.jlpt = parseInt(text, 10);
+            } else if (name === "character") {
+              KANJI.push(kanji);
+            }
           });
-        parser.addListener("text", function(t) {
-          });
+        parser.addListener("text", function(t) { text += t; });
         parser.parse(data);
         start_server();
       });
@@ -126,10 +151,16 @@ function start_server()
       ["GET", /^\/flexo.js$/, function(req, response) {
           server.serve_file_raw(req, response, "../../flexo.js");
         }],
-      ["GET", /^\/key\/(.*)$/, function(req, response, m) {
+      ["GET", /^\/word\/(.*)$/, function(req, response, m) {
           var key = decodeURIComponent(m[1]);
-          var r = KEYS.hasOwnProperty(key) ? KEYS[key] : [];
-          console.log("get key \"{0}\" ({1})".fmt(key, r));
+          var r = WORD_KEYS.hasOwnProperty(key) ? WORD_KEYS[key] : [];
+          console.log("get word key=\"{0}\" ({1})".fmt(key, r));
+          server.serve_json(req, response, r);
+        }],
+      ["GET", /^\/kanji\/(.*)$/, function(req, response, m) {
+          var key = decodeURIComponent(m[1]);
+          var r = KANJI_KEYS.hasOwnProperty(key) ? KANJI_KEYS[key] : [];
+          console.log("get kanji key=\"{0}\" ({1})".fmt(key, r));
           server.serve_json(req, response, r);
         }],
     ]));
