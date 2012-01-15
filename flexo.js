@@ -490,6 +490,26 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
       y: p.y + document.body.scrollTop };
   };
 
+  // Shortcut for flexo.html: no namespace; text content is interpreted as
+  // innerHTML instead of textContent. Attributes are optional as well.
+  flexo.ez_html = function(name)
+  {
+    var elem = document.createElement(name);
+    var args = 1;
+    if (arguments.length > 1 && typeof arguments[1] === "object") {
+      for (a in arguments[1]) elem.setAttribute(a, arguments[1][a]);
+      args = 2;
+    }
+    [].slice.call(arguments, args).forEach(function(ch) {
+        if (typeof ch === "string") {
+          elem.innerHTML += ch;
+        } else {
+          elem.appendChild(ch);
+        }
+      });
+    return elem;
+  };
+
   // Test whether an element has the given class
   flexo.has_class = function(elem, c)
   {
@@ -536,6 +556,12 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     }
     return removed;
   };
+  // Safe removal of a node; do nothing if the node did not exist or had no
+  // parent
+  flexo.safe_remove = function(node)
+  {
+    if (node && node.parentNode) node.parentNode.removeChild(node);
+  };
 
   // Add or remove the class c on elem according to the value of predicate p
   // (add if true, remove if false)
@@ -575,6 +601,13 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   {
     return elem.namespaceURI === flexo.SVG_NS &&
       elem.localName === "svg" ? elem : flexo.find_svg(elem.parentNode);
+  };
+
+  // True if rects ra and rb intersect
+  flexo.intersect_rects = function(ra, rb)
+  {
+    return ((ra.x + ra.width) >= rb.x) && (ra.x <= (rb.x + rb.width)) &&
+      ((ra.y + ra.height) >= rb.y) && (ra.y <= (rb.y + rb.height));
   };
 
   // Make an SVG element in the current document
