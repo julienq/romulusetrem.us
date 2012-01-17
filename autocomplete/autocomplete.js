@@ -1,3 +1,8 @@
+// Containers and categories (e.g. suitcase: container, underwear: category)
+// Cf http://emshort.wordpress.com/2007/06/11/inform-7-for-the-fiction-author/
+// Cf http://en.wikibooks.org/wiki/Beginner%27s_Guide_to_Interactive_Fiction_with_Inform_7/Getting_Started_with_Inform_7
+// Cf http://www.ifwiki.org/index.php/Inform_7_for_Programmers
+
 // Output a message
 (function()
 {
@@ -12,7 +17,19 @@
 
 // Autocomplete stuff
 
-var words = ["north", "south", "east", "west", "walk"];
+var verbs = {
+  drop: function(what, where) { message("You cannot drop that."); },
+  eat: function(what) { message("You cannot eat that."); },
+  examine: function(what) { message("You cannot see such a thing."); },
+  go: function(where) { message("You cannot go there."); },
+  "go to": function(place) { message("There is no such place."); },
+  look: function() { message("You cannot see such a thing."); },
+  "look at": function(what) { message("You cannot see such a thing."); },
+  say: function(what) { message("There is nobody to talk to."); },
+  take: function(what) { message("There is nothing to take."); },
+};
+
+var DIRECTIONS = ["north", "south", "east", "west", "back", "up", "down"];
 
 (function()
 {
@@ -33,6 +50,7 @@ var words = ["north", "south", "east", "west", "walk"];
   {
     message(cmd, "player");
     clear_prompt();
+    message("I don't understand.");
   }
 
   function choose_completion(incr)
@@ -63,7 +81,7 @@ var words = ["north", "south", "east", "west", "walk"];
     var i = flexo.normalize(orig).toLowerCase();
     var l = i.length;
     if (l > 0) {
-      words.forEach(function(w) {
+      Object.keys(verbs).sort().forEach(function(w) {
           if (w.substr(0, l) === i) {
             var li = flexo.ez_html("li", w);
             li.addEventListener("click", function() { user_input(w); }, false);
@@ -89,8 +107,15 @@ var words = ["north", "south", "east", "west", "walk"];
 
   prompt.addEventListener("keyup", complete, false);
 
-  //prompt.addEventListener("keyup", complete, false);
-
 })();
 
-message("Hello!");
+function describe(place)
+{
+  message(place.title, "room");
+  message(place.desc);
+  place.things.forEach(function(thing) { message(thing.desc); });
+}
+
+document.title = document.title.fmt(TITLE);
+message(INTRO, "intro");
+describe(CURRENT);

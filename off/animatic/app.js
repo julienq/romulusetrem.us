@@ -1,3 +1,10 @@
+exports.patterns = [
+  ["GET", /^\/animatic\/$/, function(req, response) {
+      exports.SERVER.serve_text(req, response, "ANIMATIC");
+    }],
+];
+
+/*
 var fs = require("fs");
 var path = require("path");
 var util = require("util");
@@ -84,3 +91,4 @@ function save(req, response, filename)
       server.serve_json(req, response, { OK: filename });
     });
 }
+*/

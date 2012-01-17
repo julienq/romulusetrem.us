@@ -56,6 +56,7 @@ var KANJI_KEYS = {};
 
 // Open the dictionary file first
 // TODO replace this with a DB?
+server.debug("start", "Reading dictionary file...");
 fs.readFile(DICT, "UTF-8", function(err, data) {
     if (err) throw "Could not read dictionary file at {0}: {1}".fmt(DICT, err);
     var parser = new expat.Parser("UTF-8");
@@ -103,7 +104,7 @@ fs.readFile(DICT, "UTF-8", function(err, data) {
       });
     parser.addListener("text", function(t) { text += t; });
     parser.parse(data);
-    console.log("Reading kanji file...");
+    server.debug("start", "Reading kanji file...");
     fs.readFile(KANJI_F, "UTF-8", function(err, data) {
         if (err) {
           throw "Could not read kanji dictionary file at {0}: {1}"
@@ -154,13 +155,13 @@ function start_server()
       ["GET", /^\/word\/(.*)$/, function(req, response, m) {
           var key = decodeURIComponent(m[1]);
           var r = WORD_KEYS.hasOwnProperty(key) ? WORD_KEYS[key] : [];
-          console.log("get word key=\"{0}\" ({1})".fmt(key, r));
+          server.debug("info", "get word key=\"{0}\" ({1})".fmt(key, r));
           server.serve_json(req, response, r);
         }],
       ["GET", /^\/kanji\/(.*)$/, function(req, response, m) {
           var key = decodeURIComponent(m[1]);
           var r = KANJI_KEYS.hasOwnProperty(key) ? KANJI_KEYS[key] : [];
-          console.log("get kanji key=\"{0}\" ({1})".fmt(key, r));
+          console.debug("info", "get kanji key=\"{0}\" ({1})".fmt(key, r));
           server.serve_json(req, response, r);
         }],
     ]));

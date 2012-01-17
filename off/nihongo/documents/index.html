@@ -4,58 +4,100 @@
     <title>日本語</title>
     <meta charset="UTF-8">
     <style>
-      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
-      .primary { font-weight: bold; }
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        width: 960px; margin: auto; font-size: 16px; }
+      .l12, .r12 { margin: 0 10px; width: 940px; }
+      .l3 { margin: 0 10px; width: 220px; }
+      .r9 { margin: 0 250px; width: 700px; }
+      #lookup { position: absolute; }
+      .lookup { text-align: right; display: inline-block; width: 220px;
+        margin-top: 4px; }
+      .label { width: 80px; display: inline-block; padding: 5px 0; }
+      input[type=text] { width: 130px; border: solid black 1px; padding: 4px; }
+      input { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        font-size: 16px; }
+      #history { list-style-type: none; margin-left: 0; padding-left: 0;
+        font-size: 12px; }
+      #history ol li { display: inline; margin-right: 1em; }
+      #result { position: absolute; }
+      .reading { display: inline; list-style-type: none; margin-left: 0;
+        padding-left: 0; }
+      .reading li { display: inline; margin-right: 1em; color: #888; }
+      .primary { color: black !important; }
+      .pos { font-style: italic; font-size: smaller; margin-right: 1em; }
+      .word > li { margin-bottom: 1em; }
     </style>
     <script src="flexo.js"></script>
   </head>
   <body>
-    <p>
-      <label>Key:
-        <input type="text" id="key" placeholder="key" autofocus></label>
-      <input type="button" value="Lookup" id="button">
-    </p>
-    <div id="result"></div>
+    <div id="lookup" class="l3">
+      <p>
+        <label><span class="label">Word: </span><input
+          type="text" id="word" placeholder="word" autofocus></label>
+        <br>
+        <span class="lookup">
+          <input type="button" value="Lookup" id="button">
+        </span>
+      <p>
+      <ul id="history"></ul>
+    </div>
+    <div id="result" class="r9"></div>
+
     <script>
-      var key_input = document.getElementById("key");
+      var word_input = document.getElementById("word");
       var result = document.getElementById("result");
+      var button = document.getElementById("button");
+      var history = document.getElementById("history");
 
       function lookup()
       {
-        flexo.request_uri("/word/{0}".fmt(flexo.normalize(key_input.value)),
-          function(req) {
+        window.location = "/?q=" + flexo.normalize(word_input.value);
+      }
+
+      function lookup_q(q)
+      {
+        flexo.log("Lookup \"{0}\"".fmt(q));
+        flexo.request_uri("/word/{0}".fmt(q), function(req) {
             flexo.remove_children(result);
             var results = JSON.parse(req.responseText);
-            var ol = flexo.html("ol", { "class": "entry" });
+            var ol = flexo.html("ol", { "class": "word" });
             result.appendChild(ol);
             results.forEach(function(result) {
-                var entry = flexo.html("li");
-                ol.appendChild(entry);
+                var word = flexo.html("li");
+                ol.appendChild(word);
+                var reading = flexo.html("ul", { "class": "reading",
+                  lang: "ja" });
+                word.appendChild(reading);
                 if (result.kanji) {
-                  var list = flexo.html("ul", { "class": "kanji" });
-                  entry.appendChild(list);
                   result.kanji.forEach(function(k) {
                       var li = flexo.html("li", {}, k[0]);
                       if (k[1]) li.className = "primary";
-                      list.appendChild(li);
+                      reading.appendChild(li);
                     });
                 }
                 if (result.reading) {
-                  var list = flexo.html("ul", { "class": "reading" });
-                  entry.appendChild(list);
                   result.reading.forEach(function(r) {
                       var li = flexo.html("li", {}, r[0]);
                       if (r[1]) li.className = "primary";
-                      list.appendChild(li);
+                      reading.appendChild(li);
                     });
                 }
                 if (result.sense) {
                   var list = flexo.html("ol", { "class": "sense" });
-                  entry.appendChild(list);
+                  word.appendChild(list);
                   result.sense.forEach(function(s) {
-                      var li = flexo.html("li", {}, "({0}) {1}"
-                        .fmt(s.pos.join(", "), s.gloss.join(", ")));
+                      var contents = [];
+                      var li = flexo.ez_html("li", {},
+                        (s.pos.length > 0 ? "<span class=\"pos\">{0}</span> "
+                          .fmt(s.pos.join(", ")) : "") +
+                        s.gloss.join(", "));
                       list.appendChild(li);
+                      /*
+                      li.addEventListener("click", function() {
+                          if (button !== 0) return;
+                          history.appendChild(word.cloneNode(true));
+                        }, false);
+                        */
                     });
                 }
               });
@@ -63,10 +105,12 @@
       }
 
       button.addEventListener("click", lookup, false);
-      key_input.addEventListener("change", lookup, false);
-      key_input.addEventListener("keyup", function(e) {
+      word_input.addEventListener("change", lookup, false);
+      word_input.addEventListener("keyup", function(e) {
           if (e.keyCode === 13) lookup();
         }, false);
+      var args = flexo.get_args();
+      if (args.q) lookup_q(args.q);
 
     </script>
   </body>
