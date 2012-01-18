@@ -1,6 +1,6 @@
-exports.patterns = [
+exports.PATTERNS = [
   ["GET", /^\/animatic\/$/, function(req, response) {
-      exports.SERVER.serve_text(req, response, "ANIMATIC");
+      this.serve_text(req, response, "ANIMATIC");
     }],
 ];
 
