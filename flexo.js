@@ -161,7 +161,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   flexo.get_args = function(defaults, argstr)
   {
     if (!argstr) {
-      argstr =  typeof window === "object" &&
+      argstr = typeof window === "object" &&
         typeof window.location === "object" &&
         typeof window.location.search === "string" ?
         window.location.search.substring(1) : "";
@@ -169,7 +169,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     var args = defaults || {};
     argstr.split("&").forEach(function(q) {
         var sep = q.indexOf("=");
-        args[q.substr(0, sep)] = unescape(q.substr(sep + 1));
+        args[q.substr(0, sep)] = decodeURIComponent(q.substr(sep + 1));
       });
     return args;
   };

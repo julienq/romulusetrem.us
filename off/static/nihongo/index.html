@@ -31,74 +31,65 @@
   <body>
     <div id="lookup" class="l3">
       <p>
-        <label><span class="label">Key: </span><input
-          type="text" id="word" placeholder="word" autofocus></label>
-        <br>
-        <span class="lookup">
-          <input type="button" value="Lookup" id="button">
-        </span>
+        <form action="" method="GET">
+          <label><span class="label">Key:</span><input
+            type="text" name="key" autofocus></label>
+          <br>
+          <span class="lookup">
+            <input type="submit" va="Lookup">
+          </span>
+        </form>
       <p>
       <ul id="history"></ul>
     </div>
     <div id="result" class="r9"></div>
 
     <script>
-      var word_input = document.getElementById("word");
-      var result = document.getElementById("result");
-      var button = document.getElementById("button");
-      var history = document.getElementById("history");
 
-      button.addEventListener("click", function() {
-          flexo.log("Lookup: \"{0}\"".fmt(word_input.value.trim()));
-          flexo.request_uri("/nihongo/key/" + word_input.value.trim(),
-            function(req) {
-              flexo.log(req.responseText);
-              flexo.remove_children(result);
-              var entries = JSON.parse(req.responseText);
-              var ol = flexo.html("ol", { "class": "word" });
-              result.appendChild(ol);
-              entries.forEach(function(entry) {
-                  var word = flexo.html("li");
-                  ol.appendChild(word);
-                  var reading = flexo.html("ul", { "class": "reading",
-                    lang: "ja" });
-                  word.appendChild(reading);
-                  if (entry.kanji.length) {
-                    entry.kanji.forEach(function(k) {
-                        reading.appendChild(flexo.ez_html("li", k));
-                      });
-                  }
-                  if (entry.reading.length) {
-                    entry.reading.forEach(function(r) {
-                        reading.appendChild(flexo.ez_html("li", r));
-                      });
-                  }
-                  if (entry.senses.length) {
-                    var list = flexo.html("ol", { "class": "sense" });
-                    word.appendChild(list);
-                    entry.senses.forEach(function(sense) {
-                        var contents = [];
-                        var li = flexo.ez_html("li", {},
-                          (sense.pos.length > 0 ?
-                            "<span class=\"pos\">{0}</span> "
-                            .fmt(sense.pos.join(", ")) : "") +
-                          sense.gloss.join(", "));
-                        list.appendChild(li);
-                      });
-                  }
-                });
-            });
-        }, false);
-
-        /*
-      button.addEventListener("click", lookup, false);
-      word_input.addEventListener("change", lookup, false);
-      word_input.addEventListener("keyup", function(e) {
-          if (e.keyCode === 13) lookup();
-        }, false);
       var args = flexo.get_args();
-      //if (args.q) lookup_q(args.q);
-      */
+      if (args.key) lookup_key(args.key);
+
+      function lookup_key(key)
+      {
+        var result = document.getElementById("result");
+        flexo.request_uri("/nihongo/key/" + encodeURIComponent(key.trim()),
+          function(req) {
+            flexo.remove_children(result);
+            var entries = JSON.parse(req.responseText);
+            var ol = flexo.html("ol", { "class": "word" });
+            result.appendChild(ol);
+            entries.forEach(function(entry) {
+                var word = flexo.html("li");
+                ol.appendChild(word);
+                var reading = flexo.html("ul", { "class": "reading",
+                  lang: "ja" });
+                word.appendChild(reading);
+                if (entry.kanji.length) {
+                  entry.kanji.forEach(function(k) {
+                      reading.appendChild(flexo.ez_html("li", k));
+                    });
+                }
+                if (entry.reading.length) {
+                  entry.reading.forEach(function(r) {
+                      reading.appendChild(flexo.ez_html("li", r));
+                    });
+                }
+                if (entry.senses.length) {
+                  var list = flexo.html("ol", { "class": "sense" });
+                  word.appendChild(list);
+                  entry.senses.forEach(function(sense) {
+                      var contents = [];
+                      var li = flexo.ez_html("li", {},
+                        (sense.pos.length > 0 ?
+                          "<span class=\"pos\">{0}</span> "
+                          .fmt(sense.pos.join(", ")) : "") +
+                        sense.gloss.join(", "));
+                      list.appendChild(li);
+                    });
+                }
+              });
+          });
+      }
 
     </script>
   </body>
