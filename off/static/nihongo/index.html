@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>日本語</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        width: 960px; margin: auto; font-size: 16px; }
+      .l12, .r12 { margin: 0 10px; width: 940px; }
+      .l3 { margin: 0 10px; width: 220px; }
+      .r9 { margin: 0 250px; width: 700px; }
+      #lookup { position: absolute; }
+      .lookup { text-align: right; display: inline-block; width: 220px;
+        margin-top: 4px; }
+      .label { width: 80px; display: inline-block; padding: 5px 0; }
+      input[type=text] { width: 130px; border: solid black 1px; padding: 4px; }
+      input { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        font-size: 16px; }
+      #history { list-style-type: none; margin-left: 0; padding-left: 0;
+        font-size: 12px; }
+      #history ol li { display: inline; margin-right: 1em; }
+      #result { position: absolute; }
+      .reading { display: inline; list-style-type: none; margin-left: 0;
+        padding-left: 0; }
+      .reading li { display: inline; margin-right: 1em; }
+      .pos { font-style: italic; font-size: smaller; margin-right: 1em; }
+      .word > li { margin-bottom: 1em; }
+    </style>
+    <script src="/flexo.js"></script>
+  </head>
+  <body>
+    <div id="lookup" class="l3">
+      <p>
+        <label><span class="label">Key: </span><input
+          type="text" id="word" placeholder="word" autofocus></label>
+        <br>
+        <span class="lookup">
+          <input type="button" value="Lookup" id="button">
+        </span>
+      <p>
+      <ul id="history"></ul>
+    </div>
+    <div id="result" class="r9"></div>
+
+    <script>
+      var word_input = document.getElementById("word");
+      var result = document.getElementById("result");
+      var button = document.getElementById("button");
+      var history = document.getElementById("history");
+
+      button.addEventListener("click", function() {
+          flexo.log("Lookup: \"{0}\"".fmt(word_input.value.trim()));
+          flexo.request_uri("/nihongo/key/" + word_input.value.trim(),
+            function(req) {
+              flexo.log(req.responseText);
+              flexo.remove_children(result);
+              var entries = JSON.parse(req.responseText);
+              var ol = flexo.html("ol", { "class": "word" });
+              result.appendChild(ol);
+              entries.forEach(function(entry) {
+                  var word = flexo.html("li");
+                  ol.appendChild(word);
+                  var reading = flexo.html("ul", { "class": "reading",
+                    lang: "ja" });
+                  word.appendChild(reading);
+                  if (entry.kanji.length) {
+                    entry.kanji.forEach(function(k) {
+                        reading.appendChild(flexo.ez_html("li", k));
+                      });
+                  }
+                  if (entry.reading.length) {
+                    entry.reading.forEach(function(r) {
+                        reading.appendChild(flexo.ez_html("li", r));
+                      });
+                  }
+                  if (entry.senses.length) {
+                    var list = flexo.html("ol", { "class": "sense" });
+                    word.appendChild(list);
+                    entry.senses.forEach(function(sense) {
+                        var contents = [];
+                        var li = flexo.ez_html("li", {},
+                          (sense.pos.length > 0 ?
+                            "<span class=\"pos\">{0}</span> "
+                            .fmt(sense.pos.join(", ")) : "") +
+                          sense.gloss.join(", "));
+                        list.appendChild(li);
+                      });
+                  }
+                });
+            });
+        }, false);
+
+        /*
+      button.addEventListener("click", lookup, false);
+      word_input.addEventListener("change", lookup, false);
+      word_input.addEventListener("keyup", function(e) {
+          if (e.keyCode === 13) lookup();
+        }, false);
+      var args = flexo.get_args();
+      //if (args.q) lookup_q(args.q);
+      */
+
+    </script>
+  </body>
+</html>
+

@@ -9,7 +9,7 @@ var REDIS_PORT;
 var IP = "";
 var HELP = false;
 
-server.DOCUMENTS = process.cwd();
+server.DOCUMENTS = require("path").join(process.cwd(), "static");
 
 // Parse arguments from the command line
 function parse_args(args)
@@ -79,11 +79,22 @@ if (REDIS_PORT) {
         }).bind(this));
       redis[cmd].apply(redis, arguments);
     } else {
-      this.serve_error(400, "Unknow redis command \"{0}\"".fmt(cmd));
+      this.serve_error(500, "Unknow redis command \"{0}\"".fmt(cmd));
     }
-  }
+  };
+  server.TRANSACTION.rmulti = function() { return redis.multi(); };
+  server.TRANSACTION.mexec = function(multi, f) {
+    multi.exec(function(err, results) {
+        if (err) {
+          this.serve_error(500, "Redis error: " + err);
+        } else {
+          f.call(this, results);
+        }
+      });
+  };
   redis.on("error", function(err) {
-      server.error("Redis error:", err);
+      util.log("Redis error:", err);
+      process.exit(1);
     });
   redis.on("ready", function() {
       util.log("redis ready ({0})".fmt(redis.port));

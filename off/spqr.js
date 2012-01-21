@@ -164,14 +164,14 @@ exports.run = function(ip, port)
   http.createServer(function(request, response) {
       var transaction = Object.create(exports.TRANSACTION)
         .init(exports, request, response);
-      var pathname = transaction.url.pathname;
+      var pathname = decodeURIComponent(transaction.url.pathname);
       var method = request.method.toUpperCase();
       if (method === "HEAD") method = "GET";
       var m;
       for (var i = 0, n = exports.PATTERNS.length; i < n; ++i) {
         if (method === exports.PATTERNS[i][0].toUpperCase() &&
           (m = pathname.match(exports.PATTERNS[i][1]))) {
-          var args = [m.slice(1)];
+          var args = m.slice(1);
           args.unshift(transaction);
           return exports.PATTERNS[i][2].apply(exports, args);
         }
