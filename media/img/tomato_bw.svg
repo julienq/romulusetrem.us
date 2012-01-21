@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" baseProfile="tiny" version="1.2"
+  viewBox="-20 -20 40 40" width="114" height="114">
+  <circle r="16" stroke="black" fill="none"/>
+  <text text-anchor="middle" fill="black"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">*</text>
+</svg>

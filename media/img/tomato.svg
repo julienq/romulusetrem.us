@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" baseProfile="tiny" version="1.2"
+  viewBox="-18 -18 36 36">
+  <circle r="16" fill="red"/>
+  <text text-anchor="middle" fill="green"
+    font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">*</text>
+</svg>
