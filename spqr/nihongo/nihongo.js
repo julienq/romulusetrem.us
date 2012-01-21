@@ -3,17 +3,17 @@ var DB = 1;
 exports.PATTERNS =
 [
   ["GET", /^\/nihongo\/key\/(.*)$/, function(transaction, key) {
-      transaction.mexec(transaction.rmulti()
+      transaction.rmulti()
         .SELECT(DB)
-        .LRANGE("key:" + decodeURIComponent(key), 0, -1),
-        function(results) {
+        .LRANGE("key:" + decodeURIComponent(key), 0, -1)
+        .exec(function(results) {
           var m = transaction.rmulti();
           results[1].forEach(function(seq) {
               m.LRANGE("kanji:" + seq, 0, -1)
               m.LRANGE("reading:" + seq, 0, -1)
               m.GET("senses:" + seq)
             });
-          transaction.mexec(m, function(results_) {
+          m.exec(function(results_) {
               var i = 0;
               var entries = [];
               (function f() {
@@ -28,7 +28,7 @@ exports.PATTERNS =
                     m_.LRANGE("pos:{0}:{1}".fmt(seq, j), 0, -1)
                       .LRANGE("gloss:{0}:{1}".fmt(seq, j), 0, -1);
                   }
-                  transaction.mexec(m_, function(results__) {
+                  m_.exec(function(results__) {
                       for (var k = 0, n = results.length; k < n; k += 2) {
                         entry.senses.push({ pos: results__[k],
                           gloss: results__[k + 1] });
@@ -37,10 +37,35 @@ exports.PATTERNS =
                       f();
                     });
                 } else {
-                  transaction.serve_json(entries);
+                  transaction.serve_text(entries_list(entries));
                 }
               })();
             });
         });
     }],
 ]
+
+function entries_list(entries)
+{
+  return $ol({ "class": "word" },
+    entries.map(function(entry) {
+        return $li(
+          $ul({ "class": "reading", lang: "ja" },
+            entry.kanji.map(function(k) {
+                return $li(k.split("").map(function(c) {
+                    return $a({ href: "?key=" + c }, c);
+                  }).join(""))
+              }).join(""),
+            entry.reading.map(function(r) {
+                return $li($a({ href: "?key=" + r }, r));
+              }).join(""),
+            $ol(
+              entry.senses.map(function(sense) {
+                  return $li(
+                    sense.pos.map(function(pos) {
+                        return $span({ "class": "pos" }, pos);
+                      }).join(""),
+                    sense.gloss.join(", "));
+                }).join(""))));
+      }).join(""));
+}

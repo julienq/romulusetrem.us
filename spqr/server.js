@@ -82,15 +82,21 @@ if (REDIS_PORT) {
       this.serve_error(500, "Unknow redis command \"{0}\"".fmt(cmd));
     }
   };
-  server.TRANSACTION.rmulti = function() { return redis.multi(); };
-  server.TRANSACTION.mexec = function(multi, f) {
-    multi.exec(function(err, results) {
-        if (err) {
-          this.serve_error(500, "Redis error: " + err);
-        } else {
-          f.call(this, results);
-        }
-      });
+  server.TRANSACTION.rmulti = function() {
+    var transaction = this;
+    var multi = redis.multi();
+    var exec = multi.exec;
+    multi.exec = function(f)
+    {
+      exec.call(multi, function(err, results) {
+          if (err) {
+            transaction.server_error(500, "Redis error: " + err);
+          } else {
+            f.call(transaction, results);
+          }
+        });
+    };
+    return multi;
   };
   redis.on("error", function(err) {
       util.log("Redis error:", err);
