@@ -1,9 +1,10 @@
 // Base SPQR server
 // Can optionally connect to a Redis server and load applications
+var util = require("util");
 var server = require("./spqr.js");
 
 var APPS = [];
-var PORT = 6381;
+var PORT = 8910;
 var REDIS_PORT;
 var IP = "";
 var HELP = false;
@@ -50,11 +51,11 @@ if (HELP) show_help.apply(null, process.argv);
 
 [].push.apply(server.PATTERNS,
   [
-    ["GET", /^\/favicon\.ico$/, function(req, response) {
-        this.serve_error(req, response, 404);
+    ["GET", /^\/favicon\.ico$/, function(transaction) {
+        transaction.serve_error(404, "No favicon");
       }],
-    ["GET", /^\/flexo.js$/, function(req, response) {
-        this.serve_file_from_path(req, response, "../flexo.js");
+    ["GET", /^\/flexo.js$/, function(transaction) {
+        transaction.serve_file_from_path("../flexo.js");
       }]
   ]);
 
@@ -64,15 +65,30 @@ APPS.forEach(function(a) {
   });
 
 if (REDIS_PORT) {
-  server.REDIS = require("redis").createClient(REDIS_PORT);
-  server.REDIS.on("error", function(err) {
+  var redis = require("redis").createClient(REDIS_PORT);
+  server.TRANSACTION.redis = function() {
+    var cmd = [].shift.apply(arguments);
+    var f = [].pop.apply(arguments);
+    if (typeof redis[cmd] === "function") {
+      [].push.call(arguments, (function(err, results) {
+          if (err) {
+            this.serve_error(500, "Redis error: " + err);
+          } else {
+            f.call(this, results);
+          }
+        }).bind(this));
+      redis[cmd].apply(redis, arguments);
+    } else {
+      this.serve_error(400, "Unknow redis command \"{0}\"".fmt(cmd));
+    }
+  }
+  redis.on("error", function(err) {
       server.error("Redis error:", err);
     });
-  server.REDIS.on("ready", function() {
-      server.debug("redis", "ready");
+  redis.on("ready", function() {
+      util.log("redis ready ({0})".fmt(redis.port));
       server.run(IP, PORT);
     });
 } else {
   server.run(IP, PORT);
 }
-
