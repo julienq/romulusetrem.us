@@ -1,6 +1,7 @@
 exports.PATTERNS =
 [
 
+  // Get an image
   ["GET", /^\/animatic\/images\/(.+)$/, function(transaction, img) {
       transaction.serve_file_from_path(req, response, path.join("images", img));
     }],
