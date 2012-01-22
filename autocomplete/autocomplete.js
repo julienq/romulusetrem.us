@@ -1,8 +1,3 @@
-// Containers and categories (e.g. suitcase: container, underwear: category)
-// Cf http://emshort.wordpress.com/2007/06/11/inform-7-for-the-fiction-author/
-// Cf http://en.wikibooks.org/wiki/Beginner%27s_Guide_to_Interactive_Fiction_with_Inform_7/Getting_Started_with_Inform_7
-// Cf http://www.ifwiki.org/index.php/Inform_7_for_Programmers
-
 // Output a message
 (function()
 {
@@ -11,25 +6,193 @@
   {
     var li = flexo.ez_html("li", class_ ? { "class": class_ } : {}, msg);
     messages.appendChild(li);
+    li.scrollIntoView();
     return li;
   };
 })();
 
-// Autocomplete stuff
+// Update the inventory
+(function()
+{
+  var inventory = document.getElementById("inventory");
+  window.update_inventory = function()
+  {
+    inventory.innerHTML = Object.keys(INVENTORY).map(function(object) {
+        return "<li onclick=\"select_object('{0}')\">{0}</li>".fmt(object);
+      }).join("") || "<li>You carry nothing!</li>";
+  };
+})();
 
-var verbs = {
-  drop: function(what, where) { message("You cannot drop that."); },
-  eat: function(what) { message("You cannot eat that."); },
-  examine: function(what) { message("You cannot see such a thing."); },
-  go: function(where) { message("You cannot go there."); },
-  "go to": function(place) { message("There is no such place."); },
-  look: function() { message("You cannot see such a thing."); },
-  "look at": function(what) { message("You cannot see such a thing."); },
+
+// Autocomplete stuff
+var verbs =
+{
+  // Drop objects from the inventory
+  drop: function(what)
+  {
+    if (INVENTORY.hasOwnProperty(what)) {
+      var object = INVENTORY[what];
+      if (object.drop && object.drop()) {
+        LOCATION.things.push(what);
+        delete INVENTORY[what];
+        update_inventory();
+        return;
+      }
+      message("You dropped the {0}.".fmt(what));
+      LOCATION.things.push(what);
+      delete INVENTORY[what];
+      update_inventory();
+    } else {
+      message("You cannot drop that.");
+    }
+  },
+
+  // Eat edible objects
+  eat: function(what)
+  {
+    var thing;
+    var i = LOCATION.things.indexOf(what);
+    if (i < 0) {
+      if (INVENTORY.hasOwnProperty(what)) {
+        thing = INVENTORY[what];
+        if (thing.edible) {
+          delete INVENTORY[what];
+          update_inventory();
+        }
+      } else {
+        message("You cannot see such a thing.");
+      }
+    } else {
+      thing = THINGS[LOCATION.things[i]];
+      if (thing.edible) LOCATION.things.splice(i, 1);
+    }
+    if (thing) {
+      if (thing.eat && thing.eat()) return;
+      if (thing.edible) {
+        message("You eat the {0}.".fmt(what));
+      } else {
+        message("That's plainly inedible!");
+      }
+    }
+  },
+
+  // Examine an object from either the current location or inventory
+  examine: function(what)
+  {
+    var thing;
+    var i = LOCATION.things.indexOf(what);
+    if (i < 0) {
+      if (INVENTORY.hasOwnProperty(what)) thing = INVENTORY[what];
+    } else {
+      thing = THINGS[LOCATION.things[i]];
+    }
+    if (thing) {
+      if (thing.examine) {
+        thing.examine();
+      } else if (thing.hasOwnProperty("detail")) {
+        message(thing.detail);
+      } else {
+        message("There is nothing special about that.");
+      }
+    } else {
+      message("You cannot see such a thing.");
+    }
+  },
+
+  // Help!
+  help: function()
+  {
+    message("Just type commands and follow the story. At the moment the parser "
+        + "can only understand commands of the form VERB [OBJECT [INDIRECT "
+        + "OBJECT]]");
+  },
+
+  // Go in the given direction
+  go: function(dir)
+  {
+    if (LOCATION.hasOwnProperty(dir)) {
+      LOCATION = PLACES[LOCATION[dir]];
+      describe(LOCATION);
+    } else {
+      message("You cannot go there.");
+    }
+  },
+
+  // "go to": function(place) { message("There is no such place."); },
+  look: function()
+  {
+    describe(LOCATION);
+  },
+
+  // "look at": function(what) { message("You cannot see such a thing."); },
   say: function(what) { message("There is nobody to talk to."); },
-  take: function(what) { message("There is nothing to take."); },
+
+  // Take an object
+  take: function(what)
+  {
+    // Find the object in the current room
+    var i = LOCATION.things.indexOf(what);
+    if (i < 0) {
+      message("I don't see that around.");
+    } else {
+      var name = LOCATION.things[i];
+      var object = THINGS[name];
+      if (object.take && object.take()) {
+        LOCATION.things.splice(i, 1);
+        INVENTORY[name] = object;
+        update_inventory();
+        return;
+      }
+      if (object.movable) {
+        LOCATION.things.splice(i, 1);
+        message("You took the {0}.".fmt(name));
+        INVENTORY[name] = object;
+        update_inventory();
+      } else {
+        message("You cannot take this.");
+      }
+    }
+  },
 };
 
-var DIRECTIONS = ["north", "south", "east", "west", "back", "up", "down"];
+var directions = ["north", "south", "east", "west", "up", "down"];
+
+// The handler
+function handle_input(input)
+{
+  var parse = parse_input(input);
+  return handle_object(parse, false) ||
+    handle_object(parse, true) ||
+    handle_verb(parse);
+}
+
+function handle_verb(parse)
+{
+  if (verbs.hasOwnProperty(parse.verb)) {
+    verbs[parse.verb](parse.object, parse.indirect);
+  } else if (parse.verb) {
+    message("I don't know what \"{0}\" means.".fmt(parse.verb));
+  }
+  return !!parse.verb;
+}
+
+function handle_object(parse, direct)
+{
+  /*var object = direct ? parse.object : parse.indirect;
+  if (objects.hasOwnProperty(object)) {
+    return objects[object](parse.verb, parse.object, parse.indirect);
+  }*/
+  return false;
+}
+
+// The parser
+// Can only parse sentences of the form VERB [DIRECT OBJECT [INDIRECT OBJECT]]
+function parse_input(input)
+{
+  input = flexo.normalize(input).toLowerCase();
+  var tokens = input.split(" ");
+  return { verb: tokens[0], object: tokens[1], indirect: tokens[2] };
+}
 
 (function()
 {
@@ -44,13 +207,25 @@ var DIRECTIONS = ["north", "south", "east", "west", "back", "up", "down"];
     prompt.value = "";
     completions.innerHTML = "";
     completep = false;
+    prompt.scrollIntoView();
+  }
+
+  window.die = function()
+  {
+    message("You have died!", "died");
+    message("Reload this page for another go!");
+    prompt.style.display = "none";
   }
 
   function user_input(cmd)
   {
-    message(cmd, "player");
+    if (/\S/.test(cmd)) {
+      message(cmd, "player");
+      if (!handle_input(cmd)) {
+        message("I have no idea what you're talking about.");
+      }
+    }
     clear_prompt();
-    message("I don't understand.");
   }
 
   function choose_completion(incr)
@@ -89,6 +264,7 @@ var DIRECTIONS = ["north", "south", "east", "west", "back", "up", "down"];
           }
         });
     }
+    completions.scrollIntoView();
   }
 
   prompt.addEventListener("keydown", function(e) {
@@ -113,9 +289,26 @@ function describe(place)
 {
   message(place.title, "room");
   message(place.desc);
-  place.things.forEach(function(thing) { message(thing.desc); });
+  place.things.forEach(function(thing) {
+      if (THINGS[thing].desc && !THINGS[thing].scenery) {
+        message(THINGS[thing].desc);
+      }
+    });
 }
 
 document.title = document.title.fmt(TITLE);
+document.querySelector("h1").textContent = TITLE;
+
+// Init inventory
+var i = INVENTORY;
+INVENTORY = {};
+i.forEach(function(thing) { INVENTORY[thing] = THINGS[thing]; });
+update_inventory();
+
+// Add custom verbs
+if (VERBS) {
+  for (var v in VERBS) if (VERBS.hasOwnProperty(v)) verbs[v] = VERBS[v];
+}
+
 message(INTRO, "intro");
-describe(CURRENT);
+describe(LOCATION);
