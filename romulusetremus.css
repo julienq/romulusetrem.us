@@ -1,5 +1,6 @@
 body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
   margin: 0 auto; padding: 0; background-color: white; width: 900px; }
+.icons h2 { font-size: 100%; font-weight: normal; text-align: center; }
 a { text-decoration: none; color: #ff4040; }
 section { display: inline-block; width: 160px; margin: 10px; padding: 0;
   text-align: center; }
