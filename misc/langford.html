@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Langford pairings</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../romulusetremus.css">
+    <style>
+      .sizer, .number, .slot { display: inline-block; text-align: center;
+        font-size: 96px; margin: 8px; -webkit-border-radius: 8px;
+        -moz-border-radius: 8px; min-width: 1em; }
+      .number, .slot { margin: 8px; padding: 8px; cursor: default; }
+      .number { background-color: #ff4040; color: white; }
+      .slot { background-color: #444 }
+      #slots .droppable { background-color: #08f !important; }
+      .hint { background-color: #aaa !important; }
+      .dragging { position: absolute; margin: 0; }
+      .m { font-family: serif; font-style: italic; }
+    </style>
+    <script src="../flexo.js"></script>
+  </head>
+  <body>
+    <h1>Langford pairings</h1>
+    <p>A <a href="http://en.wikipedia.org/wiki/Langford_pairing">Langford
+      pairing</a> is <q>a permutation of the sequence of 2<span
+        class="m">n</span> numbers 1, 1, 2, 2, ..., <span class="m">n</span>,
+      <span class="m">n</span> in which the two ones are one unit apart, the two
+      twos are two units apart, and more generally the two copies of each number
+      <span class="m">k</span> are <span class="m">k</span> units apart.
+      Langford pairings are named after C. Dudley Langford, who posed the
+      problem of constructing them in 1958.</q></p>
+    <p>Select a number <span class="m">n</span> below (<span class="m">n</span>
+    must be &gt; 3 and verify <span class="m">n</span> = 4<span
+      class="m">m</span> or <span class="m">n</span> = 4<span
+      class="m">m</span> - 1) then drag the numbers from the top row into the
+    bottom row to make Langford pairings: each pair of numbers <span
+      class="m">n</span> must be separated by <span class="m">n</span>
+    spots. Warning: changing <span class="m">n</span> will reset all
+    numbers.</p>
+    <form action="" method="GET">
+      <p>
+        <label><span class="m">n</span> =
+          <input name="n" type="number" min="3" value="3"></label>
+        <input type="submit" value="Set">
+      </p>
+    </form>
+    <div id="numbers"></div>
+    <div id="slots"></div>
+    <footer>
+    Copyright © <span class="roman">mmxi, mmxii</span>,
+    <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/misc/langford.html">Github</a>
+    </footer>
+    <foot>
+    <script>
+
+var args = flexo.get_args();
+if (isNaN(args.n)) args.n = 3;
+document.querySelector("input[name=n]").value = args.n;
+
+var W;
+var H;
+
+function event_client_pos(e)
+{
+  return { x: e.targetTouches ? e.targetTouches[0].clientX : e.clientX,
+    y: e.targetTouches ? e.targetTouches[0].clientY : e.clientY };
+};
+
+var drag_delegate =
+{
+  dragging: null,
+  slot: null,
+  handleEvent: function(e)
+  {
+    if (e.type === "mousedown" || e.type === "touchstart") {
+      e.preventDefault();
+      var target = e.target || e.targetTouches[0].target;
+      // kludge for iOS: the text node receives the event, not the block!
+      if (target.nodeType === Node.TEXT_NODE) target = target.parentNode;
+      if (flexo.has_class(target, "slot")) return;
+      this.dragging = target;
+      this.slot = make_elem("slot", " ");
+      this.dragging.parentNode.insertBefore(this.slot, this.dragging);
+      flexo.add_class(this.dragging, "dragging");
+      var p = event_client_pos(e);
+      this.dragging.style.left = (p.x - W).toString() + "px";
+      this.dragging.style.top = (p.y - H).toString() + "px";
+      document.body.appendChild(this.dragging);
+      [].forEach.call(document.querySelectorAll("#slots *"), function(slot) {
+          if (can_drop(target, slot)) flexo.add_class(slot, "hint");
+        });
+    } else if ((e.type === "mousemove" || e.type === "touchmove") &&
+      this.dragging) {
+      e.preventDefault();
+      var p = event_client_pos(e);
+      this.dragging.style.left = (p.x - W).toString() + "px";
+      this.dragging.style.top = (p.y - H).toString() + "px";
+      this.dragging.style.visibility = "hidden";
+      var below = document.elementFromPoint(p.x, p.y);
+      this.dragging.style.removeProperty("visibility");
+      var droppable = document.querySelector(".droppable");
+      if (droppable && droppable !== below) {
+        flexo.remove_class(droppable, "droppable");
+      }
+      if (below && can_drop(this.dragging, below)) {
+        e.stopPropagation();
+        flexo.add_class(below, "droppable");
+      }
+    } else if ((e.type === "mouseup" || e.type === "touchend") &&
+      this.dragging) {
+      e.preventDefault();
+      flexo.remove_class(this.dragging, "dragging");
+      var droppable = document.querySelector(".droppable");
+      if (droppable) {
+        droppable.parentNode.insertBefore(this.dragging, droppable);
+        droppable.parentNode.removeChild(droppable);
+      } else {
+        this.slot.parentNode.insertBefore(this.dragging, this.slot);
+        this.slot.parentNode.removeChild(this.slot);
+      }
+      this.dragging = null;
+      this.slot = null;
+      [].forEach.call(document.querySelectorAll(".hint"),
+        function(hint) { flexo.remove_class(hint, "hint"); });
+      if (document.querySelectorAll("#slots .slot").length === 0) {
+        alert("Nice!");
+      }
+    }
+  },
+  make_draggable: function(elem)
+  {
+    elem.addEventListener("mousedown", this, false);
+    elem.addEventListener("touchstart", this, false);
+    elem.addEventListener("touchmove", this, false);
+    elem.addEventListener("touchend", this, false);
+  }
+}
+
+document.addEventListener("mousemove", drag_delegate, false);
+document.addEventListener("mouseup", drag_delegate, false);
+
+function make_elem(class_name, value)
+{
+  var elem = document.createElement("div");
+  elem.className = class_name;
+  if (typeof value !== "undefined") elem.textContent = value;
+  elem.style.width = W + "px";
+  elem.style.height = H + "px";
+  drag_delegate.make_draggable(elem);
+  return elem;
+}
+
+function show_numbers()
+{
+  if (args.n % 4 === 1 || args.n % 4 === 2) {
+    alert("Warning! There are no Langford pairings for n = {0}".fmt(args.n));
+  }
+  var numbers = document.getElementById("numbers");
+  var slots = document.getElementById("slots");
+  numbers.textContent = "";
+  slots.textContent = "";
+  var sizer = document.createElement("div");
+  sizer.className = "sizer";
+  sizer.textContent = args.n.toString();
+  numbers.appendChild(sizer);
+  var sz = function()
+  {
+    W = sizer.offsetWidth;
+    H = sizer.offsetHeight;
+    if (!W || !H) {
+      setTimeout(sz, 0);
+    } else {
+      numbers.removeChild(sizer);
+      for (var i = 1; i <= args.n; ++i) {
+        for (var j = 0; j < 2; ++j) {
+          var num = make_elem("number", i.toString());
+          numbers.appendChild(num);
+          slots.appendChild(make_elem("slot", " "));
+        }
+      }
+    }
+  };
+  setTimeout(sz, 0);
+}
+
+show_numbers();
+
+function can_drop(num, slot)
+{
+  if (flexo.has_class(slot, "hint")) return true;
+  if (!flexo.has_class(slot, "slot")) return false;
+  if (slot.parentNode.id === "numbers") return true;
+  var nodes = [].slice.call(slot.parentNode.childNodes);
+  var i = nodes.indexOf(slot);
+  var n = parseInt(num.textContent, 10);
+  for (var j = 0, m = nodes.length; j < m; ++j) {
+    if (nodes[j].textContent === num.textContent) {
+      return i === j - n - 1 || i === j + n + 1;
+    }
+  }
+  var before = i - n - 1;
+  var after = i + n + 1;
+  return (before >= 0 && flexo.has_class(nodes[before], "slot")) ||
+    (after < nodes.length && flexo.has_class(nodes[after], "slot"));
+}
+
+    </script>
+  </body>
+</html>
