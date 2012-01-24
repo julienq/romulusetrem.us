@@ -26,6 +26,12 @@
       .reading li { display: inline; margin-right: 1em; }
       .pos { font-style: italic; font-size: smaller; margin-right: 1em; }
       .word > li { margin-bottom: 1em; }
+      .reading .primary { color: black; }
+      .reading { color: #666; }
+      span[lang=fr], span[lang=de], span[lang=ru] { color: #666; }
+      span[lang=fr]:after { content: " (fr)"; }
+      span[lang=de]:after { content: " (de)"; }
+      span[lang=ru]:after { content: " (ru)"; }
     </style>
     <script src="/flexo.js"></script>
   </head>

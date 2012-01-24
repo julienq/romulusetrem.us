@@ -4,7 +4,7 @@ var flexo = require("../../flexo.js");
 var util = require("util");
 var redis_ = require("redis");
 
-var DICT = "dicts/JMdict_e";
+var DICT = "dicts/JMdict.xml";
 var PORT = 8911;
 var DB = 1;
 
@@ -32,43 +32,59 @@ redis.on("ready", function() {
 function mkdict(data)
 {
   var parser = new expat.Parser("UTF-8");
-  var seq;
-  var text;
+  var entry;  // entry being read
+  var text;   // current text
+  var elem;   // current kanji/reading
+  var sense;  // current sense
+  var lang;   // lang of the current gloss element
   var m;
-  var sense;
   var n = 0;
   parser.addListener("startElement", function(name, attrs) {
       text = "";
       if (name === "entry") {
         m = redis.multi();
+        entry = { sense: [] };
+      } else if (name === "k_ele" || name === "r_ele") {
+        elem = [];
+      } else if (name === "sense") {
+        sense = {};
+      } else if (name === "gloss") {
+        lang = attrs["xml:lang"] || "eng";
       }
     });
   parser.addListener("endElement", function(name) {
       if (name === "ent_seq") {
-        seq = flexo.normalize(text);
-        sense = 0;
-      } else if (name === "keb") {
-        var k = flexo.normalize(text);
-        m.RPUSH("kanji:" + seq, k);
-        m.RPUSH("key:" + k, seq);
-      } else if (name === "reb") {
-        var r = flexo.normalize(text);
-        m.RPUSH("reading:" + seq, r);
-        m.RPUSH("key:" + r, seq);
+        entry.seq = flexo.normalize(text);
+      } else if (name === "keb" || name === "reb") {
+        var e = flexo.normalize(text);
+        elem.push(e);
+        m.RPUSH("key:" + e, entry.seq);
+      } else if (name === "ke_pri" || name === "re_pri") {
+        var e = flexo.normalize(text);
+        elem.push(e);
+      } else if (name === "k_ele") {
+        if (!entry.hasOwnProperty("kanji")) entry.kanji = [];
+        entry.kanji.push(elem);
+      } else if (name === "r_ele") {
+        if (!entry.hasOwnProperty("reading")) entry.reading = [];
+        entry.reading.push(elem);
       } else if (name === "pos") {
-        m.RPUSH("pos:{0}:{1}".fmt(seq, sense), flexo.normalize(text));
+        if (!sense.hasOwnProperty(name)) sense[name] = [];
+        sense[name].push(flexo.normalize(text));
       } else if (name === "gloss") {
-        m.RPUSH("gloss:{0}:{1}".fmt(seq, sense), flexo.normalize(text));
+        if (!sense.hasOwnProperty("gloss")) sense.gloss = {};
+        if (!sense.gloss[lang]) sense.gloss[lang] = [];
+        sense.gloss[lang].push(flexo.normalize(text));
+        lang = "";
       } else if (name === "sense") {
-        ++sense;
+        entry.sense.push(sense);
       } else if (name === "entry") {
-        parser.pause();
-        m.SET("senses:{0}".fmt(seq), sense + 1);
+        m.SET("entry:{0}".fmt(entry.seq), JSON.stringify(entry));
+        parser.stop();
         m.exec(function() {
-            if ((++n % 10000) === 0) util.log(seq);
+            if ((++n % 10000) === 0) util.log(JSON.stringify(entry));
             parser.resume();
           });
-        m = null;
       } else if (name === "JMdict") {
         util.log("... done parsing.");
         redis.quit();
