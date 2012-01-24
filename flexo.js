@@ -310,6 +310,17 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     return u;
   }
 
+  flexo.sys_uuid = function(f)
+  {
+    var p = require("child_process").spawn("uuidgen");
+    var uuid = "";
+    p.stdout.on("data", function(chunk) { uuid += chunk.toString(); });
+    p.on("exit", function(code) {
+        uuid = uuid.toLowerCase().replace(/[^0-9a-f]/g, "");
+        f(uuid);
+      });
+  };
+
   // Convert a string with dashes (as used in XML attributes) to camel case (as
   // used for property names)
   flexo.undash = function(string)
