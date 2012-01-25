@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Autocomplete | {0}</title>
+    <title>Playing {0}</title>
     <meta charset="UTF-8">
     <style>
       html { height: 100%; }
@@ -9,6 +9,10 @@
         background-color: #fcf9f0; }
       body, #prompt { font-size: 16px;
         font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+
+      .low-key { font-weight: normal; color: #888; }
+      .selectable { cursor: pointer; }
+      .center { text-align: center; }
 
       #left { width: 540px; height: 100%; position: absolute; left: 10px;
         overflow: auto; }
@@ -41,11 +45,13 @@
   </head>
   <body>
     <div id="left">
-      <h1 id="title">Autocomplete</h1>
+      <h1 id="title"><span class="low-key">Playing</span> {0}</h1>
       <ul id="messages"></ul>
       <div id="commands">
-        <input id="prompt" type="text" placeholder="What do you want to do now?"
-          autofocus>
+        <form onsubmit="handle_input(event)">
+          <input id="prompt" name="input" type="text" autofocus
+            placeholder="What do you want to do now?">
+        </form>
         <ul id="completions"></ul>
       </div>
     </div>
@@ -58,6 +64,6 @@
       <h2>Inventory</h2>
       <ul id="inventory"></ul>
     </div>
-    <script src="autocomplete.js"></script>
+    <script src="play.js"></script>
   </body>
 </html>
