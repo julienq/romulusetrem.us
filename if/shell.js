@@ -25,6 +25,12 @@ function handle_input(input)
   }
 }
 
+engine.verbs.quit = function()
+{
+  console.log("Bye!");
+  process.exit(0);
+}
+
 console.log("");
 flexo.listen(world.pc, "@location", function() {
     engine.describe(world, world.pc.location);

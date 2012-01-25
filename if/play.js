@@ -39,6 +39,9 @@ function select(object)
 {
 };
 
+// TODO ask confirmation
+engine.verbs.quit = function() { window.location = "../if/index.html"; };
+
 function handle_input(e)
 {
   e.preventDefault();
@@ -53,21 +56,70 @@ var args = flexo.get_args();
 if (args.src) {
   var script = flexo.html("script", { src: args.src });
   document.head.appendChild(script);
-  script.onload = function() {
-    flexo.listen(world.pc, "@inventory", function() {
-        update_inventory(world.pc.inventory);
-      });
-    flexo.listen(world.pc, "@location", function() {
-        engine.describe(world, world.pc.location);
-      });
-    flexo.listen(world.pc, "@die", function() {
-        engine.message("You have died!", "died");
-        engine.message("Reload this page for another go...", "center");
-        document.querySelector("form").style.display = "none";
-      });
-    engine.start(world);
-  };
+  script.onload = ready;
+  script.onerror = default_world;
 } else {
-  set_title("nothing");
-  update_inventory({});
+  default_world();
 }
+
+function default_world()
+{
+  world = {
+    title: "if",
+    places: {
+      howto:
+      {
+        title: "How to play",
+        desc: "To start playing, type <em>play</em> followed by the name of a "
+          + "game in your inventory. Type <em>help</em> at any time for help.",
+        things: ["site"],
+      }
+    },
+    things:
+    {
+      ruins:
+      {
+        name: "ruins",
+        desc: "The test game \"Ruins Remixed\" is available...",
+        detail: "\"Ruins Remixed\" is a simple test game from a tutorial.",
+        src: "ruins.js",
+      },
+      site:
+      {
+        name: "site",
+        src: "site.js",
+      }
+    },
+    verbs:
+    {
+      play: function(info)
+      {
+        if (info.thing && info.thing.src) {
+          window.location = "?src={0}".fmt(info.thing.src);
+          return true;
+        } else {
+          engine.message("You cannot play that!");
+        }
+      },
+      quit: function() { window.location = "../index.html"; }
+    }
+  };
+  world.pc = Object.create(engine.pc).init(world, world.places.howto, "ruins");
+  ready();
+}
+
+function ready()
+{
+  flexo.listen(world.pc, "@inventory", function() {
+      update_inventory(world.pc.inventory);
+    });
+  flexo.listen(world.pc, "@location", function() {
+      engine.describe(world, world.pc.location);
+    });
+  flexo.listen(world.pc, "@die", function() {
+      engine.message("You have died!", "died");
+      engine.message("Reload this page for another go...", "center");
+      document.querySelector("form").style.display = "none";
+    });
+  engine.start(world);
+};

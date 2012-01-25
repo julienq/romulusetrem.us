@@ -1,51 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Autocomplete | {0}</title>
+    <title>Play {0}</title>
     <meta charset="UTF-8">
-    <style>
-      html { height: 100%; }
-      body { width: 960px; height: 100%; margin: 0 auto; position: relative;
-        background-color: #fcf9f0; }
-      body, #prompt { font-size: 16px;
-        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
-
-      #left { width: 540px; height: 100%; position: absolute; left: 10px;
-        overflow: auto; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { margin: 0; padding-bottom: 12px; }
-
-      #prompt { border: solid thin black; padding: 4px; width: 450px;
-        margin-top: 10px; background-color: transparent; }
-      #prompt:focus { border-color: #ff4040; outline: 0; }
-
-      #completions { list-style-type: none; margin: 0; padding: 0;
-        color: #888; }
-      #completions li { cursor: pointer; padding: 5px 5px 5px 15px; }
-      #completions li.sel { font-style: italic; color: #ff4040;
-        background-color: #ff0; }
-
-      li.player { font-style: italic; color: #ff4040; }
-      .intro { font-style: italic; }
-      .room { font-weight: bold; }
-      .died { text-align: center; color: red; font-size: 200%; }
-      .died:before { content: "☠ "; }
-      .died:after { content: " ☠"; }
-
-      #right { width: 300px; position: absolute; right: 10px; }
-      #map { width: 300px; height: 300px; background-color: #ccc; }
-
-    </style>
+    <link rel="stylesheet" href="if.css">
     <script src="../flexo.js"></script>
     <script src="engine.js"></script>
   </head>
   <body>
     <div id="left">
-      <h1 id="title">Autocomplete</h1>
+      <h1 id="title"><span class="low-key">Play</span> {0}</h1>
       <ul id="messages"></ul>
       <div id="commands">
-        <input id="prompt" type="text" placeholder="What do you want to do now?"
-          autofocus>
+        <form onsubmit="handle_input(event)">
+          <input id="prompt" name="input" type="text" autofocus
+            placeholder="What do you want to do now?">
+        </form>
         <ul id="completions"></ul>
       </div>
     </div>
@@ -58,6 +28,6 @@
       <h2>Inventory</h2>
       <ul id="inventory"></ul>
     </div>
-    <script src="autocomplete.js"></script>
+    <script src="play.js"></script>
   </body>
 </html>

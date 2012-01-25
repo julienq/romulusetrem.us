@@ -1,5 +1,7 @@
 if (typeof require === "function") var flexo = require("../flexo.js");
 
+// TODO match thing name rather than thing key
+
 (function (engine)
 {
   // Overload this function
@@ -188,8 +190,12 @@ if (typeof require === "function") var flexo = require("../flexo.js");
   // Handle the input from the verb point of view
   function handle_verb(info)
   {
-    if (verbs.hasOwnProperty(info.verb)) {
+    if (info.world.verbs && info.world.verbs.hasOwnProperty(info.verb)) {
+      info.world.verbs[info.verb](info);
+    } else if (verbs.hasOwnProperty(info.verb)) {
       verbs[info.verb](info);
+    } else if (engine.verbs.hasOwnProperty(info.verb)) {
+      engine.verbs[info.verb](info);
     } else {
       engine.message("I have no idea what you're talking about.");
     }
@@ -202,7 +208,7 @@ if (typeof require === "function") var flexo = require("../flexo.js");
     if (world.pc.inventory.hasOwnProperty(object)) {
       return world.pc.inventory[object];
     }
-    if (location) {
+    if (location && location.things) {
       var i =location.things.indexOf(object);
       if (i >= 0) return world.things[location.things[i]];
     }
@@ -213,10 +219,12 @@ if (typeof require === "function") var flexo = require("../flexo.js");
   {
     engine.message(place.title, "room");
     engine.message(place.desc);
-    place.things.forEach(function(object) {
-        var thing = world.things[object];
-        if (thing.desc && !thing.scenery) engine.message(thing.desc);
-      });
+    if (place.things) {
+      place.things.forEach(function(object) {
+          var thing = world.things[object];
+          if (thing.desc && !thing.scenery) engine.message(thing.desc);
+        });
+    }
   };
 
   // Handle an input string: first parse it, then try the different tokens from
