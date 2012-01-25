@@ -12,6 +12,22 @@ String.prototype.fmt = function()
     });
 };
 
+// Wrap a string to fit with the given width
+String.prototype.wrap = function(width)
+{
+  var w = width + 1;
+  return this.trim().split(/\s+/).map(function(word, i) {
+      w -= (word.length + 1);
+      if (w < 0) {
+        w = width - word.length;
+        return (i === 0 ? "" : "\n") + word;
+      } else {
+        return (i === 0 ? "" : " ") + word;
+      }
+    }).join("");
+  return out;
+};
+
 
 // Bind the function f to the object x. Additional arguments can be provided to
 // specialize the bound function.

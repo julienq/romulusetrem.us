@@ -58,6 +58,10 @@ function mkdict(data)
       } else if (name === "keb" || name === "reb") {
         var e = flexo.normalize(text);
         elem.push(e);
+        for (var i = 1, l = e.length; i <= l; ++i) {
+          m.ZADD("prefixes", 0, e.substr(0, i));
+        }
+        m.ZADD("prefixes", 0, e + "*");
         m.RPUSH("key:" + e, entry.seq);
       } else if (name === "ke_pri" || name === "re_pri") {
         var e = flexo.normalize(text);
