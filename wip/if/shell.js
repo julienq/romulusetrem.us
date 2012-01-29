@@ -1,7 +1,7 @@
 var readline = require("readline");
 var engine = require("./engine.js");
-var flexo = require("../flexo.js");
-var world = require("./ruins.js");
+var flexo = require("../../flexo.js");
+var world = require("./hometown.js");
 
 var rli = readline.createInterface(process.stdin, process.stdout);
 rli.on("close", function() {

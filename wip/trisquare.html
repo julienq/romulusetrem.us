@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Trisquare</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../romulusetremus.css">
+    <style>
+      body { width: 800px; background-color: black; margin: 2em auto;
+        color: white; }
+    </style>
+    <script src="../flexo.js"></script>
+  </head>
+  <body>
+    <canvas width="800" height="800"></canvas>
+    <footer>
+    After <a href="http://crowquills.com/#1092423/08-15-2008">Andy Gilmore</a>.
+    Reload for more!
+    Copyright © <span class="roman">mmxii</span>,
+    <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/tree/master/wip">Github</a>
+    </footer>
+    <script>
+
+      var canvas = document.querySelector("canvas");
+      var context = canvas.getContext("2d");
+      var args = flexo.get_args();
+      var N = Math.max(parseInt(args.N, 10) || 5, 1);
+      var SZ = canvas.width / (2 * N);
+
+      function random_color(color)
+      {
+        if (color) {
+          return [(color[0] + flexo.random_number(-0.5, 0.5)) % (2 * Math.PI),
+            flexo.clamp(color[1] + flexo.random_number(-0.1, 0.1), 0, 1),
+            flexo.clamp(color[2] + flexo.random_number(-0.1, 0.1), 0, 1)];
+        } else {
+          return [flexo.random_number(0, 2 * Math.PI),
+            flexo.random_number(0.25, 0.8), flexo.random_number(0.5, 1)];
+        }
+      }
+
+      function square(context, x, y, c1, c2, right)
+      {
+        context.fillStyle = flexo.hsv_to_hex.apply(this, c1);
+        context.fillRect(x, y, SZ, SZ);
+        context.fillStyle = flexo.hsv_to_hex.apply(this, c2);
+        context.beginPath();
+        if (right) {
+          context.moveTo(x, y);
+          context.lineTo(x, y + SZ);
+          context.lineTo(x + SZ, y + SZ);
+        } else {
+          context.moveTo(x, y + SZ);
+          context.lineTo(x + SZ, y + SZ);
+          context.lineTo(x + SZ, y);
+        }
+        context.fill();
+      }
+
+      var c1 = random_color();
+      var c2 = random_color(c1);
+      for (var i = 0; i < N; ++i) {
+        for (var j = i; j < N; ++j) {
+          for (var x = 0; x < 2; ++x) {
+            for (var y = 0; y < 2; ++y) {
+              square(context, (2 * i + x) * SZ, (2 * j + y) * SZ, c1, c2,
+                (x + y) % 2 === 0);
+              c1 = random_color(c2);
+              c2 = random_color(c1);
+            }
+          }
+          if (i !== j) {
+            for (var x = 0; x < 2; ++x) {
+              for (var y = 0; y < 2; ++y) {
+                square(context, (2 * j + x) * SZ, (2 * i + y) * SZ, c1, c2,
+                  (x + y) % 2 === 0);
+                c1 = random_color(c2);
+                c2 = random_color(c1);
+              }
+            }
+          }
+        }
+      }
+
+    </script>
+  </body>
+</html>

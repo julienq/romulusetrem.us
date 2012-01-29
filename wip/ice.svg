@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+  <script xlink:href="../flexo.js"/>
+
+  <defs>
+    <rect id="tile" x="-50" y="-50" width="100" height="100" rx="10" ry="10"
+      fill="#b1f1ff" stroke="white"/>
+    <rect id="vtile" x="-50" y="-50" width="100" height="100" rx="10" ry="10"
+      fill="#d2ecb9" stroke="white"/>
+    <line id="vwall" y1="-50" y2="50" stroke-width="10" stroke="#443d2d"
+      stroke-linecap="round"/>
+    <line id="hwall" x1="-50" x2="50" stroke-width="10" stroke="#443d2d"
+      stroke-linecap="round"/>
+    <g id="player" fill="#ff4040" stroke="#ff4040" stroke-width="8"
+      stroke-linejoin="round">
+      <ellipse cx="0" cy="12.5" rx="25" ry="12.5"/>
+      <polyline points="-25 12.5 0 -40 25 12.5"/>
+    </g>
+  </defs>
+
+  <g id="tiles"/>
+  <g id="walls"/>
+  <g id="pieces"/>
+
+  <script><![CDATA[
+
+    // TODO
+    // [ ] animation
+    // [ ] new maps
+    // [ ] new obstacles
+    // [ ] HTML host page
+    // [ ] isometric view
+
+    var map = [
+      "         ",
+      " @ * *|* ",
+      "         ",
+      "   * * * ",
+      "         ",
+      " *|* * * ",
+      "     -   ",
+      "   #     ",
+      "         "
+    ];
+
+    function obstaclep(i, j, incr, jncr)
+    {
+      if (i % 2 === 1 && j % 2 === 1 &&
+        (map[i][j] === " " || map[i][j] === "#")) {
+        return true;
+      }
+      i += incr;
+      j += jncr;
+      return map[i][j] === "|" || map[i][j] === "-";
+    }
+
+    function check_status(i, j)
+    {
+      if (map[i][j] === "#") alert("You won :)");
+      if (map[i][j] === " ") alert("You fell :(");
+    }
+
+    var W = (map[0].length - 1) / 2;
+    var H = (map.length - 1) / 2;
+    document.documentElement.setAttribute("viewBox",
+      "-100 -100 {0}00 {0}00".fmt(W + 1, H + 1));
+
+    var tiles = document.getElementById("tiles");
+    var walls = document.getElementById("walls");
+    var pieces = document.getElementById("pieces");
+
+    var player = {};
+
+    for (var i = 0, m = map.length; i < m; ++i) {
+      var y = (i - 1) * 50;
+      for (var j = 0, n = map[i].length; j < n; ++j) {
+        var x = (j - 1) * 50;
+        if (map[i][j] === "*" || map[i][j] === "#" || map[i][j] === "@") {
+          var tile = flexo.svg_href("use",
+            map[i][j] === "#" ? "#vtile" : "#tile", { x: x, y: y });
+          (function(i_, j_) {
+            tile.addEventListener("click", function(e) {
+                e.preventDefault();
+                if (i_ === player.i) player.j = j_;
+                if (j_ === player.j) player.i = i_;
+              }, false);
+          })(i, j);
+          tiles.appendChild(tile);
+          if (map[i][j] === "@") {
+            map[i][j] = "*";
+            var use = flexo.svg_href("use", "#player", { x: x, y: y });
+            (function(i_, j_) {
+              flexo.getter_setter(player, "i", function() { return i_; },
+                function(i__) {
+                  var k = i_;
+                  if (i_ < i__) {
+                    var m = map.length - 1;
+                    for (; k < m && !obstaclep(k, j_, +1, 0); ++k);
+                  } else if (i_ > i__) {
+                    for (; k > 0 && !obstaclep(k, j_, -1, 0); --k);
+                  }
+                  i_ = k;
+                  use.setAttribute("y", (i_ - 1) * 50);
+                  check_status(i_, j_);
+                });
+              flexo.getter_setter(player, "j", function() { return j_; },
+                function(j__) {
+                  var k = j_;
+                  if (j_ < j__) {
+                    var n = map[i_].length - 1;
+                    for (; k < n && !obstaclep(i_, k, 0, +1); ++k);
+                  } else if (j_ > j__) {
+                    for (; k > 0 && !obstaclep(i_, k, 0, -1); --k);
+                  }
+                  j_ = k;
+                  use.setAttribute("x", (j_ - 1) * 50);
+                  check_status(i_, j_);
+                });
+            })(i, j);
+            pieces.appendChild(use);
+          }
+        } else if (map[i][j] === "-") {
+          walls.appendChild(flexo.svg_href("use", "#hwall", { x: x, y: y }));
+        } else if (map[i][j] === "|") {
+          walls.appendChild(flexo.svg_href("use", "#vwall", { x: x, y: y }));
+        }
+      }
+    }
+
+  ]]></script>
+
+</svg>

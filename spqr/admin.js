@@ -18,6 +18,8 @@ exports.PATTERNS =
           users.add(transaction, JSON.parse(data));
         });
     }],
+
+  ["DELETE", /^\/admin\/user\/(.*)$/, users.delete_user]
 ]
 
 function html_head()
@@ -52,9 +54,11 @@ function users_page()
         $label({ for: "email" }, "Email: "),
         $input({ type: "email", name: "email" }),
         $br(true),
-        $input({ type: "submit", value: "submit" }))) +
+        $span({ "class": "right" },
+          $input({ type: "submit", value: "submit" })))) +
     $script(_refresh_users.toString()) +
     $script(_add_user.toString()) +
+    $script(_delete_user.toString()) +
     $script("_refresh_users();");
     html_foot();
 }
@@ -88,4 +92,18 @@ function _add_user(e)
       info[key] = form[key].value;
     });
   req.send(JSON.stringify(info));
+}
+
+// Client version of delete_user: request the user deletion
+function _delete_user(username)
+{
+  if (confirm("Really delete user \"{0}\"?".fmt(username))) {
+    var req = new XMLHttpRequest();
+    req.open("DELETE", "/admin/user/" + username, true);
+    req.onload = function() {
+      if (req.responseText) alert(req.responseText);
+      window.location.reload(true);
+    };
+    req.send("");
+  }
 }

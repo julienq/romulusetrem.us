@@ -1,4 +1,4 @@
-if (typeof require === "function") var flexo = require("../flexo.js");
+if (typeof require === "function") var flexo = require("../../flexo.js");
 
 // TODO match thing name rather than thing key
 
@@ -37,7 +37,7 @@ if (typeof require === "function") var flexo = require("../flexo.js");
 
   // Words skipped during parsing
   var skip_words = {};
-  ["a", "the", "to"].forEach(function(w) { skip_words[w] = true; });
+  ["a", "from", "the", "to"].forEach(function(w) { skip_words[w] = true; });
 
   // Parse an input string and return the extracted tokens. At the moment this
   // is really naive and only understand sentences in the form "V Object" with
@@ -113,6 +113,7 @@ if (typeof require === "function") var flexo = require("../flexo.js");
     {
       if (engine.verbs.drop(info)) {
         engine.message("You dropped the {0}.".fmt(info.object));
+        return true;
       } else {
         engine.message("You cannot drop that.");
       }
@@ -128,6 +129,7 @@ if (typeof require === "function") var flexo = require("../flexo.js");
         } else {
           engine.message("You're definitely not putthing that in your mouth.");
         }
+        return true;
       } else {
         engine.message("You cannot eat that.");
       }
@@ -142,6 +144,7 @@ if (typeof require === "function") var flexo = require("../flexo.js");
         } else {
           engine.message("There is nothing special about that.");
         }
+        return true;
       } else {
         engine.message("You cannot see such a thing.");
       }
@@ -150,7 +153,11 @@ if (typeof require === "function") var flexo = require("../flexo.js");
     // Go in the given direction
     go: function(info)
     {
-      if (!engine.verbs.go(info)) engine.message("You cannot go there.");
+      if (engine.verbs.go(info)) {
+        return true;
+      } else {
+        engine.message("You cannot go there.");
+      }
     },
 
     // Help!
@@ -170,17 +177,22 @@ if (typeof require === "function") var flexo = require("../flexo.js");
               return "{0}a{1} {2}".fmt(i === inventory.length - 1 && i > 0 ?
                 "and " : "", /^[aiueoy]/.test(n) ? "n" : "", n);
             }).join(", ")));
+      return true;
     },
 
     look: function(info)
     {
       engine.describe(info.world, info.world.pc.location);
+      return true;
     },
 
+    // TODO distinguish between cannot take (no effect) and nothing to take
+    // (input error)
     take: function(info)
     {
       if (engine.verbs.take(info)) {
         engine.message("You took the {0}.".fmt(info.object));
+        return true;
       } else {
         engine.message("You cannot take that.");
       }
@@ -191,11 +203,11 @@ if (typeof require === "function") var flexo = require("../flexo.js");
   function handle_verb(info)
   {
     if (info.world.verbs && info.world.verbs.hasOwnProperty(info.verb)) {
-      info.world.verbs[info.verb](info);
+      return info.world.verbs[info.verb](info);
     } else if (verbs.hasOwnProperty(info.verb)) {
-      verbs[info.verb](info);
+      return verbs[info.verb](info);
     } else if (engine.verbs.hasOwnProperty(info.verb)) {
-      engine.verbs[info.verb](info);
+      return engine.verbs[info.verb](info);
     } else {
       engine.message("I have no idea what you're talking about.");
     }
@@ -231,6 +243,8 @@ if (typeof require === "function") var flexo = require("../flexo.js");
   // right to left for handling. At the moment of course that's only object,
   // then verb. This is the main entry point -- give the current world and last
   // input as argument and there you go!
+  // After every action there is a new tick to keep track of elapsed time.
+  // TODO better distinction between errors and actions that have no effect.
   engine.handle_input = function(world, input)
   {
     // Sanity check: the player should be alive!
@@ -241,13 +255,19 @@ if (typeof require === "function") var flexo = require("../flexo.js");
     var parse = engine.parse(input);
     parse.thing = engine.find_thing(world, parse.object, world.pc.location);
     parse.world = world;
-    return handle_object(parse) || handle_verb(parse);
+    var handled = handle_object(parse) || handle_verb(parse);
+    if (handled) {
+      ++world.ticks;
+      flexo.notify(world, "@ticks");
+    }
+    return handled;
   };
 
   engine.start = function(world)
   {
     if (world.title) engine.message(world.title, "title");
     if (world.intro) engine.message(world.intro, "intro");
+    if (!world.ticks) world.ticks = 0;
     flexo.notify(world.pc, "@inventory");
     flexo.notify(world.pc, "@location");
   };

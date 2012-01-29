@@ -77,12 +77,12 @@ function default_world()
     },
     things:
     {
-      ruins:
+      hometown:
       {
-        name: "ruins",
-        desc: "The test game \"Ruins Remixed\" is available...",
-        detail: "\"Ruins Remixed\" is a simple test game from a tutorial.",
-        src: "ruins.js",
+        name: "hometown",
+        desc: "The game \"Hometown\" is available...",
+        detail: "\"Hometown\" is my first game!",
+        src: "hometown.js",
       },
       site:
       {
@@ -104,7 +104,8 @@ function default_world()
       quit: function() { window.location = "../index.html"; }
     }
   };
-  world.pc = Object.create(engine.pc).init(world, world.places.howto, "ruins");
+  world.pc = Object.create(engine.pc).init(world, world.places.howto,
+      "hometown");
   ready();
 }
 

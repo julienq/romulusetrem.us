@@ -15,7 +15,8 @@ a { color: #f80; text-decoration: none; }
 #messages { list-style-type: none; margin: 0; padding: 0; }
 #messages li { margin: 0; padding-bottom: 12px; }
 
-#prompt { border: solid thin black; padding: 4px; width: 450px;
+#prompt { /*border: solid thin black; padding: 4px; width: 450px;*/
+  border: none; width: 460px;
   margin-top: 10px; background-color: transparent; }
 #prompt:focus { border-color: #ff4040; outline: 0; }
 
@@ -24,7 +25,7 @@ a { color: #f80; text-decoration: none; }
 #completions li.sel { font-style: italic; color: #ff4040;
   background-color: #ff0; }
 
-li.player { font-style: italic; color: #ff4040; }
+li.player { font-style: weight; color: #666; }
 .intro { font-style: italic; }
 .room { font-weight: bold; }
 .died { text-align: center; color: red; font-size: 200%; }
