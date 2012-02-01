@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1600 1200"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>Mondrian</title>
+  <script xlink:href="../../flexo.js"/>
+  <style>
+    .vertical { stroke: black; stroke-width: 12; }
+    .horizontal { stroke: black; stroke-width: 16; }
+    .red { fill: rgb(204, 0, 11); }
+    .blue { fill: rgb(1, 102, 186); }
+    .yellow { fill: rgb(249, 213, 26); }
+  </style>
+
+  <g id="canvas">
+    <rect width="1600" height="1200" fill="#fef9f0"/>
+    <g id="rectangles"/>
+    <g id="lines"/>
+  </g>
+
+  <script><![CDATA[
+
+    var padding = 40;
+    var bbox = document.getElementById("canvas").getBBox();
+    var lines = document.getElementById("lines");
+
+    function did_split()
+    {
+      var lines_v = document.querySelectorAll(".vertical");
+      var lines_h = document.querySelectorAll(".horizontal");
+      if (Math.random() < .5) {
+        // vertical split
+        var x = flexo.random_int(padding, bbox.width - padding);
+        for (var i = 0, n = lines_v.length; i < n; ++i) {
+          if (Math.abs(x - lines_v[i].getAttribute("x1")) < padding) {
+            return 0;
+          }
+        }
+        var intersect = [].filter.call(lines_h, function(l) {
+            return x >= l.getAttribute("x1") && x <= l.getAttribute("x2");
+          }).map(function(l) { return +l.getAttribute("y1"); });
+        intersect.push.call(intersect, 0, bbox.height);
+        var y1 = flexo.random_element(intersect);
+        for (var y2 = y1; y1 === y2; y2 = flexo.random_element(intersect));
+        lines.appendChild(flexo.svg("line", { x1: x, y1: Math.min(y1, y2),
+          x2: x, y2: Math.max(y1, y2), "class": "vertical" }));
+      } else {
+        // horizontal split
+        var y = flexo.random_int(padding, bbox.height - padding);
+        for (var i = 0, n = lines_h.length; i < n; ++i) {
+          if (Math.abs(y - lines_h[i].getAttribute("y1")) < padding) {
+            return 0;
+          }
+        }
+        var intersect = [].filter.call(lines_v, function(l) {
+            return y >= l.getAttribute("y1") && y <= l.getAttribute("y2");
+          }).map(function(l) { return +l.getAttribute("x1"); });
+        intersect.push.call(intersect, 0, bbox.width);
+        var x1 = flexo.random_element(intersect);
+        for (var x2 = x1; x1 === x2; x2 = flexo.random_element(intersect));
+        lines.appendChild(flexo.svg("line", { x1: Math.min(x1, x2), y1: y,
+          x2: Math.max(x1, x2), y2: y, "class": "horizontal" }));
+      }
+      return 1;
+    }
+
+    var rectangles = document.getElementById("rectangles");
+
+    function did_fill()
+    {
+      var x1 = 0;
+      var y1 = 0;
+      var x2 = bbox.width;
+      var y2 = bbox.height;
+      var x = flexo.random_int(x1, x2);
+      var y = flexo.random_int(y1, y2);
+      var lines_v = document.querySelectorAll(".vertical");
+      var intersect_x = [].filter.call(lines_v, function(l) {
+          return y >= l.getAttribute("y1") && y <= l.getAttribute("y2");
+        }).map(function(l) { return +l.getAttribute("x1"); });
+      intersect_x.forEach(function(x0) { if (x0 > x1 && x0 < x) x1 = x0; });
+      intersect_x.forEach(function(x0) { if (x0 < x2 && x0 > x) x2 = x0; });
+      var lines_h = document.querySelectorAll(".horizontal");
+      var intersect_y = [].filter.call(lines_h, function(l) {
+          return x >= l.getAttribute("x1") && x <= l.getAttribute("x2");
+        }).map(function(l) { return +l.getAttribute("y1"); });
+      intersect_y.forEach(function(y0) { if (y0 > y1 && y0 < y) y1 = y0; });
+      intersect_y.forEach(function(y0) { if (y0 < y2 && y0 > y) y2 = y0; });
+      rectangles.appendChild(flexo.svg("rect", { x: x1, y: y1, width: x2 - x1,
+        height: y2 - y1,
+        "class": flexo.random_element(["blue", "red", "yellow"]) }));
+      return 1;
+    }
+
+    var n = flexo.random_int(4, 16);
+    for (var i = n; i >= 0; i -= did_split());
+    for (var i = flexo.random_int(2, n / 4); i >= 0; i -= did_fill());
+
+  ]]></script>
+
+</svg>

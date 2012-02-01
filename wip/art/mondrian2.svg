@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+  viewBox="-200 -200 1200 1100" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <title>More Mondrian</title>
+  <script xlink:href="../../flexo.js"/>
+  <defs>
+    <clipPath id="frame-clip">
+      <rect width="800" height="700"/>
+    </clipPath>
+  </defs>
+
+  <rect x="-50" y="-100" width="900" height="900" fill="#fef9f0"/>
+  <g id="canvas" clip-path="url(#frame-clip)">
+    <rect x="-50" y="-100" width="900" height="900" fill="#fef9f0"/>
+  </g>
+
+  <script><![CDATA[
+
+    var canvas = document.getElementById("canvas");
+    var bbox = canvas.getBBox();
+    var xm = bbox.x + bbox.width;
+    var ym = bbox.y + bbox.height;
+    var xc = bbox.x + bbox.width / 2;
+    var yc = bbox.y + bbox.height / 2;
+    for (var n = flexo.random_int(600, 800); n >= 0; --n) {
+      var x = flexo.random_int(bbox.x, xm);
+      var y = flexo.random_int(bbox.y, ym);
+      var dx = x - xc;
+      var dy = y - yc;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bbox.width / 2) {
+        var small = flexo.random_int(7, 10);
+        var large = flexo.random_int(10, 60);
+        var vertical = Math.random() < .5;
+        var w = vertical ? small : large;
+        var h = vertical ? large : small;
+        canvas.appendChild(flexo.svg("rect", { x: x, y: y, width: w, height: h }));
+      }
+    }
+
+  ]]></script>
+
+</svg>
