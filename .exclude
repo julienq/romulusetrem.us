@@ -5,3 +5,4 @@ www
 .git
 .DS_Store
 .exclude
+*.swp

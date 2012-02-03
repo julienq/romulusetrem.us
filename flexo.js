@@ -283,15 +283,20 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     }
   };
 
-  // Request an URI as an arraybuffer through XMLHttpRequest. The f callback is
-  // called with the response directly. TODO error handling
-  flexo.request_arraybuffer = function(uri, f)
+  // Make an XMLHttpRequest with params and a callback when done
+  flexo.ez_xhr = function(uri, params, f)
   {
+    if (f === undefined) {
+      f = params;
+      params = {};
+    }
+    if (!params.hasOwnProperty("method")) params.method = "GET";
+    if (!params.hasOwnProperty("data")) params.data = "";
     var req = new XMLHttpRequest();
-    req.open("GET", uri, true);
-    req.responseType = "arraybuffer";
-    req.onload = function() { f(req.response); };
-    req.send("");
+    req.open(params.method, uri);
+    if (params.responseType) req.responseType = params.responseType;
+    req.onload = function() { f(req); };
+    req.send(params.data);
   };
 
   // Simple wrapper for XMLHttpRequest GET request with no data; call back with
@@ -402,6 +407,14 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     return min + Math.random() * (max - min);
   };
 
+  // times(n, f) = [0, ..., n].apply(f)
+  flexo.times = function(n, f)
+  {
+    var array = new Array(n);
+    for (var i = 0; i < n; ++i) array[i] = f(i);
+    return array;
+  };
+
 
   // Transforming values
 
@@ -417,6 +430,7 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   {
     return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
   };
+
 
   // Convert a number to roman numerals (integer part only; n must be positive
   // or zero.) Now that's an important function to have in any framework.
@@ -449,6 +463,12 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     }
   };
 
+  flexo.yyyymmdd = function(date)
+  {
+    if (!date) date = new Date;
+    return "{0}{1}{2}".fmt(1900 + date.getYear(),
+        flexo.pad(1 + date.getMonth(), 2), flexo.pad(date.getDate(), 2));
+  };
 
   // DOM related functions
 
@@ -549,6 +569,9 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
   {
     return flexo.elem(null, name, attrs, contents);
   };
+
+  // Linear interpolation
+  flexo.lerp = function(from, to, ratio) { return from + (to - from) * ratio; };
 
   // Remove all children of an element
   flexo.remove_children = function(elem)
@@ -683,11 +706,20 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
     return flexo.rgb_to_hex.apply(this, flexo.hsv_to_rgb(h, s, v));
   };
 
-  // Convert an RGB color (3 values) to a hex value
+  // Convert an RGB color (3 values in the 0..255 range) to a hex value
   flexo.rgb_to_hex = function(r, g, b)
   {
     return "#" + [].map.call(arguments,
       function(x) { return flexo.pad(x.toString(16), 2, "0"); }).join("");
+  };
+
+  // Convert an sRGB color (3 values in the 0..1 range) to a hex value
+  flexo.srgb_to_hex = function(r, g, b)
+  {
+    return "#" + [].map.call(arguments,
+      function(x) {
+        return flexo.pad(Math.floor(x * 255).toString(16), 2, "0");
+      }).join("");
   };
 
 
@@ -806,124 +838,6 @@ Function.prototype.get_thunk = function() { return [this, arguments]; };
           context.closePath();
         }
       });
-  };
-
-
-  // Basic handler for pointing, with a mouse or touch
-  flexo.point_handler =
-  {
-    watch: function(elem, p)
-    {
-      if (!p) {
-        p = elem;
-        elem.addEventListener("mouseout", this, false);
-      }
-      elem.addEventListener("mousedown", this, false);
-      p.addEventListener("mousemove", this, false);
-      p.addEventListener("mouseup", this, false);
-      elem.addEventListener("touchstart", this, false);
-      elem.addEventListener("touchmove", this, false);
-      elem.addEventListener("touchend", this, false);
-    },
-
-    unwatch: function(elem, p)
-    {
-      if (!p) {
-        p = elem;
-        elem.removeEventListener("mouseout", this, false);
-      }
-      elem.removeEventListener("mousedown", this, false);
-      p.removeEventListener("mousemove", this, false);
-      p.removeEventListener("mouseup", this, false);
-      elem.removeEventListener("touchstart", this, false);
-      elem.removeEventListener("touchmove", this, false);
-      elem.removeEventListener("touchend", this, false);
-    },
-
-    // Convenience method to create a new handler watching an element
-    new_handler_for: function(elem)
-    {
-      var h = flexo.create_object(this);
-      h.watch(elem);
-      return h;
-    },
-
-    handleEvent: function(e)
-    {
-      e.preventDefault();
-      if (e.type === "mousedown" || e.type === "touchstart") {
-        this.is_down = true;
-        this.down(e);
-      } else if (e.type === "mousemove" || e.type === "touchmove") {
-        this.move(e);
-      } else if (e.type === "mouseup" || e.type === "touchend") {
-        this.up(e);
-        this.is_down = false;
-      } else if (e.type === "mouseout" || e.type === "touchcancel") {
-        this.is_down = false;
-        this.out(e);
-      }
-    },
-
-    down: function(e) {},
-    up: function(e) {},
-    move: function(e) {},
-    out: function(e) {}
-
-  };
-
-  // Basic drag and drop handler
-  flexo.dnd_handler =
-  {
-    // Attach this handler to an element
-    watch: function(elem)
-    {
-      elem.addEventListener("dragenter", this, false);
-      elem.addEventListener("dragover", this, false);
-      elem.addEventListener("dragleave", this, false);
-      elem.addEventListener("drop", this, false);
-    },
-
-    // Detach this handler from an element
-    unwatch: function(elem)
-    {
-      elem.removeEventListener("dragenter", this, false);
-      elem.removeEventListener("dragover", this, false);
-      elem.removeEventListener("dragleave", this, false);
-      elem.removeEventListener("drop", this, false);
-    },
-
-    // Convenience method to create a new handler watching an element
-    new_handler_for: function(elem)
-    {
-      var h = flexo.create_object(this);
-      h.watch(elem);
-      return h;
-    },
-
-    // Handle the drag and drop events
-    handleEvent: function(e)
-    {
-      e.preventDefault();
-      if (e.type === "dragover") {
-        this.dragover(e);
-      } else if (e.type === "dragenter") {
-        flexo.add_class(e.target, "drag");
-        this.dragenter(e);
-      } else if (e.type === "dragleave") {
-        flexo.remove_class(e.target, "drag");
-        this.dragleave(e);
-      } else if (e.type === "drop") {
-        flexo.remove_class(e.target, "drag");
-        this.drop(e);
-      }
-    },
-
-    // Customize the behavior of the handler
-    dragover: function(e) {},
-    dragenter: function(e) {},
-    dragleave: function(e) {},
-    drop: function(e) {}
   };
 
 })(typeof exports === "object" ? exports : this.flexo = {});

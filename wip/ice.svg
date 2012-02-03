@@ -12,7 +12,7 @@
     <line id="hwall" x1="-50" x2="50" stroke-width="10" stroke="#443d2d"
       stroke-linecap="round"/>
     <g id="player" fill="#ff4040" stroke="#ff4040" stroke-width="8"
-      stroke-linejoin="round" transform="translate(0, -15)">
+      stroke-linejoin="round">
       <ellipse cx="0" cy="12.5" rx="25" ry="12.5"/>
       <polyline points="-25 12.5 0 -40 25 12.5"/>
     </g>
@@ -25,7 +25,7 @@
   <script><![CDATA[
 
     // TODO
-    // [ ] drag to move
+    // [x] drag to move
     // [ ] animation
     // [ ] other pieces (with multiple targets?)
     // [ ] new maps
@@ -46,6 +46,7 @@
     ];
 
     // From Rasende Roboter
+    /*
     var map = [
       " - - - - - - - - - - - - - - - - ",
       "|* * * *|* * * * * *|* * * * * *|",
@@ -81,6 +82,7 @@
       "|* * * * *|* * * * * * *|* * * *|",
       " - - - - - - - - - - - - - - - - "
     ];
+    */
 
     function obstaclep(i, j, incr, jncr)
     {
@@ -117,13 +119,6 @@
         if (map[i][j] === "*" || map[i][j] === "#" || map[i][j] === "@") {
           var tile = flexo.svg_href("use",
             map[i][j] === "#" ? "#vtile" : "#tile", { x: x, y: y });
-          (function(i_, j_) {
-            tile.addEventListener("click", function(e) {
-                e.preventDefault();
-                if (i_ === player.i) player.j = j_;
-                if (j_ === player.j) player.i = i_;
-              }, false);
-          })(i, j);
           tiles.appendChild(tile);
           if (map[i][j] === "@") {
             map[i][j] = "*";
@@ -156,6 +151,39 @@
                   check_status(i_, j_);
                 });
             })(i, j);
+            use.addEventListener("mousedown", function(e) {
+                var p = flexo.event_svg_point(e, document.documentElement);
+                var line = flexo.svg("line", { x1: (player.j - 1) * 50,
+                  y1: (player.i - 1) * 50, x2: p.x, y2: p.y, stroke: "#08f",
+                  "stroke-width": 8, "stroke-linecap": "round",
+                  "stroke-opacity": 0.5 });
+                use.parentNode.appendChild(line);
+                var move = function(e) {
+                  var p = flexo.event_svg_point(e, document.documentElement);
+                  var i = Math.floor(p.y / 50) + 1;
+                  var j = Math.floor(p.x / 50) + 1;
+                  line.setAttribute("stroke",
+                    i === player.i || i === player.i - 1 ||
+                    j === player.j || j === player.j - 1 ? "#08f" : "#f80");
+                  line.setAttribute("x2", p.x);
+                  line.setAttribute("y2", p.y);
+                };
+                var up = function(e) {
+                  flexo.safe_remove(line);
+                  document.removeEventListener("mousemove", move);
+                  document.removeEventListener("mouseup", up);
+                  var p = flexo.event_svg_point(e, document.documentElement);
+                  var i = Math.floor(p.y / 50) + 1;
+                  var j = Math.floor(p.x / 50) + 1;
+                  if (i === player.i || i === player.i - 1) {
+                    player.j = j;
+                  } else if (j === player.j || j === player.j - 1) {
+                    player.i = i;
+                  }
+                };
+                document.addEventListener("mousemove", move);
+                document.addEventListener("mouseup", up);
+              }, false);
             pieces.appendChild(use);
           }
         } else if (map[i][j] === "-") {
