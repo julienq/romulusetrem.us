@@ -26,7 +26,7 @@
 
     // TODO
     // [x] drag to move
-    // [ ] animation
+    // [x] animation
     // [ ] other pieces (with multiple targets?)
     // [ ] new maps
     // [ ] new obstacles
@@ -45,8 +45,8 @@
       "         "
     ];
 
+/*
     // From Rasende Roboter
-    /*
     var map = [
       " - - - - - - - - - - - - - - - - ",
       "|* * * *|* * * * * *|* * * * * *|",
@@ -82,7 +82,7 @@
       "|* * * * *|* * * * * * *|* * * *|",
       " - - - - - - - - - - - - - - - - "
     ];
-    */
+*/
 
     function obstaclep(i, j, incr, jncr)
     {
@@ -110,7 +110,37 @@
     var walls = document.getElementById("walls");
     var pieces = document.getElementById("pieces");
 
-    var player = {};
+    var player =
+    {
+      can_move: true,
+
+      speed: 1.5,
+
+      move: function(use, i, j)
+      {
+        this.can_move = false;
+        var x0 = (this.j - 1) * 50;
+        var y0 = (this.i - 1) * 50;
+        var x = (j - 1) * 50;
+        var y = (i - 1) * 50;
+        var dx = x - x0;
+        var dy = y - y0;
+        var dur = Math.max(Math.abs(dx), Math.abs(dy)) * this.speed;
+        var t0 = Date.now();
+        var step = (function(t) {
+          var dt = Math.min((t - t0) / dur, 1);
+          use.setAttribute("x", x0 + dx * dt);
+          use.setAttribute("y", y0 + dy * dt);
+          if (dt < 1) {
+            requestAnimationFrame(step);
+          } else {
+            check_status(i, j);
+            this.can_move = true;
+          }
+        }).bind(this);
+        requestAnimationFrame(step);
+      }
+    };
 
     for (var i = 0, m = map.length; i < m; ++i) {
       var y = (i - 1) * 50;
@@ -133,9 +163,8 @@
                   } else if (i_ > i__) {
                     for (; k > 0 && !obstaclep(k, j_, -1, 0); --k);
                   }
+                  player.move(use, k, j_);
                   i_ = k;
-                  use.setAttribute("y", (i_ - 1) * 50);
-                  check_status(i_, j_);
                 });
               flexo.getter_setter(player, "j", function() { return j_; },
                 function(j__) {
@@ -146,12 +175,12 @@
                   } else if (j_ > j__) {
                     for (; k > 0 && !obstaclep(i_, k, 0, -1); --k);
                   }
+                  player.move(use, i_, k);
                   j_ = k;
-                  use.setAttribute("x", (j_ - 1) * 50);
-                  check_status(i_, j_);
                 });
             })(i, j);
             use.addEventListener("mousedown", function(e) {
+                if (!player.can_move || e.button !== 0) return;
                 var p = flexo.event_svg_point(e, document.documentElement);
                 var line = flexo.svg("line", { x1: (player.j - 1) * 50,
                   y1: (player.i - 1) * 50, x2: p.x, y2: p.y, stroke: "#08f",
@@ -164,7 +193,7 @@
                   var j = Math.floor(p.x / 50) + 1;
                   line.setAttribute("stroke",
                     i === player.i || i === player.i - 1 ||
-                    j === player.j || j === player.j - 1 ? "#08f" : "#f80");
+                    j === player.j || j === player.j - 1 ? "#0f8" : "#888");
                   line.setAttribute("x2", p.x);
                   line.setAttribute("y2", p.y);
                 };
@@ -175,9 +204,11 @@
                   var p = flexo.event_svg_point(e, document.documentElement);
                   var i = Math.floor(p.y / 50) + 1;
                   var j = Math.floor(p.x / 50) + 1;
-                  if (i === player.i || i === player.i - 1) {
+                  if ((i === player.i || i === player.i - 1) &&
+                      (j !== player.j && j !== player.j - 1)) {
                     player.j = j;
-                  } else if (j === player.j || j === player.j - 1) {
+                  } else if ((j === player.j || j === player.j - 1) &&
+                      (i !== player.i && i !== player.i - 1)) {
                     player.i = i;
                   }
                 };
