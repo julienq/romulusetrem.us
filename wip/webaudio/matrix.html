@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Matrix</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+    </style>
+    <script src="../../flexo.js"></script>
+  </head>
+  <body>
+
+    <svg>
+      <defs>
+        <rect id="off" x="10" y="10" width="80" height="80" rx="10" ry="10"
+          fill="#888"/>
+        <rect id="on" x="10" y="10" width="80" height="80" rx="10" ry="10"
+          fill="#f80"/>
+      </defs>
+    </svg>
+
+    <script>
+
+      var major = [0, 2, 4, 5, 7, 9, 11];
+      var minor = [0, 2, 3, 5, 7, 8, 10];
+      var harmonic_minor = [0, 2, 3, 5, 7, 8, 11];
+      var melodic_minor = [0, 2, 3, 5, 7, 9, 11];
+
+      var lowest = 60;  // C below A440
+
+      var beats = 16;
+      var rows = 16;
+      var tempo = 104;
+
+      var svg = document.querySelector("svg");
+      svg.setAttribute("viewBox", "-50 -50 {0} {1}"
+        .fmt((beats + 1) * 100, (rows + 1) * 100));
+
+      for (var i = 0; i < rows; ++i) {
+        for (var j = 0; j < beats; ++j) add_button(i, j);
+      }
+
+      function add_button(i, j)
+      {
+        var use = flexo.svg_href("use", "#off", { x: j * 100, y: i * 100 });
+        use._on = false;
+        use._toggle = function()
+        {
+          this._on = !use._on;
+          this.setAttributeNS(flexo.XLINK_NS, "href",
+            this._on ? "#on" : "#off");
+        };
+        use.addEventListener("click", function(e) { use._toggle(); }, false);
+        use._row = rows - i;
+        svg.appendChild(use);
+      }
+
+    </script>
+
+  </body>
+</html>

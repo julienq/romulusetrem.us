@@ -1,7 +1,13 @@
-(function(webaudio) {
-
+(function(webaudio)
+{
   webaudio.context = new webkitAudioContext();
   var BUFFER_SIZE = 512;
+
+  // A440 = 69
+  webaudio.mtof = function(m)
+  {
+    return 440 * Math.pow(2, (m - 69) / 12);
+  };
 
   webaudio.create_phasor = function(freq, buffer_size)
   {
@@ -37,4 +43,7 @@
     return s;
   };
 
+  webaudio.create_line = function(values, buffer_size)
+  {
+  };
 })(this.webaudio = {});
