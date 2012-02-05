@@ -11,39 +11,79 @@
       stroke-linecap="round"/>
     <line id="hwall" x1="-50" x2="50" stroke-width="10" stroke="#443d2d"
       stroke-linecap="round"/>
+    <!--
     <g id="player" fill="#ff4040" stroke="#ff4040" stroke-width="8"
       stroke-linejoin="round">
       <ellipse cx="0" cy="12.5" rx="25" ry="12.5"/>
       <polyline points="-25 12.5 0 -40 25 12.5"/>
     </g>
+    -->
+    <text font-family="sans-serif" id="player" fill="#ff4040" font-size="80"
+      text-anchor="middle" alignment-baseline="middle" cursor="default">♖</text>
+    <text font-family="sans-serif" id="heavy" fill="#08f" font-size="80"
+      text-anchor="middle" alignment-baseline="middle" cursor="default">☃</text>
   </defs>
 
   <g id="tiles"/>
   <g id="walls"/>
   <g id="pieces"/>
 
+  <!--
+  <g id="hand">
+    <text font-family="sans-serif" font-size="400" fill="#f08" transform="scale(-1, 1) rotate(-45) translate(-400, 50)" text-ancore="middle" alignment-baseline="middle">☛</text>
+  </g>
+-->
+
   <script><![CDATA[
 
     // TODO
     // [x] drag to move
     // [x] animation
-    // [ ] other pieces (with multiple targets?)
+    // [x] other pieces (unmovable)
+    // [ ] other pieces (movable)
     // [ ] new maps
     // [ ] new obstacles
     // [ ] HTML host page
     // [ ] isometric view
+    // [ ] hand to show how to drag
 
+    // Simple introductory map to experiment with movement in a safe environment
+    var map = [
+      " - - - - - ",
+      "|* * # * *|",
+      "           ",
+      "|* * * * *|",
+      " -         ",
+      "  |* * * *|",
+      "   -       ",
+      "    |* * *|",
+      "     - - - ",
+    ];
+    var positions = { player: { i: 3, j: 1 } };
+
+/*
     var map = [
       "         ",
-      " @ * *|* ",
+      " * * *|* ",
       "         ",
       "   * * * ",
       "         ",
       " *|* * * ",
       "     -   ",
       "   #     ",
-      "         "
+      "   -     "
     ];
+
+    var positions = { player: { i: 1, j: 1 } };
+*/
+
+    /*
+    var map = [
+      "                                                                       ",
+      "|* * * * * * * * * * * * * * * * @ * * * * * * * * * * * * * * * * * *|",
+      "                                                                       ",
+    ];
+    */
 
 /*
     // From Rasende Roboter
@@ -59,7 +99,7 @@
       "     -                       -   ",
       "|* * #|* * * * * * * * * * * *|*|",
       " -                               ",
-      "|* * * * * * *|* * * * * @ * * *|",
+      "|* * * * * * *|* * * * * * * * *|",
       "   -           -                 ",
       "|*|* * * * * * * * * * *|* * * *|",
       "               - -       -       ",
@@ -82,16 +122,30 @@
       "|* * * * *|* * * * * * *|* * * *|",
       " - - - - - - - - - - - - - - - - "
     ];
+    var positions = { player: { i: 11, j: 25 },
+      heavy: [{ i: 1, j: 1 }, { i: 5, j: 3 }, { i: 9, j: 15 }] };
 */
 
     function obstaclep(i, j, incr, jncr)
     {
-      if (i % 2 === 1 && j % 2 === 1 &&
-        (map[i][j] === " " || map[i][j] === "#")) {
-        return true;
+      if (i % 2 === 1 && j % 2 === 1) {
+        if (map[i][j] === " ") {
+          return true;
+        }
       }
       i += incr;
       j += jncr;
+
+      var obstacle = false;
+      ["heavy"].forEach(function(kind) {
+          if (positions.hasOwnProperty(kind)) {
+            positions[kind].forEach(function(p) {
+                if (i + incr === p.i && j + jncr === p.j) obstacle = true;
+              });
+          }
+        });
+      if (obstacle) return true;
+
       return map[i][j] === "|" || map[i][j] === "-";
     }
 
@@ -150,73 +204,6 @@
           var tile = flexo.svg_href("use",
             map[i][j] === "#" ? "#vtile" : "#tile", { x: x, y: y });
           tiles.appendChild(tile);
-          if (map[i][j] === "@") {
-            map[i][j] = "*";
-            var use = flexo.svg_href("use", "#player", { x: x, y: y });
-            (function(i_, j_) {
-              flexo.getter_setter(player, "i", function() { return i_; },
-                function(i__) {
-                  var k = i_;
-                  if (i_ < i__) {
-                    var m = map.length - 1;
-                    for (; k < m && !obstaclep(k, j_, +1, 0); ++k);
-                  } else if (i_ > i__) {
-                    for (; k > 0 && !obstaclep(k, j_, -1, 0); --k);
-                  }
-                  player.move(use, k, j_);
-                  i_ = k;
-                });
-              flexo.getter_setter(player, "j", function() { return j_; },
-                function(j__) {
-                  var k = j_;
-                  if (j_ < j__) {
-                    var n = map[i_].length - 1;
-                    for (; k < n && !obstaclep(i_, k, 0, +1); ++k);
-                  } else if (j_ > j__) {
-                    for (; k > 0 && !obstaclep(i_, k, 0, -1); --k);
-                  }
-                  player.move(use, i_, k);
-                  j_ = k;
-                });
-            })(i, j);
-            use.addEventListener("mousedown", function(e) {
-                if (!player.can_move || e.button !== 0) return;
-                var p = flexo.event_svg_point(e, document.documentElement);
-                var line = flexo.svg("line", { x1: (player.j - 1) * 50,
-                  y1: (player.i - 1) * 50, x2: p.x, y2: p.y, stroke: "#08f",
-                  "stroke-width": 8, "stroke-linecap": "round",
-                  "stroke-opacity": 0.5 });
-                use.parentNode.appendChild(line);
-                var move = function(e) {
-                  var p = flexo.event_svg_point(e, document.documentElement);
-                  var i = Math.floor(p.y / 50) + 1;
-                  var j = Math.floor(p.x / 50) + 1;
-                  line.setAttribute("stroke",
-                    i === player.i || i === player.i - 1 ||
-                    j === player.j || j === player.j - 1 ? "#0f8" : "#888");
-                  line.setAttribute("x2", p.x);
-                  line.setAttribute("y2", p.y);
-                };
-                var up = function(e) {
-                  flexo.safe_remove(line);
-                  document.removeEventListener("mousemove", move);
-                  document.removeEventListener("mouseup", up);
-                  var p = flexo.event_svg_point(e, document.documentElement);
-                  var i = Math.floor(p.y / 50) + 1;
-                  var j = Math.floor(p.x / 50) + 1;
-                  if ((i === player.i || i === player.i - 1) &&
-                      (j !== player.j && j !== player.j - 1)) {
-                    player.j = j;
-                  } else if ((j === player.j || j === player.j - 1) &&
-                      (i !== player.i && i !== player.i - 1)) {
-                    player.i = i;
-                  }
-                };
-                document.addEventListener("mousemove", move);
-                document.addEventListener("mouseup", up);
-              }, false);
-            pieces.appendChild(use);
-          }
         } else if (map[i][j] === "-") {
           walls.appendChild(flexo.svg_href("use", "#hwall", { x: x, y: y }));
         } else if (map[i][j] === "|") {
@@ -224,6 +211,88 @@
         }
       }
     }
+
+    // Setup pieces
+    var x = (positions.player.j - 1) * 50;
+    var y = (positions.player.i - 1) * 50;
+    var use = flexo.svg_href("use", "#player", { x: x, y: y });
+    (function(i_, j_) {
+      flexo.getter_setter(player, "i", function() { return i_; },
+        function(i__) {
+          var k = i_;
+          if (i_ < i__) {
+            var m = map.length - 1;
+            for (; k < m && !obstaclep(k, j_, +1, 0); ++k);
+          } else if (i_ > i__) {
+            for (; k > 0 && !obstaclep(k, j_, -1, 0); --k);
+          }
+          player.move(use, k, j_);
+          i_ = k;
+        });
+      flexo.getter_setter(player, "j", function() { return j_; },
+        function(j__) {
+          var k = j_;
+          if (j_ < j__) {
+            var n = map[i_].length - 1;
+            for (; k < n && !obstaclep(i_, k, 0, +1); ++k);
+          } else if (j_ > j__) {
+            for (; k > 0 && !obstaclep(i_, k, 0, -1); --k);
+          }
+          player.move(use, i_, k);
+          j_ = k;
+        });
+    })(positions.player.i, positions.player.j);
+    use.addEventListener("mousedown", function(e) {
+        if (!player.can_move || e.button !== 0) return;
+        e.preventDefault();
+        var p = flexo.event_svg_point(e, document.documentElement);
+        var line = flexo.svg("line", { x1: (player.j - 1) * 50,
+          y1: (player.i - 1) * 50, x2: p.x, y2: p.y, stroke: "#0f8",
+          "stroke-width": 8, "stroke-linecap": "round",
+          "stroke-opacity": 0.5 });
+        use.parentNode.appendChild(line);
+        var move = function(e) {
+          var p = flexo.event_svg_point(e, document.documentElement);
+          var i = Math.floor(p.y / 50) + 1;
+          var j = Math.floor(p.x / 50) + 1;
+          line.setAttribute("stroke",
+            i === player.i || i === player.i - 1 ||
+            j === player.j || j === player.j - 1 ? "#0f8" : "#888");
+          line.setAttribute("x2", p.x);
+          line.setAttribute("y2", p.y);
+        };
+        var up = function(e) {
+          flexo.safe_remove(line);
+          document.removeEventListener("mousemove", move);
+          document.removeEventListener("mouseup", up);
+          var p = flexo.event_svg_point(e, document.documentElement);
+          var i = Math.floor(p.y / 50) + 1;
+          var j = Math.floor(p.x / 50) + 1;
+          if ((i === player.i || i === player.i - 1) &&
+              (j !== player.j && j !== player.j - 1)) {
+            player.j = j;
+          } else if ((j === player.j || j === player.j - 1) &&
+              (i !== player.i && i !== player.i - 1)) {
+            player.i = i;
+          }
+        };
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+      }, false);
+  pieces.appendChild(use);
+
+  // TODO make some pieces movable
+  // TODO light pieces
+  ["heavy"].forEach(function(kind) {
+      if (positions.hasOwnProperty(kind)) {
+        positions[kind].forEach(function(p) {
+            var x = (p.j - 1) * 50;
+            var y = (p.i - 1) * 50;
+            var use = flexo.svg_href("use", "#" + kind, { x: x, y: y });
+            pieces.appendChild(use);
+          });
+      }
+    });
 
   ]]></script>
 

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Phasor</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+    </style>
+    <script src="../flexo.js"></script>
+    <script src="webaudio.js"></script>
+  </head>
+  <body>
+    <h1>Phasor</h1>
+
+    <script>
+
+      var phasor = webaudio.create_phasor(440);
+      var sin = webaudio.create_sin();
+      phasor.connect(sin);
+      sin.connect(webaudio.context.destination);
+
+      var button = flexo.ez_html("button", "Play");
+      button.onclick = function()
+      {
+        phasor.gain.gain.value = 1;
+      };
+      document.body.appendChild(button);
+
+      button = flexo.ez_html("button", "Stop");
+      button.onclick = function()
+      {
+        phasor.gain.gain.value = 0;
+      }
+      document.body.appendChild(button);
+
+    </script>
+  </body>
+</html>
