@@ -16,7 +16,13 @@
           fill="#888"/>
         <rect id="on" x="10" y="10" width="80" height="80" rx="10" ry="10"
           fill="#f80"/>
+        <rect id="led-off" x="30" y="40" width="40" height="20" rx="10" ry="10"
+          fill="#ccc"/>
+        <rect id="led-on" x="30" y="40" width="40" height="20" rx="10" ry="10"
+          fill="#f00"/>
       </defs>
+      <g id="leds"/>
+      <g id="matrix" transform="translate(0, 100)"/>
     </svg>
 
     <script>
@@ -30,12 +36,36 @@
 
       var beats = 16;
       var rows = 16;
-      var tempo = 104;
+      var tempo = 84;
+      var rate = 60000 / (4 * tempo);  // TODO time signatures
+
+      var leds = document.getElementById("leds");
+
+      var t0 = Date.now();
+      var led_on;
+      function schedule(t)
+      {
+        var beat = Math.floor(((t - t0) / rate) % beats);
+        var on = leds.querySelectorAll("use")[beat];
+        if (on !== led_on) {
+          if (led_on) led_on.setAttributeNS(flexo.XLINK_NS, "href", "#led-off");
+          led_on = on;
+          led_on.setAttributeNS(flexo.XLINK_NS, "href", "#led-on");
+        }
+        requestAnimationFrame(schedule);
+      }
+      requestAnimationFrame(schedule);
 
       var svg = document.querySelector("svg");
       svg.setAttribute("viewBox", "-50 -50 {0} {1}"
-        .fmt((beats + 1) * 100, (rows + 1) * 100));
+        .fmt((beats + 1) * 100, (rows + 2) * 100));
 
+      for (var i = 0; i < beats; ++i) {
+        var use = flexo.svg_href("use", "#led-off", { x: i * 100, y: 0 });
+        leds.appendChild(use);
+      }
+
+      var matrix = document.getElementById("matrix");
       for (var i = 0; i < rows; ++i) {
         for (var j = 0; j < beats; ++j) add_button(i, j);
       }
@@ -52,7 +82,7 @@
         };
         use.addEventListener("click", function(e) { use._toggle(); }, false);
         use._row = rows - i;
-        svg.appendChild(use);
+        matrix.appendChild(use);
       }
 
     </script>

@@ -6,32 +6,53 @@
     <style>
       body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
     </style>
-    <script src="../flexo.js"></script>
+    <script src="../../flexo.js"></script>
     <script src="webaudio.js"></script>
   </head>
   <body>
     <h1>Phasor</h1>
 
+    <ul>
+      <li>
+        <label for="gain">Gain</label>
+        <input onchange="set_gain(event)" type="range" name="gain" min="0"
+          max="127" step="1" value="0">
+      </li>
+      <li>
+        <label for="sin">Sine wave</label>
+        <input onchange="set_sin(event)" type="checkbox">
+      </li>
+    </ul>
+
+
+
     <script>
 
-      var phasor = webaudio.create_phasor(440);
-      var sin = webaudio.create_sin();
-      phasor.connect(sin);
-      sin.connect(webaudio.context.destination);
+      var phasor = webaudio.phasor(440);
+      var sin = webaudio.sin();
+      var gain = webaudio.context.createGainNode();
+      gain.gain.value = 0;
 
-      var button = flexo.ez_html("button", "Play");
-      button.onclick = function()
-      {
-        phasor.gain.gain.value = 1;
-      };
-      document.body.appendChild(button);
+      phasor.connect(gain);
+      gain.connect(webaudio.context.destination);
 
-      button = flexo.ez_html("button", "Stop");
-      button.onclick = function()
+      function set_gain(e)
       {
-        phasor.gain.gain.value = 0;
+        gain.gain.value = event.target.valueAsNumber / 127;
       }
-      document.body.appendChild(button);
+
+      function set_sin(e)
+      {
+        if (e.target.checked) {
+          phasor.disconnect(gain);
+          phasor.connect(sin);
+          sin.connect(gain);
+        } else {
+          phasor.disconnect(sin);
+          sin.disconnect(gain);
+          phasor.connect(gain);
+        }
+      }
 
     </script>
   </body>
