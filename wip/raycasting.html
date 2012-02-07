@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Raycasting</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+    </style>
+    <script src="../flexo.js"></script>
+  </head>
+  <body>
+    <canvas width="512" height="384"></canvas>
+    <script>
+
+      var canvas = document.querySelector("canvas");
+      var gc = canvas.getContext("2d");
+
+      var map = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ];
+
+      var p = Math.PI / 3;
+      var colors = [[0, 0, 0], [0, 1, 1], [2 * p, 1, 1], [4 * p, 1, 1],
+        [0, 0, 1], [p, 1, 1]];
+
+      var pos_x = 22;
+      var pos_y = 12;
+      var dir_x = -1;
+      var dir_y = 0;
+      var plane_x = 0;
+      var plane_y = 0.66;
+
+      var keys = { up: false, down: false, left: false, right: false };
+      document.addEventListener("keydown", function(e) {
+          if (e.keyCode === 37) {
+            keys.left = true;
+          } else if (e.keyCode === 38) {
+            keys.up = true;
+          } else if (e.keyCode === 39) {
+            keys.right = true;
+          } else if (e.keyCode === 40) {
+            keys.down = true;
+          }
+        }, false);
+      document.addEventListener("keyup", function(e) {
+          if (e.keyCode === 37) {
+            keys.left = false;
+          } else if (e.keyCode === 38) {
+            keys.up = false;
+          } else if (e.keyCode === 39) {
+            keys.right = false;
+          } else if (e.keyCode === 40) {
+            keys.down = false;
+          }
+        }, false);
+
+      var dirty = true;
+      var last_t = Date.now();
+      var speed = 0.01;
+      var rotation_speed = 0.0025;
+
+      function move(t)
+      {
+        var dt = t - last_t;
+        last_t = t;
+        if (keys.left) {
+          var dx = dir_x;
+          var dy = dir_y;
+          var dr = dt * rotation_speed;
+          dir_x = dx * Math.cos(dr) - dy * Math.sin(dr);
+          dir_y = dx * Math.sin(dr) + dy * Math.cos(dr);
+          var px = plane_x;
+          var py = plane_y;
+          plane_x = px * Math.cos(dr) - py * Math.sin(dr);
+          plane_y = px * Math.sin(dr) + py * Math.cos(dr);
+          dirty = true;
+        } else if (keys.right) {
+          var dx = dir_x;
+          var dy = dir_y;
+          var dr = dt * -rotation_speed;
+          dir_x = dx * Math.cos(dr) - dy * Math.sin(dr);
+          dir_y = dx * Math.sin(dr) + dy * Math.cos(dr);
+          var px = plane_x;
+          var py = plane_y;
+          plane_x = px * Math.cos(dr) - py * Math.sin(dr);
+          plane_y = px * Math.sin(dr) + py * Math.cos(dr);
+          dirty = true;
+        }
+        if (keys.up) {
+          var x = pos_x + dir_x * dt * speed;
+          var y = pos_y + dir_y * dt * speed;
+          //if (map[Math.round(x)][Math.round(y)] === 0) {
+            pos_x = x;
+            pos_y = y;
+            dirty = true;
+          //}
+        } else if (keys.down) {
+          var x = pos_x - dir_x * dt * speed;
+          var y = pos_y - dir_y * dt * speed;
+          //if (map[Math.round(x)][Math.round(y)] === 0) {
+            pos_x = x;
+            pos_y = y;
+            dirty = true;
+          //}
+        }
+        if (dirty) {
+          draw();
+          dirty = false;
+        }
+        requestAnimationFrame(move);
+      }
+
+      move();
+
+      /*
+      document.addEventListener("keyup", function(e) {
+        }, false);
+        */
+
+      function draw()
+      {
+        gc.fillStyle = "#000";
+        gc.fillRect(0, 0, canvas.width, canvas.height);
+        for (var x = 0; x < canvas.width; ++x) {
+          var camera_x = 2 * x / canvas.width - 1;
+          var raypos_x = pos_x;
+          var raypos_y = pos_y;
+          var raydir_x = dir_x + plane_x * camera_x;
+          var raydir_y = dir_y + plane_y * camera_x;
+          var map_x = Math.round(raypos_x);
+          var map_y = Math.round(raypos_y);
+          var delta_dist_x =
+            Math.sqrt(1 + (raydir_y * raydir_y) / (raydir_x * raydir_x));
+          var delta_dist_y =
+            Math.sqrt(1 + (raydir_x * raydir_x) / (raydir_y * raydir_y));
+          var hit = false;
+          var side_dist_x, side_dist_y, perp_wall_dist, step_x, step_y;
+          var side = false;
+          if (raydir_x < 0) {
+            step_x = -1;
+            side_dist_x = (raypos_x - map_x) * delta_dist_x;
+          } else {
+            step_x = 1;
+            side_dist_x = (map_x + 1 - raypos_x) * delta_dist_x;
+          }
+          if (raydir_y < 0) {
+            step_y = -1;
+            side_dist_y = (raypos_y - map_y) * delta_dist_y;
+          } else {
+            step_y = 1;
+            side_dist_y = (map_y + 1 - raypos_y) * delta_dist_y;
+          }
+          while (!hit &&
+            map[map_x] !== undefined && map[map_x][map_y] !== undefined) {
+            if (side_dist_x < side_dist_y) {
+              side_dist_x += delta_dist_x;
+              map_x += step_x;
+              side = false;
+            } else {
+              side_dist_y += delta_dist_y;
+              map_y += step_y;
+              side = true;
+            }
+            hit = map[map_x] !== undefined && map[map_x][map_y] !== undefined &&
+              map[map_x][map_y] > 0;
+          }
+          perp_wall_dist = side ?
+            Math.abs((map_y - raypos_y + (1 - step_y) / 2) / raydir_y) :
+            Math.abs((map_x - raypos_x + (1 - step_x) / 2) / raydir_x);
+          var height = Math.abs(Math.floor(canvas.height / perp_wall_dist));
+          var y0 = -height / 2 + canvas.height / 2;
+          var y1 = height / 2 + canvas.height / 2;
+          if (map[map_x] !== undefined && map[map_x][map_y] !== undefined) {
+            var color = colors[map[map_x][map_y]];
+            gc.strokeStyle = flexo.hsv_to_hex(color[0], color[1], color[2] *
+              side ? 0.5 : 1);
+            gc.beginPath();
+            gc.moveTo(x, y0);
+            gc.lineTo(x, y1);
+            gc.stroke();
+          }
+        }
+      }
+
+    </script>
+  </body>
+</html>
+
