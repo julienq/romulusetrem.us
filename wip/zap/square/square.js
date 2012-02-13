@@ -1,3 +1,5 @@
+zap.title = "Square";
+
 var frame = zap.frame(320, 240);
 frame.scale = 2;
 frame.cursor = "none";

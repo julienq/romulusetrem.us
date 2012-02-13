@@ -1,5 +1,15 @@
+// Next: http://vimeo.com/channels/makingflashpunkgames#16406608
 (function(zap)
 {
+  var title;
+  flexo.getter_setter(zap, "title", function() { return title; },
+    function(t) {
+      title = t;
+      document.title = title;
+      var h1 = document.querySelector("h1.zap");
+      if (h1) h1.textContent = title;
+    });
+
   zap.frame = function(width, height, id)
   {
     var frame = flexo.create_object({
@@ -34,7 +44,7 @@
         var p = flexo.event_svg_point(e, svg);
         mouse_x = p.x;
         mouse_y = p.y;
-      });
+      }, false);
     flexo.getter_setter(frame, "mouse_x", function() { return mouse_x; });
     flexo.getter_setter(frame, "mouse_y", function() { return mouse_y; });
 
@@ -47,12 +57,11 @@
           button = true;
           last_check = repeat;
         }
-      });
+      }, false);
     document.addEventListener("mouseup", function(e) {
         e.preventDefault();
         if (e.button === 0) button = false;
-
-      });
+      }, false);
     flexo.getter_setter(frame, "button", function() {
         if (button) {
           if (typeof last_check === "boolean") {
@@ -69,6 +78,31 @@
     flexo.getter_setter(frame, "button_repeat", function() { return repeat; },
         function(r) { repeat = r; });
 
+    var keys = {};
+    document.addEventListener("keydown", function(e) {
+        if (e.keyCode === 37) {
+          keys.left = true;
+        } else if (e.keyCode === 38) {
+          keys.up = true;
+        } else if (e.keyCode === 39) {
+          keys.right = true;
+        } else if (e.keyCode === 40) {
+          keys.down = true;
+        }
+      }, false);
+    document.addEventListener("keyup", function(e) {
+        if (e.keyCode === 37) {
+          keys.left = false;
+        } else if (e.keyCode === 38) {
+          keys.up = false;
+        } else if (e.keyCode === 39) {
+          keys.right = false;
+        } else if (e.keyCode === 40) {
+          keys.down = false;
+        }
+      }, false);
+    flexo.getter_setter(frame, "keys", function() { return keys; });
+
     flexo.getter_setter(frame, "cursor",
         function() {
           return window.getComputedStyle(svg).getPropertyValue("cursor");
@@ -78,13 +112,15 @@
         });
 
 
-    var scale = 1;
+    var scale;
     flexo.getter_setter(frame, "scale", function() { return scale; },
         function(s) {
           scale = s;
+          svg.setAttribute("transform", "scale({0})".fmt(scale));
           svg.setAttribute("width", "{0}px".fmt(width * scale));
           svg.setAttribute("height", "{0}px".fmt(height * scale));
         });
+    frame.scale = 1;
 
     var scenes = [];
     flexo.getter_setter(frame, "scenes", function() { return scenes; });
@@ -107,11 +143,20 @@
   zap.scene = function(id)
   {
     var scene = flexo.create_object({
-      // Add an object to the scene
-      add: function(obj)
+      // Add an entity to the scene
+      add: function(entity)
       {
-        this.element.appendChild(obj.element);
-        if (obj.element.id) this["$" + obj.element.id] = obj;
+        this.element.appendChild(entity.element);
+        if (entity.element.id) this["$" + entity.element.id] = entity;
+        if (entity.kind) {
+          if (!this.kinds[entity.kind]) this.kinds[entity.kind] = [];
+          this.kinds[entity.kind].push(entity);
+        }
+      },
+
+      collide: function(entity, others)
+      {
+        return others.some(function(other) { return entity.collide(other); });
       },
 
       // Stubs
@@ -120,23 +165,89 @@
     });
     var svg = flexo.svg("g", { id: id });
     flexo.getter_setter(scene, "element", function() { return svg; });
+    var kinds = {};
+    flexo.getter_setter(scene, "kinds", function() { return kinds; });
     return scene;
   };
 
+  zap.entity = function()
+  {
+    var entity = flexo.create_object({
+        // on, once
+
+        collide: function(other)
+        {
+          var ra = this.hitbox;
+          var ax = ra.x + this.x;
+          var ay = ra.y + this.y;
+          var rb = other.hitbox;
+          var bx = rb.x + other.x;
+          var by = rb.y + other.y;
+          return ((ax + ra.width) >= bx) && (ax <= (bx + rb.width)) &&
+            ((ay + ra.height) >= by) && (ay <= (by + rb.height));
+        }
+      });
+    return entity;
+  }
+
   zap.svg = function(name, properties)
   {
-    var rect = flexo.create_object({});
+    var entity = zap.entity();
     var svg = flexo.svg(name, properties);
-    flexo.getter_setter(rect, "element", function() { return svg; });
-    flexo.getter_setter(rect, "x", function() { return svg.getAttribute("x"); },
-        function(x) { svg.setAttribute("x", x); });
-    flexo.getter_setter(rect, "y", function() { return svg.getAttribute("y"); },
-        function(y) { svg.setAttribute("y", y); });
-    flexo.getter_setter(rect, "fill",
-        function() { return svg.getAttribute("fill"); },
-        function(fill) { svg.setAttribute("fill", fill);
-      });
-    return rect;
+    flexo.getter_setter(entity, "element", function() { return svg; });
+    if (name === "circle") {
+      get_set_float_trait(entity, "cx");
+      get_set_float_trait(entity, "cy");
+    } else if (name === "line") {
+      get_set_float_trait(entity, "x1");
+      get_set_float_trait(entity, "y1");
+      get_set_float_trait(entity, "x2");
+      get_set_float_trait(entity, "y2");
+    } else {
+      get_set_float_trait(entity, "x");
+      get_set_float_trait(entity, "y");
+    }
+    get_set_float_trait(entity, "width");
+    get_set_float_trait(entity, "height");
+    get_set_trait(entity, "fill", "#000");
+    return entity;
   };
+
+  zap.image = function(src, properties)
+  {
+    var entity = zap.svg("image", properties);
+    entity.element.setAttributeNS(flexo.XLINK_NS, "href", src);
+    var img = new Image();
+    img.src = src;
+    img.onload = function()
+    {
+      if (!properties || !properties.hasOwnProperty("width")) {
+        entity.element.setAttribute("width", img.width);
+      }
+      if (!properties || !properties.hasOwnProperty("height")) {
+        entity.element.setAttribute("height", img.height);
+      }
+      flexo.notify(entity, "#load");
+    }
+    return entity;
+  };
+
+
+  // Utility functions
+
+  function get_set_trait(obj, trait, default_)
+  {
+    flexo.getter_setter(obj, trait,
+        function() { return flexo.get_trait(obj.element, trait, default_); },
+        function(t) { obj.element.setAttribute(trait, t); });
+  }
+
+  function get_set_float_trait(obj, trait, default_)
+  {
+    flexo.getter_setter(obj, trait,
+        function() { return flexo.get_float_trait(obj.element, trait,
+          default_); },
+        function(t) { obj.element.setAttribute(trait, t); });
+  }
 
 })(this.zap = {});
