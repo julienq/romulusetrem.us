@@ -1,4 +1,3 @@
-// Next: http://vimeo.com/channels/makingflashpunkgames#16406608
 (function(zap)
 {
   var title;
@@ -10,8 +9,18 @@
       if (h1) h1.textContent = title;
     });
 
-  zap.frame = function(width, height, id)
+  zap.frame = function(width, height, id, parent)
   {
+    if (typeof id !== "string") {
+      parent = id;
+      id = undefined;
+    }
+    if (!parent) {
+      parent = document.getElementById("zap") ||
+        document.querySelector("div") || document.body;
+    }
+    if (parent.tabIndex < 0) parent.tabIndex = 0;
+
     var frame = flexo.create_object({
         add_scene: function(scene)
         {
@@ -78,8 +87,10 @@
     flexo.getter_setter(frame, "button_repeat", function() { return repeat; },
         function(r) { repeat = r; });
 
+    // Set tabindex on parent div and watch keyboard events on that div
     var keys = {};
-    document.addEventListener("keydown", function(e) {
+    parent.addEventListener("keydown", function(e) {
+        e.preventDefault();
         if (e.keyCode === 37) {
           keys.left = true;
         } else if (e.keyCode === 38) {
@@ -90,7 +101,8 @@
           keys.down = true;
         }
       }, false);
-    document.addEventListener("keyup", function(e) {
+    parent.addEventListener("keyup", function(e) {
+        e.preventDefault();
         if (e.keyCode === 37) {
           keys.left = false;
         } else if (e.keyCode === 38) {
@@ -117,16 +129,16 @@
         function(s) {
           scale = s;
           svg.setAttribute("transform", "scale({0})".fmt(scale));
-          svg.setAttribute("width", "{0}px".fmt(width * scale));
-          svg.setAttribute("height", "{0}px".fmt(height * scale));
+          parent.style.width = "{0}px".fmt(width * scale);
+          parent.style.height = "{0}px".fmt(height * scale);
         });
     frame.scale = 1;
 
     var scenes = [];
     flexo.getter_setter(frame, "scenes", function() { return scenes; });
 
-    var parent = document.getElementById("zap") || document.body;
     parent.appendChild(svg);
+    parent.focus();
 
     var t0 = Date.now;
     var t;
