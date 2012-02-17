@@ -1,6 +1,10 @@
 // TODO
 // [x] onion skin
-// [ ] play/pause/stop
+// [x] play
+// [ ] pause
+// [ ] stop
+// [ ] timeline
+// [ ] scrubbing
 // [ ] drag thumbs to reorder
 // [x] select thumbs
 // [ ] multiple selection
@@ -9,18 +13,48 @@
 // [x] remove frame
 // [ ] show command
 // [ ] number thumbnails
+// [ ] auto save/load
+// [ ] background
+
+
+var selection;
+var thumbnails = document.getElementById("thumbnails");
 
 var undo_stack = [];
 var redo_stack = [];
 
-var args = flexo.get_args({ layers: "3", onion_skin: "true" });
+var args = flexo.get_args({ layers: 3, onion_skin: "true", fps: 9,
+  id: flexo.random_id(6) });
 var layers = Math.max(1, parseInt(args.layers, 10));
+var fps = Math.max(1, parseFloat(args.fps));
 var show_onion_skin = flexo.is_true(args.onion_skin);
 var draw = Object.create(svg_draw).init(document.getElementById("canvas"),
     layers);
+draw.svg.id = args.id;
 new_frame();
 
-var selection;
+var transport =
+{
+  play: function()
+  {
+    var p = (function()
+    {
+      var next = selection.nextSibling ||
+        selection.parentNode.firstElementChild;
+      this.playing =
+        setTimeout(function() { select_thumb(next); p() }, 1000 / fps);
+    }).bind(this);
+    if (selection) p();
+  },
+
+  pause: function()
+  {
+    if (this.playing) {
+      clearTimeout(this.playing);
+      delete this.playing;
+    }
+  }
+};
 
 function select_thumb(thumb)
 {
@@ -31,8 +65,6 @@ function select_thumb(thumb)
     draw.show_frame(thumb.querySelector("use"));
   }
 }
-
-var thumbnails = document.getElementById("thumbnails");
 
 // Delete the current selection, with a command
 function delete_selection()
@@ -88,13 +120,30 @@ function onion_skin()
 
 function play_pause()
 {
+  if (transport.playing) {
+    transport.pause();
+    draw.layers = show_onion_skin ? layers : 1;
+  } else {
+    draw.layers = 1;
+    transport.play();
+  }
 }
 
 function save()
 {
-  draw.save(function(req) {
-      console.log(JSON.parse(req.responseText));
-    });
+  draw.save(function(req) { console.log(req.status); });
+}
+
+function select_next()
+{
+  var next = selection && selection.nextSibling;
+  if (next) select_thumb(next);
+}
+
+function select_prev()
+{
+  var prev = selection && selection.previousSibling;
+  if (prev) select_thumb(prev);
 }
 
 flexo.listen(draw, "@drawn", function() {
@@ -129,14 +178,16 @@ function redo()
 }
 
 var keys = [];
-keys[32] = function() { play_pause(); };        // space
-keys[65] = function() { new_frame(true); };     // A
-keys[73] = function() { new_frame(); };         // I
-keys[79] = function() { onion_skin(); };        // O
-keys[82] = function() { redo(); };              // R
-keys[83] = function() { save(); };              // S
-keys[85] = function() { undo(); };              // U
-keys[88] = function() { delete_selection(); };  // X
+keys[32] = play_pause;                       // space
+keys[65] = function() { new_frame(true); };  // A
+keys[72] = select_prev;                      // H
+keys[73] = new_frame;                        // I
+keys[76] = select_next;                      // L
+keys[79] = onion_skin;                       // O
+keys[82] = redo;                             // R
+keys[83] = save;                             // S
+keys[85] = undo;                             // U
+keys[88] = delete_selection;                 // X
 
 document.addEventListener("keydown", function(e) {
     if (!e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {

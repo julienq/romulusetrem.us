@@ -6,6 +6,7 @@
 // [x] redo
 // [x] several frames
 // [x] layers (onion skin)
+// [ ] disable smoothing
 
 var svg_draw =
 {
@@ -16,14 +17,10 @@ var svg_draw =
     this.counter = 0;
     this.defs = flexo.svg("defs");
     div.parentNode.insertBefore(this.defs, div);
-    this.svg = flexo.svg("svg");
-    this.svg.setAttribute("stroke-linejoin", "round");
-    this.svg.setAttribute("stroke-linecap", "round");
-    this.svg.setAttribute("stroke", "#ff4040");
-    this.svg.setAttribute("stroke-width", "4");
-    this.svg.setAttribute("fill", "none");
-    this.svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(div.offsetWidth,
-          div.offsetHeight))
+    this.svg = flexo.svg("svg", { "stroke-linejoin": "round",
+      "stroke-linecap": "round", stroke: "#ff4040", "stroke-width": 4,
+      fill: "none",
+      viewBox: "0 0 {0} {1}".fmt(div.offsetWidth, div.offsetHeight) });
     div.appendChild(this.svg);
     this.g_layers = flexo.svg("g");
     this.svg.appendChild(this.g_layers);
@@ -140,27 +137,17 @@ var svg_draw =
   // Save the current drawing
   save: function(f)
   {
-    if (!this.svg.id) {
-      flexo.request_uri("/id", (function(req) {
-          this.svg.setAttribute("id", JSON.parse(req.responseText).id);
-          this.save(f);
-        }).bind(this));
-    } else {
-      var svg = this.svg.cloneNode(false);
-      svg.setAttribute("xmlns", flexo.SVG_NS);
-      svg.setAttribute("xmlns:xlink", flexo.XLINK_NS);
-      svg.appendChild(this.defs.cloneNode(true));
-      svg.appendChild(flexo.svg("use", { "xlink:href":
-        this.use.getAttributeNS(flexo.XLINK_NS, "href") }));
-      var div = flexo.html("div");
-      div.appendChild(svg);
-      var req = new XMLHttpRequest();
-      req.open("POST", "/save/" + this.svg.id + ".svg");
-      req.setRequestHeader("Content-type", "image/svg+xml");
-      req.onreadystatechange = function() { if (req.readyState === 4) f(req); };
-      req.send(div.innerHTML);
-    }
-  },
+    var svg = this.svg.cloneNode(false);
+    svg.setAttribute("xmlns", flexo.SVG_NS);
+    svg.setAttribute("xmlns:xlink", flexo.XLINK_NS);
+    svg.appendChild(this.defs.cloneNode(true));
+    svg.appendChild(flexo.svg("use", { "xlink:href":
+      this.use.getAttributeNS(flexo.XLINK_NS, "href") }));
+    var div = flexo.html("div");
+    div.appendChild(svg);
+    flexo.ez_xhr("images/{0}.svg".fmt(this.svg.id), { method: "POST",
+      "Content-type": "image/svg+xml", data: div.innerHTML }, f);
+  }
 };
 
 function d_from_points(points)

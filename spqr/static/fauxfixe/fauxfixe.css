@@ -1,0 +1,9 @@
+body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+  background-color: #444; width: 854px; margin: 8px auto; }
+#canvas { width: 854px; height: 480px; background-color: white;
+  -webkit-border-radius: 12px; -moz-border-radius: 12px; }
+#thumbnails { margin-top: 8px; width: 1280px; }
+.thumb { width: 128px; height: 72px; background-color: white;
+  display: inline-block; -webkit-border-radius: 4px; -moz-border-radius: 4px;
+  position: relative; }
+.selected { border: solid 6px #f80; margin: -6px; z-index: 1 }
