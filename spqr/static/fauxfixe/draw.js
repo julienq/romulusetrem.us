@@ -7,6 +7,8 @@
 // [x] several frames
 // [x] layers (onion skin)
 // [ ] disable smoothing
+// [ ] background sketch
+// [ ] background layer
 
 var svg_draw =
 {
@@ -147,7 +149,27 @@ var svg_draw =
     div.appendChild(svg);
     flexo.ez_xhr("images/{0}.svg".fmt(this.svg.id), { method: "POST",
       "Content-type": "image/svg+xml", data: div.innerHTML }, f);
+  },
+
+  set_sketch: function(src, w, h)
+  {
+    if (!this.sketch) {
+      this.sketch = flexo.svg("image");
+      this.svg.insertBefore(this.sketch, this.svg.firstChild);
+    }
+    this.sketch.setAttributeNS(flexo.XLINK_NS, "href", src);
+    this.sketch.setAttribute("width", w);
+    this.sketch.setAttribute("height", h);
+  },
+
+  cycle_sketch_opacity: function()
+  {
+    if (this.sketch) {
+      var op = flexo.get_float_trait(this.sketch, "opacity", 1);
+      this.sketch.setAttribute("opacity", op === 0 ? 1 : op - 0.5);
+    }
   }
+
 };
 
 function d_from_points(points)

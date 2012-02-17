@@ -7,3 +7,4 @@ body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
   display: inline-block; -webkit-border-radius: 4px; -moz-border-radius: 4px;
   position: relative; }
 .selected { border: solid 6px #f80; margin: -6px; z-index: 1 }
+.hidden { display: none; }

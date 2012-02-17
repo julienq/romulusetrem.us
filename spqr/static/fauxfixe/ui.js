@@ -1,7 +1,7 @@
 // TODO
 // [x] onion skin
 // [x] play
-// [ ] pause
+// [x] pause
 // [ ] stop
 // [ ] timeline
 // [ ] scrubbing
@@ -14,6 +14,7 @@
 // [ ] show command
 // [ ] number thumbnails
 // [ ] auto save/load
+// [ ] background sketch
 // [ ] background
 
 
@@ -24,13 +25,34 @@ var undo_stack = [];
 var redo_stack = [];
 
 var args = flexo.get_args({ layers: 3, onion_skin: "true", fps: 9,
-  id: flexo.random_id(6) });
+  id: flexo.random_id(6), error: 4 });
 var layers = Math.max(1, parseInt(args.layers, 10));
 var fps = Math.max(1, parseFloat(args.fps));
 var show_onion_skin = flexo.is_true(args.onion_skin);
 var draw = Object.create(svg_draw).init(document.getElementById("canvas"),
-    layers);
+    layers); //, args.error);
 draw.svg.id = args.id;
+
+draw.svg.addEventListener("dragenter", dragenter, false);
+draw.svg.addEventListener("dragover", dragover, false);
+draw.svg.addEventListener("dragleave", dragleave, false);
+draw.svg.addEventListener("drop", drop, false);
+
+function dragenter(e) { e.preventDefault(); }
+function dragover(e) { e.preventDefault(); }
+function dragleave(e) { e.preventDefault(); }
+function drop(e)
+{
+  e.preventDefault();
+  var file = e.dataTransfer.files[0];
+  if (file && file.type.match(/^image\/.*/)) {
+    draw.set_sketch(window.webkitURL ? window.webkitURL.createObjectURL(file) :
+      window.URL ? window.URL.createObjectURL(file) :
+      createObjectURL(file), 854, 480);
+  }
+}
+
+
 new_frame();
 
 var transport =
@@ -177,6 +199,8 @@ function redo()
   }
 }
 
+function sketch_opacity() { draw.cycle_sketch_opacity(); }
+
 var keys = [];
 keys[32] = play_pause;                       // space
 keys[65] = function() { new_frame(true); };  // A
@@ -187,6 +211,7 @@ keys[79] = onion_skin;                       // O
 keys[82] = redo;                             // R
 keys[83] = save;                             // S
 keys[85] = undo;                             // U
+keys[86] = sketch_opacity;                   // V
 keys[88] = delete_selection;                 // X
 
 document.addEventListener("keydown", function(e) {
