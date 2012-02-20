@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Krakatoa</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      div { background-color: #08f; width: 640px; margin: auto; }
+    </style>
+  </head>
+  <body>
+    <div id="screen">
+      <svg viewBox="0 0 320 480">
+        <g id="letters"/>
+        <polygon points="-40,480 -40,440 120,300 200,300 360,440 360,480"
+          fill="#604830"/>
+      </svg>
+    </div>
+
+    <script src="../flexo.js"></script>
+    <script>
+      var letters = document.getElementById("letters");
+      var particles = [];
+      var x0 = 160;
+      var y0 = 340;
+
+      function erupt()
+      {
+        particles.forEach(function(p) {
+            if (--p.__ttl === 0) {
+              particles.shift();
+              p.parentNode.removeChild(p);
+            }
+            p.__x += p.__vx;
+            p.__y += p.__vy;
+            p.setAttribute("x", p.__x);
+            p.setAttribute("y", p.__y);
+            p.setAttribute("fill-opacity", p.__ttl / 500);
+          });
+        if (Math.random() < .5) {
+          var particle = flexo.svg("text", { x: x0, y: y0,
+            "font-size": flexo.random_int(48, 72),
+            fill: flexo.get_color_20(flexo.random_int(0, 19)),
+            "font-weight": "bold", "text-anchor": "middle" },
+            flexo.random_element("ABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+          particle.__x = x0;
+          particle.__y = y0;
+          particle.__vx = flexo.random_number(-1, 1);
+          particle.__vy = flexo.random_number(-7, -1);
+          particle.__ttl = 400;
+          letters.appendChild(particle);
+          particles.push(particle);
+        }
+        requestAnimationFrame(erupt);
+      }
+
+      erupt();
+
+    </script>
+
+  </body>
+</html>
