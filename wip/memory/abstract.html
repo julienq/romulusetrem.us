@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Memory</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
+        background-color: #187757 }
+    </style>
+  </head>
+  <body>
+    <svg>
+      <defs>
+        <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
+          width="100" height="100">
+            <line stroke="#55bef2" y1="0" x2="0"/>
+            <line stroke="#55bef2" y1="2" x2="2"/>
+            <line stroke="#55bef2" y1="4" x2="4"/>
+            <line stroke="#55bef2" y1="6" x2="6"/>
+            <line stroke="#55bef2" y1="8" x2="8"/>
+            <line stroke="#55bef2" y1="10" x2="10"/>
+            <line stroke="#55bef2" y1="12" x2="12"/>
+            <line stroke="#55bef2" y1="14" x2="14"/>
+            <line stroke="#55bef2" y1="16" x2="16"/>
+            <line stroke="#55bef2" y1="18" x2="18"/>
+            <line stroke="#55bef2" y1="20" x2="20"/>
+            <line stroke="#55bef2" y1="22" x2="22"/>
+            <line stroke="#55bef2" y1="24" x2="24"/>
+            <line stroke="#55bef2" y1="26" x2="26"/>
+            <line stroke="#55bef2" y1="28" x2="28"/>
+            <line stroke="#55bef2" y1="30" x2="30"/>
+            <line stroke="#55bef2" y1="32" x2="32"/>
+            <line stroke="#55bef2" y1="34" x2="34"/>
+            <line stroke="#55bef2" y1="36" x2="36"/>
+            <line stroke="#55bef2" y1="38" x2="38"/>
+            <line stroke="#55bef2" y1="40" x2="40"/>
+            <line stroke="#55bef2" y1="42" x2="42"/>
+            <line stroke="#55bef2" y1="44" x2="44"/>
+            <line stroke="#55bef2" y1="46" x2="46"/>
+            <line stroke="#55bef2" y1="48" x2="48"/>
+            <line stroke="#55bef2" y1="50" x2="50"/>
+            <line stroke="#55bef2" y1="52" x2="52"/>
+            <line stroke="#55bef2" y1="54" x2="54"/>
+            <line stroke="#55bef2" y1="56" x2="56"/>
+            <line stroke="#55bef2" y1="58" x2="58"/>
+            <line stroke="#55bef2" y1="60" x2="60"/>
+            <line stroke="#55bef2" y1="62" x2="62"/>
+            <line stroke="#55bef2" y1="64" x2="64"/>
+            <line stroke="#55bef2" y1="66" x2="66"/>
+            <line stroke="#55bef2" y1="68" x2="68"/>
+            <line stroke="#55bef2" y1="70" x2="70"/>
+            <line stroke="#55bef2" y1="72" x2="72"/>
+            <line stroke="#55bef2" y1="74" x2="74"/>
+            <line stroke="#55bef2" y1="76" x2="76"/>
+            <line stroke="#55bef2" y1="78" x2="78"/>
+            <line stroke="#55bef2" y1="80" x2="80"/>
+            <line stroke="#55bef2" y1="82" x2="82"/>
+            <line stroke="#55bef2" y1="84" x2="84"/>
+            <line stroke="#55bef2" y1="86" x2="86"/>
+            <line stroke="#55bef2" y1="88" x2="88"/>
+            <line stroke="#55bef2" y1="90" x2="90"/>
+            <line stroke="#55bef2" y1="92" x2="92"/>
+            <line stroke="#55bef2" y1="94" x2="94"/>
+            <line stroke="#55bef2" y1="96" x2="96"/>
+            <line stroke="#55bef2" y1="98" x2="98"/>
+            <line stroke="#55bef2" y1="100" x2="100"/>
+            <line stroke="#55bef2" x1="2" y1="100" x2="100" y2="2"/>
+            <line stroke="#55bef2" x1="4" y1="100" x2="100" y2="4"/>
+            <line stroke="#55bef2" x1="6" y1="100" x2="100" y2="6"/>
+            <line stroke="#55bef2" x1="8" y1="100" x2="100" y2="8"/>
+            <line stroke="#55bef2" x1="10" y1="100" x2="100" y2="10"/>
+            <line stroke="#55bef2" x1="12" y1="100" x2="100" y2="12"/>
+            <line stroke="#55bef2" x1="14" y1="100" x2="100" y2="14"/>
+            <line stroke="#55bef2" x1="16" y1="100" x2="100" y2="16"/>
+            <line stroke="#55bef2" x1="18" y1="100" x2="100" y2="18"/>
+            <line stroke="#55bef2" x1="20" y1="100" x2="100" y2="20"/>
+            <line stroke="#55bef2" x1="22" y1="100" x2="100" y2="22"/>
+            <line stroke="#55bef2" x1="24" y1="100" x2="100" y2="24"/>
+            <line stroke="#55bef2" x1="26" y1="100" x2="100" y2="26"/>
+            <line stroke="#55bef2" x1="28" y1="100" x2="100" y2="28"/>
+            <line stroke="#55bef2" x1="30" y1="100" x2="100" y2="30"/>
+            <line stroke="#55bef2" x1="32" y1="100" x2="100" y2="32"/>
+            <line stroke="#55bef2" x1="34" y1="100" x2="100" y2="34"/>
+            <line stroke="#55bef2" x1="36" y1="100" x2="100" y2="36"/>
+            <line stroke="#55bef2" x1="38" y1="100" x2="100" y2="38"/>
+            <line stroke="#55bef2" x1="40" y1="100" x2="100" y2="40"/>
+            <line stroke="#55bef2" x1="42" y1="100" x2="100" y2="42"/>
+            <line stroke="#55bef2" x1="44" y1="100" x2="100" y2="44"/>
+            <line stroke="#55bef2" x1="46" y1="100" x2="100" y2="46"/>
+            <line stroke="#55bef2" x1="48" y1="100" x2="100" y2="48"/>
+            <line stroke="#55bef2" x1="50" y1="100" x2="100" y2="50"/>
+            <line stroke="#55bef2" x1="52" y1="100" x2="100" y2="52"/>
+            <line stroke="#55bef2" x1="54" y1="100" x2="100" y2="54"/>
+            <line stroke="#55bef2" x1="56" y1="100" x2="100" y2="56"/>
+            <line stroke="#55bef2" x1="58" y1="100" x2="100" y2="58"/>
+            <line stroke="#55bef2" x1="60" y1="100" x2="100" y2="60"/>
+            <line stroke="#55bef2" x1="62" y1="100" x2="100" y2="62"/>
+            <line stroke="#55bef2" x1="64" y1="100" x2="100" y2="64"/>
+            <line stroke="#55bef2" x1="66" y1="100" x2="100" y2="66"/>
+            <line stroke="#55bef2" x1="68" y1="100" x2="100" y2="68"/>
+            <line stroke="#55bef2" x1="70" y1="100" x2="100" y2="70"/>
+            <line stroke="#55bef2" x1="72" y1="100" x2="100" y2="72"/>
+            <line stroke="#55bef2" x1="74" y1="100" x2="100" y2="74"/>
+            <line stroke="#55bef2" x1="76" y1="100" x2="100" y2="76"/>
+            <line stroke="#55bef2" x1="78" y1="100" x2="100" y2="78"/>
+            <line stroke="#55bef2" x1="80" y1="100" x2="100" y2="80"/>
+            <line stroke="#55bef2" x1="82" y1="100" x2="100" y2="82"/>
+            <line stroke="#55bef2" x1="84" y1="100" x2="100" y2="84"/>
+            <line stroke="#55bef2" x1="86" y1="100" x2="100" y2="86"/>
+            <line stroke="#55bef2" x1="88" y1="100" x2="100" y2="88"/>
+            <line stroke="#55bef2" x1="90" y1="100" x2="100" y2="90"/>
+            <line stroke="#55bef2" x1="92" y1="100" x2="100" y2="92"/>
+            <line stroke="#55bef2" x1="94" y1="100" x2="100" y2="94"/>
+            <line stroke="#55bef2" x1="96" y1="100" x2="100" y2="96"/>
+            <line stroke="#55bef2" x1="98" y1="100" x2="100" y2="98"/>
+            <line stroke="#55bef2" x1="100" y1="100" x2="100" y2="100"/>
+        </pattern>
+        <g id="back">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
+        </g>
+        <g id="front">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
+        </g>
+        <g id="donut">
+          <use xlink:href="#front"/>
+          <circle cx="50" cy="50" r="30"/>
+          <circle cx="50" cy="50" r="10" fill="#fcfbe3"/>
+        </g>
+        <g id="square">
+          <use xlink:href="#front"/>
+          <rect x="20" y="20" width="60" height="60"/>
+        </g>
+        <g id="triangle">
+          <use xlink:href="#front"/>
+          <polygon points="20,80 50,20 80,80"/>
+        </g>
+        <g id="hexagon">
+          <use xlink:href="#front"/>
+          <polygon points="50,20 75.98,35 75.98,65 50,80 24.02,65 24.02,35"/>
+        </g>
+        <g id="star">
+          <use xlink:href="#front"/>
+          <polygon points="60,50 74.27,32.37 53.09,40.49 40.73,21.47 41.9,44.12
+          20,50 41.9,55.88 40.73,78.53 53.09,59.51 74.27,67.63"/>
+        </g>
+        <g id="circle">
+          <use xlink:href="#front"/>
+          <circle cx="50" cy="50" r="30"/>
+        </g>
+        <g id="cross">
+          <use xlink:href="#front"/>
+          <polygon points="80,40 60,40 60,20 40,20 40,40 20,40 20,60 40,60
+            40,80 60,80 60,60 80,60"/>
+        </g>
+      </defs>
+      <g id="tiles"/>
+    </svg>
+
+    <script src="../../flexo.js"></script>
+    <script>
+
+      var COLORS = [
+        "#1693a5",  // Dutch teal
+        "#fbb829",  // Heart of gold
+        "#7faf1b",  // Elle était belle
+        "#ff0066",  // Hot pink
+        "#f02311",  // Sex on the floor
+        "#47092e"   // Nothing Man
+      ];
+
+      var SHAPES = ["donut", "square", "triangle", "hexagon", "star", "cross"];
+
+      var TILES = [];
+      SHAPES.forEach(function(shape) {
+          [].push.apply(TILES,
+            COLORS.map(function(color) { return [shape, color]; }));
+        });
+
+      var args = flexo.get_args({ w: 6, h: 4, reveal: "false" });
+      var svg = document.querySelector("svg");
+      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(args.w * 100, args.h * 100));
+      var g = document.getElementById("tiles");
+      var t = flexo.shuffle(TILES).slice(0, args.w * args.h / 2);
+      [].push.apply(t, t);
+      var tiles = flexo.shuffle(t);
+
+      for (var x = 0; x < args.w; ++x) {
+        for (var y = 0; y < args.h; ++y) {
+          add_tile(x, y);
+        }
+      }
+
+      function add_tile(x, y)
+      {
+        var tile = flexo.svg_href("use", "#" + tiles[x * args.h + y][0],
+          { x: x * 100, y: y * 100, fill: tiles[x * args.h + y][1] });
+        var back = flexo.svg_href("use", "#back", { x: x * 100, y: y * 100 });
+        g.appendChild(tile);
+        if (!flexo.is_true(args.reveal)) {
+          g.appendChild(back);
+          back.addEventListener("click", function(e) { reveal(tile); }, false);
+        }
+      }
+
+      var moves = 0;
+      var revealed;
+      var timeout;
+
+      function reveal(tile)
+      {
+        if (timeout) return;
+        tile.nextSibling.style.display = "none";
+        if (revealed) {
+          ++moves;
+          if (tile.getAttribute("fill") === revealed.getAttribute("fill") &&
+            tile.getAttributeNS(flexo.XLINK_NS, "href") ===
+            revealed.getAttributeNS(flexo.XLINK_NS, "href")) {
+            timeout = setTimeout(function() {
+                alert("Match!");
+                flexo.safe_remove(tile.nextSibling);
+                flexo.safe_remove(tile);
+                flexo.safe_remove(revealed.nextSibling);
+                flexo.safe_remove(revealed);
+                revealed = undefined;
+                timeout = null;
+                if (!g.querySelector("use")) {
+                  setTimeout(function() {
+                      alert("Cleared the board in {0} moves.".fmt(moves));
+                    }, 0);
+                }
+              }, 0);
+          } else {
+            timeout = setTimeout(function() {
+                alert("No match!");
+                tile.nextSibling.style.display = "";
+                revealed.nextSibling.style.display = "";
+                revealed = undefined;
+                timeout = null;
+              }, 0);
+          }
+        } else {
+          revealed = tile;
+        }
+      }
+
+    </script>
+  </body>
+</html>

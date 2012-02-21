@@ -14,8 +14,10 @@
 // [ ] show command
 // [ ] number thumbnails
 // [ ] auto save/load
-// [ ] background sketch
+// [x] background sketch
 // [ ] background
+// [ ] select
+// [ ] non-photo blue pen
 
 
 var selection;
@@ -46,9 +48,11 @@ function drop(e)
   e.preventDefault();
   var file = e.dataTransfer.files[0];
   if (file && file.type.match(/^image\/.*/)) {
-    draw.set_sketch(window.webkitURL ? window.webkitURL.createObjectURL(file) :
+    var src = window.webkitURL ? window.webkitURL.createObjectURL(file) :
       window.URL ? window.URL.createObjectURL(file) :
-      createObjectURL(file), 854, 480);
+      createObjectURL(file);
+    do_("sketch", draw.set_sketch.bind(draw),
+        draw.set_sketch.bind(draw, src, 854, 480));
   }
 }
 
@@ -171,6 +175,12 @@ function select_prev()
 flexo.listen(draw, "@drawn", function() {
     done("draw", draw.undo.bind(draw), draw.redo.bind(draw));
   });
+
+function do_(label, u, r)
+{
+  r();
+  done(label, u, r);
+}
 
 function done(label, u, r)
 {

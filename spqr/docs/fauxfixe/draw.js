@@ -153,13 +153,20 @@ var svg_draw =
 
   set_sketch: function(src, w, h)
   {
-    if (!this.sketch) {
-      this.sketch = flexo.svg("image");
-      this.svg.insertBefore(this.sketch, this.svg.firstChild);
+    if (src) {
+      if (!this.sketch) {
+        this.sketch = flexo.svg("image");
+        this.svg.insertBefore(this.sketch, this.svg.firstChild);
+      }
+      this.sketch.setAttributeNS(flexo.XLINK_NS, "href", src);
+      this.sketch.setAttribute("width", w);
+      this.sketch.setAttribute("height", h);
+    } else {
+      if (this.sketch) {
+        this.svg.removeChild(this.sketch);
+        delete this.sketch;
+      }
     }
-    this.sketch.setAttributeNS(flexo.XLINK_NS, "href", src);
-    this.sketch.setAttribute("width", w);
-    this.sketch.setAttribute("height", h);
   },
 
   cycle_sketch_opacity: function()
