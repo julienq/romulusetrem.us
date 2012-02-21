@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Stars</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
+        background-image: -webkit-linear-gradient(top, #001, #003e5f);
+        background-image:    -moz-linear-gradient(top, #001, #003e5f);
+      }
+    </style>
+    <script src="../flexo.js"></script>
+  </head>
+  <body>
+    <script>
+
+      var svg = flexo.ez_elem("svg:svg", { viewBox: "-200 -200 400 400" });
+      document.body.appendChild(svg);
+
+      function new_particle()
+      {
+        var sides = flexo.random_int(5, 20);
+        var ro = flexo.random_int(5, 50);
+        var ri = ro * flexo.random_number(0.1, 0.5);
+        var phase = flexo.random_number(0, 2 * Math.PI);
+        var elem = flexo.svg_star(sides, ri, ro, phase);
+        elem.setAttribute("fill", flexo.get_color_20());
+        elem.__d = 0;
+        elem.__dr = flexo.random_number(-2, 2);
+        elem.__a = flexo.random_number(0, 2 * Math.PI);
+        elem.__da = flexo.random_number(-2, 2);
+        elem.__ttl = flexo.random_int(300, 500);
+        svg.insertBefore(elem, svg.firstChild);
+      }
+
+      function animate_particles()
+      {
+        [].forEach.call(svg.childNodes, function(ch) {
+            if (--ch.__ttl <= 0) {
+              flexo.safe_remove(ch);
+            } else {
+              ch.__d += ch.__dr;
+              ch.__a += ch.__da;
+              ch.setAttribute("transform",
+                "rotate({0}) translate({1})".fmt(ch.__d, ch.__a));
+            }
+          });
+        if (Math.random() < 0.1) new_particle();
+        requestAnimationFrame(animate_particles);
+      }
+
+      animate_particles();
+
+    </script>
+  </body>
+</html>
+
