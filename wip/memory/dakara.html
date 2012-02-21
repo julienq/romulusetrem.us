@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Memory</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
+        background-color: #187757 }
+    </style>
+  </head>
+  <body>
+    <svg>
+      <defs>
+        <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
+          width="100" height="100">
+          <g stroke="#55bef2"/>
+        </pattern>
+        <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0"
+          width="110%" height="110%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+          <feOffset in="blur" dx="2" dy="2"/>
+        </filter>
+        <g id="back">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
+        </g>
+        <g id="front">
+          <rect x="10" y="10" width="80" height="80" fill="white"
+            filter="url(#shadow)"/>
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+        </g>
+      </defs>
+      <g id="tiles"/>
+    </svg>
+
+    <script src="../../flexo.js"></script>
+    <script>
+
+      var lines = document.querySelector("pattern g");
+      for (var i = 2; i < 100; i += 2) {
+        lines.appendChild(flexo.svg("line", { y1: i, x2: i }));
+        lines.appendChild(flexo.svg("line",
+          { x1: i, y1: 100, x2: 100, y2: i }));
+      }
+      lines.appendChild(flexo.svg("line", { y1: 100, x2: 100 }));
+
+      var IMAGES = [
+        "img/ada.png",
+        "img/ampli.png",
+        "img/anniversaire.png",
+        "img/arbres+oiseau.png",
+        "img/arbres+oiseau2.png",
+        "img/arbres.png",
+        "img/avion.png",
+        "img/barbe.png",
+        "img/bocaux.png",
+        "img/bras.png",
+        "img/brasjambes.png",
+        "img/bucher.png",
+        "img/buveur.png",
+        "img/cactus.png",
+        "img/casques.png",
+        "img/cereales.png",
+        "img/cerveau.png",
+        "img/chaiseroulante.png",
+        "img/chapka.png",
+        "img/chat 2.png",
+        "img/chat.png",
+        "img/cheveux.png",
+        "img/cigarette.png",
+        "img/colonnes.png",
+        "img/coule.png",
+        "img/crane.png",
+        "img/cyclope.png",
+        "img/cyclopes.png",
+        "img/diable.png",
+        "img/dieu.png",
+        "img/donald.png",
+        "img/duo.png",
+        "img/elephant.png",
+        "img/emeutier.png",
+        "img/epee.png",
+        "img/esquelettes.png",
+        "img/famille.png",
+        "img/fauve.png",
+        "img/fils.png",
+        "img/fleches.png",
+        "img/frange.png",
+        "img/hamburger.png",
+        "img/hibou.png",
+        "img/k7.png",
+        "img/karate.png",
+        "img/lacets.png",
+        "img/larmes.png",
+        "img/lievre.png",
+        "img/lion.png",
+        "img/mains.png",
+        "img/majorette.png",
+        "img/mamie.png",
+        "img/marcheur.png",
+        "img/masque 2.png",
+        "img/masque.png",
+        "img/masques.png",
+        "img/mitre.png",
+        "img/montre.png",
+        "img/muraille.png",
+        "img/muscles.png",
+        "img/nadine.png",
+        "img/newyork.png",
+        "img/nez.png",
+        "img/ninja.png",
+        "img/oeil.png",
+        "img/oh.png",
+        "img/pandas.png",
+        "img/panneau.png",
+        "img/pantalon.png",
+        "img/paon.png",
+        "img/pascap.png",
+        "img/paysanne.png",
+        "img/pecheur.png",
+        "img/pere.png",
+        "img/photo.png",
+        "img/pianoguitare.png",
+        "img/pieuvre.png",
+        "img/pilori.png",
+        "img/poils.png",
+        "img/pointe 2.png",
+        "img/pointe.png",
+        "img/pouf.png",
+        "img/priere.png",
+        "img/prisonnier.png",
+        "img/profils.png",
+        "img/robot.png",
+        "img/roi.png",
+        "img/rosbif.png",
+        "img/salieri.png",
+        "img/salomon.png",
+        "img/serpent.png",
+        "img/skate.png",
+        "img/soldat.png",
+        "img/soleil.png",
+        "img/sorciere.png",
+        "img/sparadrap.png",
+        "img/spirale.png",
+        "img/tennisman.png",
+        "img/toile.png",
+        "img/trains.png",
+        "img/trio.png",
+        "img/trophee.png",
+        "img/trou.png",
+        "img/vagues.png",
+        "img/visage.png",
+        "img/visages 2.png",
+        "img/visages.png",
+        "img/visagesfemme.png",
+        "img/yeux 2.png",
+        "img/yeux.png",
+        "img/zebre.png",
+      ];
+
+      var args = flexo.get_args({ w: 6, h: 4, reveal: "false" });
+      var svg = document.querySelector("svg");
+      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(args.w * 100, args.h * 100));
+      var g = document.getElementById("tiles");
+      var t = flexo.shuffle(IMAGES).slice(0, args.w * args.h / 2);
+      [].push.apply(t, t);
+      var tiles = flexo.shuffle(t);
+
+      for (var x = 0; x < args.w; ++x) {
+        for (var y = 0; y < args.h; ++y) add_tile(x, y);
+      }
+
+      function add_tile(x, y)
+      {
+        var tile = flexo.svg("g", { transform: "translate({0}, {1})"
+          .fmt(x * 100, y * 100) }, [flexo.svg_href("use", "#front")]);
+        var img = flexo.svg_href("image", tiles[x * args.h + y],
+          { width: 57, height: 80, x: 21, y: 10 });
+        tile.appendChild(img)
+        var back = flexo.svg_href("use", "#back", { x: x * 100, y: y * 100 });
+        g.appendChild(tile);
+        if (!flexo.is_true(args.reveal)) {
+          g.appendChild(back);
+          back.addEventListener("click", function(e) { reveal(tile); }, false);
+        }
+      }
+
+      var moves = 0;
+      var revealed;
+      var timeout;
+
+      function reveal(tile)
+      {
+        if (timeout) return;
+        tile.nextSibling.style.display = "none";
+        if (revealed) {
+          ++moves;
+          if (tile.querySelector("image").getAttributeNS(flexo.XLINK_NS, "href") ===
+            revealed.querySelector("image").getAttributeNS(flexo.XLINK_NS, "href")) {
+            timeout = setTimeout(function() {
+                alert("Match!");
+                flexo.safe_remove(tile.nextSibling);
+                flexo.safe_remove(tile);
+                flexo.safe_remove(revealed.nextSibling);
+                flexo.safe_remove(revealed);
+                revealed = undefined;
+                timeout = null;
+                if (!g.querySelector("use")) {
+                  setTimeout(function() {
+                      alert("Cleared the board in {0} moves.".fmt(moves));
+                    }, 0);
+                }
+              }, 0);
+          } else {
+            timeout = setTimeout(function() {
+                alert("No match!");
+                tile.nextSibling.style.display = "";
+                revealed.nextSibling.style.display = "";
+                revealed = undefined;
+                timeout = null;
+              }, 0);
+          }
+        } else {
+          revealed = tile;
+        }
+      }
+
+    </script>
+  </body>
+</html>
