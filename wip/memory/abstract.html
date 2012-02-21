@@ -116,9 +116,14 @@
 
       function add_tile(x, y)
       {
+        var x_ = x * 100 + flexo.random_number(-2, 2);
+        var y_ = y * 100 + flexo.random_number(-2, 2);
+        var a = flexo.random_number(-2, 2);
+        var transform = "translate({0}, {1}) rotate({2}, 50, 50)"
+          .fmt(x_, y_, a);
         var tile = flexo.svg_href("use", "#" + tiles[x * args.h + y][0],
-          { x: x * 100, y: y * 100, fill: tiles[x * args.h + y][1] });
-        var back = flexo.svg_href("use", "#back", { x: x * 100, y: y * 100 });
+          { transform: transform, fill: tiles[x * args.h + y][1] });
+        var back = flexo.svg_href("use", "#back", { transform: transform });
         g.appendChild(tile);
         if (!flexo.is_true(args.reveal)) {
           g.appendChild(back);
