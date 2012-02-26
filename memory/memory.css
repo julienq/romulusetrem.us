@@ -1,0 +1,9 @@
+body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+  background-color: #187757; width: 100%; color: #fcfbe3; }
+.text { margin: 0 2em; }
+.player { color: #fbb829; font-weight: bold; }
+a { color: #55bef2; }
+#play-a { font-weight: bold; }
+ul.scores { list-style-type: none; }
+ul.scores li { display: inline; margin-right: 2em;  }
+footer { padding: 8px; margin: 0; }

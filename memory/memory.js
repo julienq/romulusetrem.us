@@ -14,6 +14,18 @@ function make_poly(id, sides, phase)
   document.getElementById(id).appendChild(poly);
 }
 
+var svg = document.querySelector("svg");
+
+function resize()
+{
+  svg.setAttribute("width", window.innerWidth);
+  svg.setAttribute("height", window.innerHeight - svg.offsetTop - 4 -
+      document.querySelector("footer").offsetHeight);
+}
+
+window.onresize = resize;
+resize();
+
 memory =
 {
   COLORS: [
@@ -50,7 +62,29 @@ memory =
                 ++this.scores[this.player];
                 delete this.timeout;
                 delete this.revealed;
-              }).bind(this), 500);
+                memory.update_scores(this);
+                if (g.childNodes.length === 0) {
+                  var max_score = -1;
+                  var winners = [];
+                  this.scores.forEach(function(score, i) {
+                      if (score > max_score) {
+                        winners = [i + 1];
+                        max_score = score;
+                      } else if (score === max_score) {
+                        winners.push(i + 1);
+                      }
+                    });
+                  var msg = winners.length === 1 ?
+                    "Congratulation player {0}, you win!".fmt(winners[0]) :
+                    "It's a tie between players {0}."
+                      .fmt(winners.join(", ").replace(/,([^,]+)$/, " and$1"));
+                  if (confirm(msg + " Play again?")) {
+                    window.location.reload();
+                  } else {
+                    window.location = "index.html";
+                  }
+                }
+              }).bind(this), 250);
           } else {
             this.timeout = setTimeout((function() {
                 tile.revealed = false;
@@ -59,14 +93,15 @@ memory =
                 alert("No match! Player {0}'s turn now.".fmt(this.player + 1));
                 delete this.timeout;
                 delete this.revealed;
-              }).bind(this), 500);
+                memory.update_player(this);
+              }).bind(this), 250);
           }
         } else {
           this.revealed = tile;
         }
       }
     });
-    game.scores = flexo.range(flexo.clamp(players, 1, 4))
+    game.scores = flexo.range(flexo.clamp(players, 1, 4) - 1)
       .map(function() { return 0; });
     game.player = 0;
     return game;
@@ -139,6 +174,20 @@ memory =
     for (var x = 0; x < args.w; ++x) {
       for (var y = 0; y < args.h; ++y) this.add_tile(g, x, y, x * h + y);
     }
+  },
+
+  update_player: function(game)
+  {
+    var li = document.querySelectorAll("li")[game.player];
+    var li_ = document.querySelector(".player");
+    if (li_) flexo.remove_class(li_, "player");
+    flexo.add_class(li, "player");
+  },
+
+  update_scores: function(game)
+  {
+    var span = document.querySelectorAll("span.score")[game.player];
+    span.textContent = game.scores[game.player];
   },
 
 };

@@ -3,9 +3,15 @@
   <head>
     <title>Memory</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="../romulusetremus.css">
     <link rel="stylesheet" href="memory.css">
   </head>
   <body>
+
+    <div class="text">
+      <ul class="scores"></ul>
+    </div>
+
     <svg>
       <defs>
         <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
@@ -53,10 +59,17 @@
       </defs>
       <g id="tiles"/>
     </svg>
-    <script src="../../flexo.js"></script>
-    <script src="memory.js"></script>
 
+    <footer>
+    Copyright © <span class="roman">mmxii</span>,
+    <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/memory">Github</a>
+    </footer>
+
+    <script src="../flexo.js"></script>
+    <script src="memory.js"></script>
     <script>
+
       memory.make_shapes();
 
       var args = flexo.get_args({ w: 6, h: 4, players: 2, reveal: "false" });
@@ -68,73 +81,20 @@
         window.location = "index.html";
       }
       memory.game = memory.make_game(parseInt(args.players, 10));
+      var ul = document.querySelector("ul")
+      memory.game.scores.forEach(function(score, i) {
+          ul.appendChild(flexo.ez_elem("li",
+            "Player {0}: ".fmt(i + 1),
+            flexo.ez_elem("span.score", score.toString())));
+        });
+      memory.update_player(memory.game);
+      resize();
       var svg = document.querySelector("svg");
       svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
 
       var g = document.getElementById("tiles");
       var tiles = memory.setup_tiles(g, w, h);
 
-      /*
-      function add_tile(x, y)
-      {
-        var x_ = x * 100 + flexo.random_number(-2, 2);
-        var y_ = y * 100 + flexo.random_number(-2, 2);
-        var a = flexo.random_number(-2, 2);
-        var transform = "translate({0}, {1}) rotate({2}, 50, 50)"
-          .fmt(x_, y_, a);
-        var tile = flexo.svg_href("use", "#" + tiles[x * args.h + y][0],
-          { transform: transform, fill: tiles[x * args.h + y][1] });
-        var back = flexo.svg_href("use", "#back", { transform: transform });
-        g.appendChild(tile);
-        if (!flexo.is_true(args.reveal)) {
-          g.appendChild(back);
-          back.addEventListener("click", function(e) { reveal(tile); }, false);
-        }
-      }
-
-      var moves = 0;
-      var revealed;
-      var timeout;
-
-      function reveal(tile)
-      {
-        if (timeout) return;
-        tile.nextSibling.style.display = "none";
-        if (revealed) {
-          ++moves;
-          if (tile.getAttribute("fill") === revealed.getAttribute("fill") &&
-            tile.getAttributeNS(flexo.XLINK_NS, "href") ===
-            revealed.getAttributeNS(flexo.XLINK_NS, "href")) {
-            timeout = setTimeout(function() {
-                alert("Match!");
-                flexo.safe_remove(tile.nextSibling);
-                flexo.safe_remove(tile);
-                flexo.safe_remove(revealed.nextSibling);
-                flexo.safe_remove(revealed);
-                revealed = undefined;
-                timeout = null;
-                if (!g.querySelector("use")) {
-                  setTimeout(function() {
-                      alert("Cleared the board in {0} moves.".fmt(moves));
-                    }, 0);
-                }
-              }, 0);
-          } else {
-            timeout = setTimeout(function() {
-                alert("No match!");
-                tile.nextSibling.style.display = "";
-                revealed.nextSibling.style.display = "";
-                revealed = undefined;
-                timeout = null;
-              }, 0);
-          }
-        } else {
-          revealed = tile;
-        }
-      }
-      */
-
     </script>
-
   </body>
 </html>
