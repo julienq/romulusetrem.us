@@ -3,10 +3,7 @@
   <head>
     <title>Memory</title>
     <meta charset="UTF-8">
-    <style>
-      body { font-family: "Helvetica Neue", Helvetica, sans-serif;
-        background-color: #187757 }
-    </style>
+    <link rel="stylesheet" href="memory.css">
   </head>
   <body>
     <svg>
@@ -30,6 +27,7 @@
           <rect x="10" y="10" width="80" height="80" fill="white"/>
           <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
         </g>
+        <rect id="mask" x="10" y="10" width="80" height="80" fill-opacity="0"/>
         <g id="donut">
           <use xlink:href="#front"/>
           <circle cx="50" cy="50" r="30"/>
@@ -55,65 +53,28 @@
       </defs>
       <g id="tiles"/>
     </svg>
-
     <script src="../../flexo.js"></script>
+    <script src="memory.js"></script>
+
     <script>
+      memory.make_shapes();
 
-      // Finish some SVG elements which are better automated...
-      var lines = document.querySelector("pattern g");
-      for (var i = 2; i < 100; i += 2) {
-        lines.appendChild(flexo.svg("line", { y1: i, x2: i }));
-        lines.appendChild(flexo.svg("line",
-          { x1: i, y1: 100, x2: 100, y2: i }));
+      var args = flexo.get_args({ w: 6, h: 4, players: 2, reveal: "false" });
+      var w = parseInt(args.w, 10);
+      var h = parseInt(args.h, 10);
+      if (w < 1 || h < 1 || w * h % 2 !== 0 ||
+        w * h > memory.TILES.length * 2) {
+        alert("Incorrect game size!");
+        window.location = "index.html";
       }
-      lines.appendChild(flexo.svg("line", { y1: 100, x2: 100 }));
-
-      function make_poly(id, sides, phase)
-      {
-        var poly = flexo.svg_polygon(sides, 30, phase || Math.PI / 2);
-        poly.setAttribute("transform", "translate(50, 50)");
-        document.getElementById(id).appendChild(poly);
-      }
-
-      make_poly("triangle", 3);
-      make_poly("square", 4, Math.PI / 4);
-      make_poly("hexagon", 6);
-
-      var star = flexo.svg_star(5, 30, 12, Math.PI / 2);
-      star.setAttribute("transform", "translate(50, 50)");
-      document.getElementById("star").appendChild(star);
-
-      var COLORS = [
-        "#1693a5",  // Dutch teal
-        "#fbb829",  // Heart of gold
-        "#7faf1b",  // Elle était belle
-        "#ff0066",  // Hot pink
-        "#f02311",  // Sex on the floor
-        "#47092e"   // Nothing Man
-      ];
-
-      var SHAPES = ["donut", "square", "triangle", "hexagon", "star", "cross"];
-
-      var TILES = [];
-      SHAPES.forEach(function(shape) {
-          [].push.apply(TILES,
-            COLORS.map(function(color) { return [shape, color]; }));
-        });
-
-      var args = flexo.get_args({ w: 6, h: 4, reveal: "false" });
+      memory.game = memory.make_game(parseInt(args.players, 10));
       var svg = document.querySelector("svg");
-      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(args.w * 100, args.h * 100));
+      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
+
       var g = document.getElementById("tiles");
-      var t = flexo.shuffle(TILES).slice(0, args.w * args.h / 2);
-      [].push.apply(t, t);
-      var tiles = flexo.shuffle(t);
+      var tiles = memory.setup_tiles(g, w, h);
 
-      for (var x = 0; x < args.w; ++x) {
-        for (var y = 0; y < args.h; ++y) {
-          add_tile(x, y);
-        }
-      }
-
+      /*
       function add_tile(x, y)
       {
         var x_ = x * 100 + flexo.random_number(-2, 2);
@@ -171,7 +132,9 @@
           revealed = tile;
         }
       }
+      */
 
     </script>
+
   </body>
 </html>

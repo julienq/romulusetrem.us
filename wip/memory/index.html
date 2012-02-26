@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Memory</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="memory.css">
+  </head>
+  <body>
+    <svg viewBox="0 0 400 300">
+      <defs>
+        <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
+          width="100" height="100">
+          <g stroke="#55bef2"/>
+        </pattern>
+        <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0"
+          width="110%" height="110%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+          <feOffset in="blur" dx="2" dy="2"/>
+        </filter>
+        <g id="back">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
+        </g>
+        <g id="front">
+          <rect x="10" y="10" width="80" height="80" fill="white"
+            filter="url(#shadow)"/>
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
+        </g>
+        <rect id="mask" x="10" y="10" width="80" height="80" fill-opacity="0"/>
+      </defs>
+      <g id="tiles"/>
+    </svg>
+    <script src="../../flexo.js"></script>
+    <script src="memory.js"></script>
+    <script>
+
+      var tiles = document.getElementById("tiles");
+
+      var info = {};
+      var set_tile = function(tile, what)
+      {
+        if (info[what]) info[what].revealed = false;
+        info[what] = tile;
+        info[what].revealed = true;
+      };
+
+      [1, 2, 3, 4].forEach(function(n) {
+          var tile = memory.letter_tile(n.toString(),
+            flexo.random_element(memory.COLORS), n - 1, 0);
+          tiles.appendChild(tile);
+          flexo.listen(tile, "@reveal", function() {
+              set_tile(tile, "player");
+              info.players = n;
+            });
+          if (n === 2) flexo.notify(tile, "@reveal");
+        });
+
+      var sizes = { S: "w=4&h=4", M: "w=6&h=4", L: "w=6&h=6",
+        "!!!": "w=9&h=8" };
+
+      ["S", "M", "L", "!!!"].forEach(function(sz, i) {
+          var tile = memory.letter_tile(sz, flexo.random_element(memory.COLORS),
+            i, 1);
+          tiles.appendChild(tile);
+          flexo.listen(tile, "@reveal", function() {
+            set_tile(tile, "size");
+            info.wh = sizes[sz];
+          });
+          if (sz === "M") flexo.notify(tile, "@reveal");
+        });
+
+      var p = flexo.random_int(0, 3);
+      [0, 1, 2, 3].forEach(function(i) {
+          var tile = memory.letter_tile("▶",
+            flexo.random_element(memory.COLORS), i, 2);
+          tiles.appendChild(tile);
+          flexo.listen(tile, "@reveal",
+            function() { set_tile(tile, "go"); });
+          flexo.listen(tile, "@hide",
+            function() { window.location = "play.html?players={0}&{1}"
+              .fmt(info.players, info.wh); });
+          if (i === p) set_tile(tile, "go");
+        });
+
+    </script>
+  </body>
+</html>
+
