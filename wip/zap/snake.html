@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Snake</title>
+    <meta charset="UTF-8">
+    <script src="../../flexo.js"></script>
+    <script src="zap.js"></script>
+    <style>
+      .zap-frame { background-color: black }
+      #zap:focus { outline: 0; }
+    </style>
+  </head>
+  <body>
+    <h1 class="zap">Zap</h1>
+    <div id="zap"></div>
+    <script>
+
+      // Make the snake a new entity
+      // Check self collision (loop)
+      // Check collision with bounds
+      // Fruits
+
+      zap.title = "Snake";
+
+      var frame = zap.frame(640, 480);
+
+      var scene = zap.scene();
+      var rate = 24;
+
+      var snake =
+      {
+        segments: "ll",
+        next: "l",
+        x: 300,
+        y: 240,
+
+        d: function()
+        {
+          return "M{0},{1}".fmt(this.x, this.y) +
+            [].map.call(this.segments, function(s) {
+                return { h: "h-20", j: "v20", k: "v-20", l: "h20" }[s];
+              }).join("");
+        },
+
+        move: function()
+        {
+          var last = this.segments[this.segments.length - 1];
+          var first = this.segments[0];
+          this.next = last;
+          this.segments = this.segments.substr(1) + last;
+          this.x += { h: -20, j: 0, k: 0, l: 20 }[first];
+          this.y += { h: 0, j: 20, k: -20, l: 0 }[first];
+        },
+
+        turn: function(d)
+        {
+          var opposite = { h: "l", j: "k", k: "j", l: "h" }[this.next];
+          if (d !== opposite) {
+            this.segments = this.segments.substr(0, this.segments.length - 1) +
+              d;
+          }
+        },
+
+        grow: function()
+        {
+          this.segments += this.segments[this.segments.length - 1];
+        }
+      }
+
+      scene.begin = function()
+      {
+        var snakepath = zap.svg("path", { fill: "none", stroke: "white",
+          "stroke-width": 20, "stroke-linejoin": "round",
+          "stroke-linecap": "round", id: "snake", d: snake.d() });
+        scene.add(snakepath);
+        this.count = 0;
+      };
+
+      scene.tick = function(t)
+      {
+        if (this.frame.keys.right) {
+          snake.turn("l");
+        } else if (this.frame.keys.left) {
+          snake.turn("h");
+        } else if (this.frame.keys.up) {
+          snake.turn("k");
+        } else if (this.frame.keys.down) {
+          snake.turn("j");
+        }
+        if (this.count++ === rate) {
+          this.count = 0;
+          snake.move();
+        }
+        this.$snake.element.setAttribute("d", snake.d());
+      };
+
+      frame.add_scene(scene);
+
+    </script>
+  </body>
+</html>
+
