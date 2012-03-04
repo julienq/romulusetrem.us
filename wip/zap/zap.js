@@ -1,5 +1,7 @@
 (function(zap)
 {
+  // The title of the application gets rendered in the title bar (and the h1.zap
+  // element if any)
   var title;
   flexo.getter_setter(zap, "title", function() { return title; },
     function(t) {
@@ -9,6 +11,8 @@
       if (h1) h1.textContent = title;
     });
 
+  // The frame in which the application is rendered
+  // Height and width are required; id and parent are optional.
   zap.frame = function(width, height, id, parent)
   {
     if (typeof id !== "string") {
@@ -19,7 +23,6 @@
       parent = document.getElementById("zap") ||
         document.querySelector("div") || document.body;
     }
-    if (parent.tabIndex < 0) parent.tabIndex = 0;
 
     var frame = flexo.create_object({
         add_scene: function(scene)
@@ -88,10 +91,16 @@
         function(r) { repeat = r; });
 
     // Set tabindex on parent div and watch keyboard events on that div
+    if (parent.tabIndex < 0) parent.tabIndex = 0;
     var keys = {};
     parent.addEventListener("keydown", function(e) {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
         e.preventDefault();
-        if (e.keyCode === 37) {
+        if (e.keyCode === 13) {
+          keys.enter = true;
+        } else if (e.keyCode === 32) {
+          keys.space = true;
+        } else if (e.keyCode === 37) {
           keys.left = true;
         } else if (e.keyCode === 38) {
           keys.up = true;
@@ -103,7 +112,11 @@
       }, false);
     parent.addEventListener("keyup", function(e) {
         e.preventDefault();
-        if (e.keyCode === 37) {
+        if (e.keyCode === 13) {
+          keys.enter = true;
+        } else if (e.keyCode === 32) {
+          keys.space = false;
+        } if (e.keyCode === 37) {
           keys.left = false;
         } else if (e.keyCode === 38) {
           keys.up = false;
@@ -145,7 +158,7 @@
     flexo.getter_setter(frame, "t0", function() { return t0; });
     var tick = function(t_) {
       t = t_;
-      scenes.forEach(function(scene) { scene.tick(t); });
+      scenes.forEach(function(scene) { if (scene.running) scene.tick(t); });
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -158,6 +171,7 @@
       // Add an entity to the scene
       add: function(entity)
       {
+        entity.scene = this;
         this.element.appendChild(entity.element);
         if (entity.element.id) this["$" + entity.element.id] = entity;
         if (entity.kind) {
@@ -179,14 +193,17 @@
     flexo.getter_setter(scene, "element", function() { return svg; });
     var kinds = {};
     flexo.getter_setter(scene, "kinds", function() { return kinds; });
+    scene.running = true;
     return scene;
   };
 
-  zap.entity = function()
+  zap.entity = function(elem)
   {
     var entity = flexo.create_object({
         // on, once
 
+        // Define the rectangle hitbox for entities (can be bbox or custom) to
+        // test for collisions against other entities
         collide: function(other)
         {
           var ra = this.hitbox;
@@ -202,6 +219,7 @@
     return entity;
   }
 
+  // TODO rename this SVG entity
   zap.svg = function(name, properties)
   {
     var entity = zap.entity();

@@ -3,10 +3,13 @@
   <head>
     <title>Snake</title>
     <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
     <script src="../../flexo.js"></script>
     <script src="zap.js"></script>
     <style>
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
       .zap-frame { background-color: black }
+      .zap-frame { width: 100%; }
       #zap:focus { outline: 0; }
     </style>
   </head>
@@ -15,88 +18,103 @@
     <div id="zap"></div>
     <script>
 
-      // Make the snake a new entity
-      // Check self collision (loop)
-      // Check collision with bounds
-      // Fruits
-
       zap.title = "Snake";
-
-      var frame = zap.frame(640, 480);
-
+      var frame = zap.frame(400, 300);
       var scene = zap.scene();
-      var rate = 24;
+      frame.add_scene(scene);
 
-      var snake =
+      scene.add((function(x, y)
       {
-        segments: "ll",
-        next: "l",
-        x: 300,
-        y: 240,
-
-        d: function()
+        var snake = zap.svg("path", { "stroke-width": 20, stroke: "#8f0",
+          "stroke-linecap": "round", "stroke-linejoin": "round", id: "snake" });
+        var direction = 0;
+        Object.defineProperty(snake, "direction", { enumerable: true,
+            get: function() { return direction; },
+            set: function(d) {
+              if (Math.abs(d - direction) !== 2) direction = d;
+            }
+          });
+        var segments = [direction];
+        snake.update_path = function()
         {
-          return "M{0},{1}".fmt(this.x, this.y) +
-            [].map.call(this.segments, function(s) {
-                return { h: "h-20", j: "v20", k: "v-20", l: "h20" }[s];
-              }).join("");
-        },
-
-        move: function()
+          this.element.setAttribute("d", "M{0},{1}".fmt(x, y) +
+            segments.map(function(d) {
+                return ["h-10", "v10", "h10", "v-10"][d];
+              }).join(""));
+        };
+        snake.grow = function()
         {
-          var last = this.segments[this.segments.length - 1];
-          var first = this.segments[0];
-          this.next = last;
-          this.segments = this.segments.substr(1) + last;
-          this.x += { h: -20, j: 0, k: 0, l: 20 }[first];
-          this.y += { h: 0, j: 20, k: -20, l: 0 }[first];
-        },
-
-        turn: function(d)
+          segments.unshift(direction);
+          x += 10 * [1, 0, -1, 0][direction];
+          y += 10 * [0, -1, 0, 1][direction];
+          this.update_path();
+        };
+        snake.move = function()
         {
-          var opposite = { h: "l", j: "k", k: "j", l: "h" }[this.next];
-          if (d !== opposite) {
-            this.segments = this.segments.substr(0, this.segments.length - 1) +
-              d;
+          segments.pop();
+          this.grow();
+        };
+        snake.is_in_path = function(x_, y_)
+        {
+          var xc = x;
+          var yc = y;
+          for (var i = 0, n = segments.length; i < n; ++i) {
+            xc += 20 * [-1, 0, 1, 0][segments[i]];
+            yc += 20 * [0, 1, 0, -1][segments[i]];
+            if (Math.abs(xc - x_) <= 10 && Math.abs(yc - y_) < 10) return true;
           }
-        },
+          return Math.abs(xc - x_) <= 10 && Math.abs(yc - y_) < 10;
+        };
+        snake.update_path();
+        flexo.getter_setter(snake, "x", function() { return x; });
+        flexo.getter_setter(snake, "y", function() { return y; });
+        return snake;
+      })(frame.width / 2 + 10, frame.height / 2 + 10));
 
-        grow: function()
-        {
-          this.segments += this.segments[this.segments.length - 1];
-        }
-      }
+      var count = 0;
+      var rate = 4;
 
-      scene.begin = function()
+      scene.add((function()
       {
-        var snakepath = zap.svg("path", { fill: "none", stroke: "white",
-          "stroke-width": 20, "stroke-linejoin": "round",
-          "stroke-linecap": "round", id: "snake", d: snake.d() });
-        scene.add(snakepath);
-        this.count = 0;
-      };
+        var apple = zap.svg("circle", { fill: "red", r: 10, id: "apple" });
+        apple.random_position = function() {
+          this.cx = 10 + 20 *
+            flexo.random_int(0, this.scene.frame.width / 20 - 1);
+          this.cy = 10 + 20 *
+            flexo.random_int(0, this.scene.frame.height / 20 - 1);
+        };
+        return apple;
+      })());
+
+      scene.$apple.random_position();
 
       scene.tick = function(t)
       {
         if (this.frame.keys.right) {
-          snake.turn("l");
+          this.$snake.direction = 0;
         } else if (this.frame.keys.left) {
-          snake.turn("h");
+          this.$snake.direction = 2;
         } else if (this.frame.keys.up) {
-          snake.turn("k");
+          this.$snake.direction = 1;
         } else if (this.frame.keys.down) {
-          snake.turn("j");
+          this.$snake.direction = 3;
         }
-        if (this.count++ === rate) {
-          this.count = 0;
-          snake.move();
+        if (count++ === rate) {
+          count = 0;
+          if (this.$snake.x < 0 || this.$snake.x > frame.width ||
+            this.$snake.y < 0 || this.$snake.y > frame.height ||
+            this.$snake.is_in_path(this.$snake.x, this.$snake.y)) {
+            this.running = false;
+          } else if (Math.abs(this.$snake.x - this.$apple.cx) <= 10 &&
+            Math.abs(this.$snake.y - this.$apple.cy) <= 10) {
+            this.$snake.grow();
+            this.$apple.random_position();
+          } else {
+            this.$snake.move();
+          }
         }
-        this.$snake.element.setAttribute("d", snake.d());
       };
-
-      frame.add_scene(scene);
 
     </script>
   </body>
 </html>
-
