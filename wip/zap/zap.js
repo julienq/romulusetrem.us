@@ -1,7 +1,10 @@
+// Zap is a simple library for building games using SVG.
+// This is a work in progress so the API is subject to change at any time.
+
 (function(zap)
 {
-  // The title of the application gets rendered in the title bar (and the h1.zap
-  // element if any)
+  // A Zap application may have a title. This title then gets rendered in the
+  // title bar, and any h1.zap element in the host document.
   var title;
   flexo.getter_setter(zap, "title", function() { return title; },
     function(t) {

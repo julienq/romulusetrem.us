@@ -15,11 +15,15 @@
   </head>
   <body>
     <h1 class="zap">Zap</h1>
+    <ul>
+      <li>Score: <span id="score">0</span></li>
+      <li>Length: <span id="length">1</span></li>
+    </ul>
     <div id="zap"></div>
     <script>
 
       zap.title = "Snake";
-      var frame = zap.frame(400, 300);
+      var frame = zap.frame(320, 460);
       var scene = zap.scene();
       frame.add_scene(scene);
 
@@ -35,6 +39,8 @@
             }
           });
         var segments = [direction];
+        Object.defineProperty(snake, "length", { enumerable: true,
+            get: function() { return segments.length; } });
         snake.update_path = function()
         {
           this.element.setAttribute("d", "M{0},{1}".fmt(x, y) +
@@ -42,28 +48,34 @@
                 return ["h-10", "v10", "h10", "v-10"][d];
               }).join(""));
         };
-        snake.grow = function()
+        snake.grow = function(n)
         {
-          segments.unshift(direction);
-          x += 10 * [1, 0, -1, 0][direction];
-          y += 10 * [0, -1, 0, 1][direction];
+          if (n > 0) {
+            for (var i = 0; i < n; ++i) {
+              segments.unshift(direction);
+              x += 10 * [1, 0, -1, 0][direction];
+              y += 10 * [0, -1, 0, 1][direction];
+            }
+          } else {
+            for (var i = 0; i < -n; ++i) segments.pop();
+          }
           this.update_path();
         };
         snake.move = function()
         {
           segments.pop();
-          this.grow();
+          this.grow(1);
         };
-        snake.is_in_path = function(x_, y_)
+        snake.is_in_path = function(x_, y_, d)
         {
           var xc = x;
           var yc = y;
           for (var i = 0, n = segments.length; i < n; ++i) {
-            xc += 20 * [-1, 0, 1, 0][segments[i]];
-            yc += 20 * [0, 1, 0, -1][segments[i]];
-            if (Math.abs(xc - x_) <= 10 && Math.abs(yc - y_) < 10) return true;
+            xc += 10 * [-1, 0, 1, 0][segments[i]];
+            yc += 10 * [0, 1, 0, -1][segments[i]];
+            if (Math.abs(xc - x_) <= d && Math.abs(yc - y_) <= d) return true;
           }
-          return Math.abs(xc - x_) <= 10 && Math.abs(yc - y_) < 10;
+          return false;
         };
         snake.update_path();
         flexo.getter_setter(snake, "x", function() { return x; });
@@ -73,10 +85,13 @@
 
       var count = 0;
       var rate = 4;
+      var rate_mult = 1;
 
       scene.add((function()
       {
         var apple = zap.svg("circle", { fill: "red", r: 10, id: "apple" });
+        apple.update_rate = 0;
+        apple.rate_mult = 1;
         apple.random_position = function() {
           this.cx = 10 + 20 *
             flexo.random_int(0, this.scene.frame.width / 20 - 1);
@@ -86,33 +101,74 @@
         return apple;
       })());
 
-      scene.$apple.random_position();
+      scene.new_apple = function()
+      {
+        this.$apple.random_position();
+        while (this.$snake.is_in_path(this.$apple.cx, this.$apple.cy, 10)) {
+          this.$apple.random_position();
+        }
+        this.$apple.score = this.$apple.max_score =
+          Math.round((Math.abs(this.$apple.cx - this.$snake.x) +
+            Math.abs(this.$apple.cy - this.$snake.y)) / 2);
+        var r = Math.random();
+        this.$apple.mult = 1;
+        if (this.$apple.update_rate-- <= 0) this.$apple.rate_mult = 1;
+        this.$apple.switch = false;
+        if (r < 0.05 && this.$snake.length > 1) {
+          this.$apple.element.setAttribute("fill", "#acbe2a");
+          this.$apple.mult = 1;
+        } else if (r < 0.1) {
+          this.$apple.element.setAttribute("fill", "#08f");
+          this.$apple.switch = true;
+        } else if (r < 0.15) {
+          this.$apple.element.setAttribute("fill", "#80f");
+          this.$apple.rate_mult = 0.5;
+          this.$apple.update_rate = 5;
+        } else if (r < 0.25) {
+          this.$apple.element.setAttribute("fill", "#fcad00");
+          this.$apple.mult = 2;
+        } else {
+          this.$apple.element.setAttribute("fill", "#ff0000");
+        }
+      }
+
+      scene.new_apple();
+      var score = 0;
 
       scene.tick = function(t)
       {
         if (this.frame.keys.right) {
-          this.$snake.direction = 0;
+          this.$snake.direction = this.$snake.switch ? 2 : 0;
         } else if (this.frame.keys.left) {
-          this.$snake.direction = 2;
+          this.$snake.direction = this.$snake.swtich ? 0 : 2;
         } else if (this.frame.keys.up) {
           this.$snake.direction = 1;
         } else if (this.frame.keys.down) {
           this.$snake.direction = 3;
         }
-        if (count++ === rate) {
+        if (count++ >= rate * rate_mult) {
           count = 0;
+          --this.$apple.score;
+          this.$apple.element.setAttribute("fill-opacity",
+            this.$apple.score / this.$apple.max_score)
           if (this.$snake.x < 0 || this.$snake.x > frame.width ||
             this.$snake.y < 0 || this.$snake.y > frame.height ||
-            this.$snake.is_in_path(this.$snake.x, this.$snake.y)) {
+            this.$snake.is_in_path(this.$snake.x, this.$snake.y, 0)) {
             this.running = false;
           } else if (Math.abs(this.$snake.x - this.$apple.cx) <= 10 &&
             Math.abs(this.$snake.y - this.$apple.cy) <= 10) {
-            this.$snake.grow();
-            this.$apple.random_position();
+            this.$snake.grow(this.$apple.mult);
+            score += this.$apple.score * this.$apple.mult;
+            document.getElementById("score").textContent = score;
+            document.getElementById("length").textContent = this.$snake.length;
+            rate_mult = this.$apple.rate_mult;
+            this.$snake.switch = this.$apple.switch;
+            this.new_apple();
           } else {
+            if (this.$apple.score === 0) this.new_apple();
             this.$snake.move();
           }
-        }
+        };
       };
 
     </script>
