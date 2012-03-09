@@ -156,12 +156,14 @@
     parent.appendChild(svg);
     parent.focus();
 
-    var t0 = Date.now;
-    var t;
+    var t0 = Date.now();
     flexo.getter_setter(frame, "t0", function() { return t0; });
-    var tick = function(t_) {
-      t = t_;
-      scenes.forEach(function(scene) { if (scene.running) scene.tick(t); });
+    var t = t0;
+    var tick = function() {
+      var now = Date.now();
+      var dt = now - t;
+      t = now;
+      scenes.forEach(function(scene) { if (scene.running) scene.tick(dt); });
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
