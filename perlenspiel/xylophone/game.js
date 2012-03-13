@@ -32,6 +32,10 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 var NOTES = ["d7", "c7", "b6", "f6", "e6", "d6", "c6", "b5", "a5", "g5", "f5",
   "e5", "d5", "c5", "b4", "a4"]
+var COLORS = [PS.COLOR_BLACK, PS.COLOR_GRAY_LIGHT, PS.COLOR_GRAY,
+    PS.COLOR_GRAY_DARK, PS.COLOR_RED, PS.COLOR_ORANGE, PS.COLOR_YELLOW,
+    PS.COLOR_GREEN, PS.COLOR_BLUE, PS.COLOR_INDIGO, PS.COLOR_VIOLET,
+    PS.COLOR_CYAN, PS.COLOR_MAGENTA];
 var BPM = 104;
 var BEAT = 0;
 
@@ -54,8 +58,8 @@ PS.Init = function ()
 PS.Click = function (x, y, data)
 {
 	"use strict";
-  var color = PS.BeadColor(x, y);
-  PS.BeadColor(x, y, color === PS.COLOR_GREEN ? PS.DEFAULT : PS.COLOR_GREEN);
+  PS.BeadData(x, y, !data);
+  PS.BeadColor(x, y, data ? PS.DEFAULT : COLORS[PS.Random(COLORS.length) - 1]);
 };
 
 // PS.Release (x, y, data)
@@ -174,7 +178,7 @@ function step(incr)
   if (incr < 0) BEAT = (BEAT + NOTES.length + incr) % NOTES.length;
   PS.BeadBorderAlpha(BEAT, PS.ALL, 50);
   for (var y = 0; y < NOTES.length; ++y) {
-    if (PS.BeadColor(BEAT, y) === PS.COLOR_GREEN) {
+    if (PS.BeadData(BEAT, y)) {
       PS.AudioPlay("xylo_" + NOTES[y]);
     }
   }
