@@ -18,8 +18,8 @@ var svg = document.querySelector("svg");
 
 function resize()
 {
-  svg.setAttribute("width", window.innerWidth);
-  svg.setAttribute("height", window.innerHeight - svg.offsetTop - 4 -
+  svg.style.width = "{0}px".fmt(window.innerWidth);
+  svg.style.height = "{0}px".fmt(window.innerHeight - svg.offsetTop - 4 -
       document.querySelector("footer").offsetHeight);
 }
 

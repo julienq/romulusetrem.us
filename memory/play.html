@@ -88,7 +88,7 @@
             flexo.ez_elem("span.score", score.toString())));
         });
       memory.update_player(memory.game);
-      resize();
+      setTimeout(resize, 0);
       var svg = document.querySelector("svg");
       svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
 
