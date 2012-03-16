@@ -25,27 +25,109 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 /*global PS */
 
+var SZ = 32;
+var BG_COLOR = 0xcda658;
+var BORDER_COLOR = PS.COLOR_GRAY;
+
+var TOOL = null;
+var ACTIVE = false;
+
+BORDERS = { 0: PS.COLOR_GRAY, road: PS.COLOR_GRAY, commercial: PS.COLOR_BLUE,
+  residential: PS.COLOR_GREEN, industrial: PS.COLOR_YELLOW };
+COLORS = { 0: 0xcda658, road: PS.COLOR_GRAY, commercial: PS.COLOR_BLUE,
+  residential: PS.COLOR_GREEN, industrial: PS.COLOR_YELLOW };
+
+function make_rect(x, y, w, h)
+{
+  var rect = {
+    iterate: function(f)
+    {
+      var x_min = this.w > 0 ? this.x : this.x + this.w - 1;
+      var x_max = this.w > 0 ? this.x + this.w - 1 : this.x;
+      var y_min = this.h > 0 ? this.y : this.y + this.h - 1;
+      var y_max = this.h > 0 ? this.y + this.h - 1 : this.y;
+      for (var x = x_min; x <= x_max; ++x) {
+        for (var y = y_min; y <= y_max; ++y) f(x, y);
+      }
+    },
+
+    test: function(p)
+    {
+      var x_min = this.w > 0 ? this.x : this.x + this.w - 1;
+      var x_max = this.w > 0 ? this.x + this.w - 1 : this.x;
+      var y_min = this.h > 0 ? this.y : this.y + this.h - 1;
+      var y_max = this.h > 0 ? this.y + this.h - 1 : this.y;
+      for (var x = x_min; x <= x_max; ++x) {
+        for (var y = y_min; y <= y_max; ++y) if (!p(x, y)) return false;
+      }
+      return true;
+    }
+  };
+  rect.x = x;
+  rect.y = y;
+  rect.w = w;
+  rect.h = h;
+  return rect;
+}
+
+function update_region(rect)
+{
+  rect.iterate(function(x, y) {
+      var data = PS.BeadData(x, y);
+      PS.BeadBorderColor(x, y, BORDERS[data && data.type]);
+      PS.BeadColor(x, y, COLORS[data && data.type]);
+    });
+}
+
+// Draw streets
+function streets(x, y, data)
+{
+  if (x === undefined || data) return;
+  PS.BeadData(x, y, { type: "road", cap: 1, pop: 0 });
+  update_region(make_rect(x, y, 1, 1));
+}
+
+// Zone function
+
+var RECT = null;
+
+function zone(type, cap, x, y, data)
+{
+  if (x === undefined) {
+    var ok = RECT.test(function(x, y) { return !PS.BeadData(x, y); });
+    if (ok) {
+      RECT.iterate(function(x, y) {
+          PS.BeadData(x, y, { type: type, cap: cap, pop: 0 });
+        });
+    }
+    update_region(RECT);
+    RECT = null;
+  } else {
+    if (RECT) {
+      update_region(RECT);
+    } else {
+      RECT = make_rect(x, y, 1, 1);
+    }
+    RECT.w = 1 + x - RECT.x;
+    RECT.h = 1 + y - RECT.y;
+    var ok = RECT.test(function(x, y) { return !PS.BeadData(x, y); });
+    if (ok) {
+      RECT.iterate(function(x, y) { PS.BeadBorderColor(x, y, BORDERS[type]); });
+    }
+  }
+}
+
 // PS.Init ()
 // Initializes the game
 // This function normally includes a call to PS.GridSize (x, y)
 // where x and y are the desired dimensions of the grid
-
-var NOTES = ["d7", "c7", "b6", "f6", "e6", "d6", "c6", "b5", "a5", "g5", "f5",
-  "e5", "d5", "c5", "b4", "a4"]
-var COLORS = [PS.COLOR_BLACK, PS.COLOR_GRAY_LIGHT, PS.COLOR_GRAY,
-    PS.COLOR_GRAY_DARK, PS.COLOR_RED, PS.COLOR_ORANGE, PS.COLOR_YELLOW,
-    PS.COLOR_GREEN, PS.COLOR_BLUE, PS.COLOR_INDIGO, PS.COLOR_VIOLET,
-    PS.COLOR_CYAN, PS.COLOR_MAGENTA];
-var BPM = 104;
-var BEAT = 0;
-
 PS.Init = function ()
 {
-	"use strict";
-	PS.GridSize(NOTES.length, NOTES.length);
-  PS.StatusText("Xylophone");
-  NOTES.forEach(function(note) { PS.AudioLoad("xylo_" + note); });
-  update_clock();
+  "use strict";
+  PS.GridSize(SZ, SZ);
+  PS.BeadFlash(PS.ALL, PS.ALL, false);
+  update_region(make_rect(0, 0, SZ, SZ));
+  PS.StatusText("Picopolis");
 };
 
 // PS.Click (x, y, data)
@@ -54,12 +136,11 @@ PS.Init = function ()
 // x = the x-position of the bead on the grid
 // y = the y-position of the bead on the grid
 // data = the data value associated with this bead, 0 if none has been set
-
 PS.Click = function (x, y, data)
 {
-	"use strict";
-  PS.BeadData(x, y, !data);
-  PS.BeadColor(x, y, data ? PS.DEFAULT : COLORS[PS.Random(COLORS.length) - 1]);
+  "use strict";
+  ACTIVE = !!TOOL;
+  if (ACTIVE) TOOL(x, y, data);
 };
 
 // PS.Release (x, y, data)
@@ -68,11 +149,11 @@ PS.Click = function (x, y, data)
 // x = the x-position of the bead on the grid
 // y = the y-position of the bead on the grid
 // data = the data value associated with this bead, 0 if none has been set
-
 PS.Release = function (x, y, data)
 {
-	"use strict";
-	// Put code here for when the mouse button is released over a bead	
+  "use strict";
+  if (ACTIVE) TOOL();
+  ACTIVE = false;
 };
 
 // PS.Enter (x, y, button, data)
@@ -81,12 +162,10 @@ PS.Release = function (x, y, data)
 // x = the x-position of the bead on the grid
 // y = the y-position of the bead on the grid
 // data = the data value associated with this bead, 0 if none has been set
-
 PS.Enter = function (x, y, data)
 {
-	"use strict";
-
-	// Put code here for when the mouse enters a bead	
+  "use strict";
+  if (ACTIVE) TOOL(x, y, data);
 };
 
 // PS.Leave (x, y, data)
@@ -95,12 +174,9 @@ PS.Enter = function (x, y, data)
 // x = the x-position of the bead on the grid
 // y = the y-position of the bead on the grid
 // data = the data value associated with this bead, 0 if none has been set
-
 PS.Leave = function (x, y, data)
 {
-	"use strict";
-
-	// Put code here for when the mouse leaves a bead	
+  "use strict";
 };
 
 // PS.KeyDown (key, shift, ctrl)
@@ -111,28 +187,28 @@ PS.Leave = function (x, y, data)
 // Function keys = PS.F1 through PS.F1
 // shift = true if shift key is held down, false otherwise
 // ctrl = true if control key is held down, false otherwise
-
 PS.KeyDown = function (key, shift, ctrl)
 {
-	"use strict";
-  if (key === PS.ARROW_UP) {
-    BPM = Math.min(BPM + 4, 240);
-    update_clock();
-  } else if (key === PS.ARROW_DOWN) {
-    BPM = Math.max(BPM - 4, 40);
-    update_clock();
-  } else if (key === PS.ARROW_LEFT) {
-    step(-1);
-  } else if (key === PS.ARROW_RIGHT) {
-    step(1);
+  "use strict";
+  var str = String.fromCharCode(key);
+  if (str === "c" || str === "C") {
+    TOOL = zone.bind(this, "commercial", shift ? 1 : 0.5);
+  } else if (str === "r" || str === "R") {
+    TOOL = zone.bind(this, "residential", shift ? 1 : 0.5);
+  } else if (str === "i" || str === "I") {
+    TOOL = zone.bind(this, "industrial", shift ? 1 : 0.5);
+  } else if (str === "s" || str === "S") {
+    TOOL = streets;
+  } else if (str === "g" || str === "G") {
+    TOOL = greenery;
+  } else if (str === "k" || str === "K") {
+    // Coal
+  } else if (str === "o" || str === "O") {
+    // Oil
+  } else if (str === "n" || str === "N") {
+    // Nuclear
   }
 };
-
-function update_clock()
-{
-  PS.Clock(1500 / BPM);
-  PS.StatusText(BPM + " bpm");
-}
 
 // PS.KeyUp (key, shift, ctrl)
 // This function is called whenever a key on the keyboard is released
@@ -142,43 +218,25 @@ function update_clock()
 // Function keys = PS.F1 through PS.F12
 // shift = true if shift key is held down, false otherwise
 // ctrl = true if control key is held down, false otherwise
-
 PS.KeyUp = function (key, shift, ctrl)
 {
-	"use strict";
+  "use strict";
 };
 
 // PS.Wheel (dir)
 // This function is called whenever the mouse wheel moves forward or backward
 // It doesn't have to do anything
 // dir = 1 if mouse wheel moves forward, -1 if backward
-
 PS.Wheel = function (dir)
 {
-	"use strict";
-
-	// Put code here for when a key is pressed	
+  "use strict";
 };
 
 // PS.Tick ()
 // This function is called on every clock tick
 // if a timer has been activated with a call to PS.Timer()
 // It doesn't have to do anything
-
 PS.Tick = function ()
 {
-	"use strict";
-  step(1);
-}
-
-function step(incr)
-{
-  var w = NOTES.length;
-  PS.BeadBorderAlpha([BEAT + w - incr] % w, PS.ALL, 100);
-  if (incr < 0) BEAT = (BEAT + w + incr) % w;
-  PS.BeadBorderAlpha(BEAT, PS.ALL, 50);
-  for (var y = 0; y < w; ++y) {
-    if (PS.BeadData(BEAT, y)) PS.AudioPlay("xylo_" + NOTES[y]);
-  }
-  if (incr > 0) BEAT = (BEAT + 1) % w;
+  "use strict";
 };

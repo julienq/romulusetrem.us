@@ -161,7 +161,7 @@ PS.KeyUp = function (key, shift, ctrl)
 PS.Wheel = function (dir)
 {
 	"use strict";
-  SZ = Math.min(Math.max(SZ + dir, 1), 16);
+  SZ = Math.min(Math.max(SZ + dir, 1), 32);
   grid_size();
   update();
 };
