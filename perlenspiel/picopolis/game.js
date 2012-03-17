@@ -32,10 +32,12 @@ var BORDER_COLOR = PS.COLOR_GRAY;
 var TOOL = null;
 var ACTIVE = false;
 
-BORDERS = { 0: PS.COLOR_GRAY, road: PS.COLOR_GRAY, commercial: PS.COLOR_BLUE,
-  residential: PS.COLOR_GREEN, industrial: PS.COLOR_YELLOW };
-COLORS = { 0: 0xcda658, road: PS.COLOR_GRAY, commercial: PS.COLOR_BLUE,
-  residential: PS.COLOR_GREEN, industrial: PS.COLOR_YELLOW };
+BORDERS = { ground: 0xcda658, bulldozed: 0xcda658, tree: 0xcda658,
+  water: 0x02aab0, street: PS.COLOR_GRAY, bridge: PS.COLOR_GRAY,
+  commercial: 0x1574b6, residential: 0x3eb615, industrial: 0xff7f40 };
+COLORS = { ground: 0xcda658, bulldozed:0x645450, tree: 0x2a5625,
+  water: 0x02aab0, street: PS.COLOR_GRAY, bridge: PS.COLOR_GRAY,
+  commercial: 0x1574b6, residential: 0x3eb615, industrial: 0xff7f40 };
 
 function make_rect(x, y, w, h)
 {
@@ -47,7 +49,9 @@ function make_rect(x, y, w, h)
       var y_min = this.h > 0 ? this.y : this.y + this.h - 1;
       var y_max = this.h > 0 ? this.y + this.h - 1 : this.y;
       for (var x = x_min; x <= x_max; ++x) {
-        for (var y = y_min; y <= y_max; ++y) f(x, y);
+        for (var y = y_min; y <= y_max; ++y) {
+          f(x, y, PS.BeadData(x, y));
+        }
       }
     },
 
@@ -58,7 +62,9 @@ function make_rect(x, y, w, h)
       var y_min = this.h > 0 ? this.y : this.y + this.h - 1;
       var y_max = this.h > 0 ? this.y + this.h - 1 : this.y;
       for (var x = x_min; x <= x_max; ++x) {
-        for (var y = y_min; y <= y_max; ++y) if (!p(x, y)) return false;
+        for (var y = y_min; y <= y_max; ++y) {
+          if (!p(x, y, PS.BeadData(x, y))) return false;
+        }
       }
       return true;
     }
@@ -72,47 +78,116 @@ function make_rect(x, y, w, h)
 
 function update_region(rect)
 {
-  rect.iterate(function(x, y) {
-      var data = PS.BeadData(x, y);
+  rect.iterate(function(x, y, data) {
       PS.BeadBorderColor(x, y, BORDERS[data && data.type]);
       PS.BeadColor(x, y, COLORS[data && data.type]);
+      PS.BeadAlpha(x, y, 50 + Math.round(("pop" in data ?
+            data.pop : .75 + .25 * Math.random()) * 50));
     });
+}
+
+var WORLD = make_rect(0, 0, SZ, SZ);
+
+function terraform()
+{
+  WORLD.iterate(function(x, y) {
+      var type = Math.random() < 0.075 ? "tree" : "ground";
+      PS.BeadData(x, y, { type: type, pop: 0.25 * Math.random() + 0.75 });
+    });
+  // Make a coast
+  var coast = PS.Random(5) - 1;
+  var depth = coast === 4 ? 0 : PS.Random(3) + 2;
+  for (var i = 0; i < depth; ++i) {
+    var x = coast === 0 ? SZ - i - 1 : coast === 2 ? i : PS.ALL;
+    var y = coast === 1 ? i : coast === 3 ? SZ - i - 1 : PS.ALL;
+    PS.BeadData(x, y, { type: "water" })
+  }
+  // And a river
+  var j = Math.round(PS.Random(SZ / 2) + SZ / 4);
+  var w = PS.Random(3) + (coast === 4 ? 1 : 0);
+  if (coast === 4) coast = PS.Random(4) - 1;
+  for (var i = 0; i < w; ++i) {
+    var x = coast === 1 || coast === 3 ? j + i : PS.ALL;
+    var y = coast === 0 || coast === 2 ? j + i : PS.ALL;
+    PS.BeadData(x, y, { type: "water" });
+  }
+  update_region(WORLD);
+}
+
+function update_world()
+{
+  WORLD.iterate(function(x, y, data) {
+      if (data.cap) {
+        var incr = Math.random() * 0.1 - 0.05;
+        data.pop = Math.max(0, Math.min(data.pop + incr, 1));
+      }
+    });
+  update_region(make_rect(0, 0, SZ, SZ));
+  if (WORLD.selection && WORLD.selection.ok) {
+    WORLD.selection.iterate(function(x, y) {
+        PS.BeadBorderColor(x, y, BORDERS[WORLD.selection.type]);
+      });
+  }
 }
 
 // Draw streets
 function streets(x, y, data)
 {
-  if (x === undefined || data) return;
-  PS.BeadData(x, y, { type: "road", cap: 1, pop: 0 });
+  if (x === undefined) {
+    PS.AudioPlay("fx_click");
+    return;
+  }
+  if (data.type !== "water" && data.type !== "ground") return;
+  var type = data.type === "water" ? "bridge" : "street";
+  PS.BeadData(x, y, { type: type, cap: 1, pop: 0 });
   update_region(make_rect(x, y, 1, 1));
+}
+
+function bulldozer(x, y, data)
+{
+  if (x === undefined) {
+    PS.AudioPlay("fx_bomb1");
+    return;
+  }
+  if (data.type === "water" || data.type === "ground") return;
+  if (data.type === "bridge") {
+    PS.BeadData(x, y, { type: "water" });
+  } else if (data.type === "bulldozed" || data.type === "tree") {
+    PS.BeadData(x, y, { type: "ground", pop: 0.25 * Math.random() + 0.75 });
+  } else {
+    PS.BeadData(x, y, { type: "bulldozed", pop: 1 });
+  }
 }
 
 // Zone function
 
-var RECT = null;
-
 function zone(type, cap, x, y, data)
 {
   if (x === undefined) {
-    var ok = RECT.test(function(x, y) { return !PS.BeadData(x, y); });
-    if (ok) {
-      RECT.iterate(function(x, y) {
+    if (WORLD.selection.ok) {
+      WORLD.selection.iterate(function(x, y) {
           PS.BeadData(x, y, { type: type, cap: cap, pop: 0 });
         });
+      PS.AudioPlay("fx_click");
     }
-    update_region(RECT);
-    RECT = null;
+    update_region(WORLD.selection);
+    WORLD.selection = null;
   } else {
-    if (RECT) {
-      update_region(RECT);
+    if (WORLD.selection) {
+      update_region(WORLD.selection);
     } else {
-      RECT = make_rect(x, y, 1, 1);
+      WORLD.selection = make_rect(x, y, 1, 1);
+      WORLD.selection.type = type;
     }
-    RECT.w = 1 + x - RECT.x;
-    RECT.h = 1 + y - RECT.y;
-    var ok = RECT.test(function(x, y) { return !PS.BeadData(x, y); });
-    if (ok) {
-      RECT.iterate(function(x, y) { PS.BeadBorderColor(x, y, BORDERS[type]); });
+    WORLD.selection.w = 1 + x - WORLD.selection.x;
+    WORLD.selection.h = 1 + y - WORLD.selection.y;
+    WORLD.selection.ok = WORLD.selection.test(function(x, y, data) {
+        return data.type === "ground";
+      });
+    if (WORLD.selection.ok) {
+      WORLD.selection.iterate(function(x, y) {
+          PS.BeadBorderColor(x, y, BORDERS[type]);
+        });
     }
   }
 }
@@ -126,8 +201,9 @@ PS.Init = function ()
   "use strict";
   PS.GridSize(SZ, SZ);
   PS.BeadFlash(PS.ALL, PS.ALL, false);
-  update_region(make_rect(0, 0, SZ, SZ));
+  terraform();
   PS.StatusText("Picopolis");
+  PS.Clock(20);
 };
 
 // PS.Click (x, y, data)
@@ -193,20 +269,20 @@ PS.KeyDown = function (key, shift, ctrl)
   var str = String.fromCharCode(key);
   if (str === "c" || str === "C") {
     TOOL = zone.bind(this, "commercial", shift ? 1 : 0.5);
+    PS.StatusText("Zone for commercial");
   } else if (str === "r" || str === "R") {
     TOOL = zone.bind(this, "residential", shift ? 1 : 0.5);
+    PS.StatusText("Zone for residential");
   } else if (str === "i" || str === "I") {
     TOOL = zone.bind(this, "industrial", shift ? 1 : 0.5);
+    PS.StatusText("Zone for industrial");
   } else if (str === "s" || str === "S") {
     TOOL = streets;
-  } else if (str === "g" || str === "G") {
-    TOOL = greenery;
-  } else if (str === "k" || str === "K") {
-    // Coal
-  } else if (str === "o" || str === "O") {
-    // Oil
-  } else if (str === "n" || str === "N") {
-    // Nuclear
+    PS.StatusText("Build streets");
+  } else if (str === "z" || str === "Z") {
+    // BulldoZe
+    TOOL = bulldozer;
+    PS.StatusText("Bulldozer");
   }
 };
 
@@ -239,4 +315,5 @@ PS.Wheel = function (dir)
 PS.Tick = function ()
 {
   "use strict";
+  update_world();
 };
