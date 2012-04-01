@@ -18,20 +18,14 @@ You may have received a copy of the GNU Lesser General Public License
 along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 */
 
-// This is a template for creating new Perlenspiel games
-// All of the functions below MUST exist, or the engine will stop and complain!
-
-// The following comment line is for JSLint. Don't remove it!
-
 /*global PS */
 
 var SZ = 32;
-var BG_COLOR = 0xcda658;
-var BORDER_COLOR = PS.COLOR_GRAY;
 
-var TOOL = null;
-var ACTIVE = false;
+var TOOL = null;     // current tool (functions like streets, zone, etc.)
+var ACTIVE = false;  // tool is currently active (when dragging)
 
+// Colors for borders and backgrounds
 BORDERS = { ground: 0xcda658, bulldozed: 0xcda658, tree: 0xcda658,
   water: 0x02aab0, street: PS.COLOR_GRAY, bridge: PS.COLOR_GRAY,
   commercial: 0x1574b6, residential: 0x3eb615, industrial: 0xff7f40 };
@@ -39,9 +33,14 @@ COLORS = { ground: 0xcda658, bulldozed:0x645450, tree: 0x2a5625,
   water: 0x02aab0, street: PS.COLOR_GRAY, bridge: PS.COLOR_GRAY,
   commercial: 0x1574b6, residential: 0x3eb615, industrial: 0xff7f40 };
 
+// Make a rectangle object; width and height may be negative meaning that we go
+// down from that corner instead of up
 function make_rect(x, y, w, h)
 {
-  var rect = {
+  var rect =
+  {
+    // Iterate over all beads in the rectangle, calling a function with x, y,
+    // and data for that bead
     iterate: function(f)
     {
       var x_min = this.w > 0 ? this.x : this.x + this.w - 1;
@@ -55,6 +54,8 @@ function make_rect(x, y, w, h)
       }
     },
 
+    // Test all beads and return false as soon as a bead fails, or true after
+    // all beads have been tested
     test: function(p)
     {
       var x_min = this.w > 0 ? this.x : this.x + this.w - 1;
@@ -76,18 +77,21 @@ function make_rect(x, y, w, h)
   return rect;
 }
 
+// Update the region given by the rect
 function update_region(rect)
 {
   rect.iterate(function(x, y, data) {
-      PS.BeadBorderColor(x, y, BORDERS[data && data.type]);
-      PS.BeadColor(x, y, COLORS[data && data.type]);
+      PS.BeadBorderColor(x, y, BORDERS[data.type]);
+      PS.BeadColor(x, y, COLORS[data.type]);
       PS.BeadAlpha(x, y, 50 + Math.round(("pop" in data ?
             data.pop : .75 + .25 * Math.random()) * 50));
     });
 }
 
+// Rect for the whole world
 var WORLD = make_rect(0, 0, SZ, SZ);
 
+// Create a new map with some water and trees
 function terraform()
 {
   WORLD.iterate(function(x, y) {
@@ -114,20 +118,20 @@ function terraform()
   update_region(WORLD);
 }
 
+var CITY =
+{
+  zones: { residential: [], commercial: [], industrial: [] },
+};
+
+// Run the simulation for one tick
 function update_world()
 {
   WORLD.iterate(function(x, y, data) {
       if (data.cap) {
-        var incr = Math.random() * 0.1 - 0.05;
-        data.pop = Math.max(0, Math.min(data.pop + incr, 1));
+        // var incr = Math.random() * 0.1 - 0.05;
+        // data.pop = Math.max(0, Math.min(data.pop + incr, 1));
       }
     });
-  update_region(make_rect(0, 0, SZ, SZ));
-  if (WORLD.selection && WORLD.selection.ok) {
-    WORLD.selection.iterate(function(x, y) {
-        PS.BeadBorderColor(x, y, BORDERS[WORLD.selection.type]);
-      });
-  }
 }
 
 // Draw streets
@@ -143,6 +147,8 @@ function streets(x, y, data)
   update_region(make_rect(x, y, 1, 1));
 }
 
+// Bulldoze
+// TODO bulldozing a zone will empty it of its population
 function bulldozer(x, y, data)
 {
   if (x === undefined) {
@@ -160,16 +166,17 @@ function bulldozer(x, y, data)
 }
 
 // Zone function
-
 function zone(type, cap, x, y, data)
 {
   if (x === undefined) {
     if (WORLD.selection.ok) {
       WORLD.selection.iterate(function(x, y) {
-          PS.BeadData(x, y, { type: type, cap: cap, pop: 0 });
+          PS.BeadData(x, y, { type: type, cap: cap, pop: cap,
+            zone: WORLD.selection });
         });
       PS.AudioPlay("fx_click");
     }
+    CITY.zones[type].push(WORLD.selection);
     update_region(WORLD.selection);
     WORLD.selection = null;
   } else {
@@ -192,10 +199,7 @@ function zone(type, cap, x, y, data)
   }
 }
 
-// PS.Init ()
-// Initializes the game
-// This function normally includes a call to PS.GridSize (x, y)
-// where x and y are the desired dimensions of the grid
+// Initialize the grid and the game world
 PS.Init = function ()
 {
   "use strict";
@@ -206,12 +210,7 @@ PS.Init = function ()
   PS.Clock(20);
 };
 
-// PS.Click (x, y, data)
-// This function is called whenever a bead is clicked
-// It doesn't have to do anything
-// x = the x-position of the bead on the grid
-// y = the y-position of the bead on the grid
-// data = the data value associated with this bead, 0 if none has been set
+// Activate the currently selected tool on mouse down
 PS.Click = function (x, y, data)
 {
   "use strict";
@@ -219,12 +218,7 @@ PS.Click = function (x, y, data)
   if (ACTIVE) TOOL(x, y, data);
 };
 
-// PS.Release (x, y, data)
-// This function is called whenever a mouse button is released over a bead
-// It doesn't have to do anything
-// x = the x-position of the bead on the grid
-// y = the y-position of the bead on the grid
-// data = the data value associated with this bead, 0 if none has been set
+// Deactivate the current tool/selection
 PS.Release = function (x, y, data)
 {
   "use strict";
@@ -232,50 +226,30 @@ PS.Release = function (x, y, data)
   ACTIVE = false;
 };
 
-// PS.Enter (x, y, button, data)
-// This function is called whenever the mouse moves over a bead
-// It doesn't have to do anything
-// x = the x-position of the bead on the grid
-// y = the y-position of the bead on the grid
-// data = the data value associated with this bead, 0 if none has been set
+// Keep dragging
 PS.Enter = function (x, y, data)
 {
   "use strict";
   if (ACTIVE) TOOL(x, y, data);
 };
 
-// PS.Leave (x, y, data)
-// This function is called whenever the mouse moves away from a bead
-// It doesn't have to do anything
-// x = the x-position of the bead on the grid
-// y = the y-position of the bead on the grid
-// data = the data value associated with this bead, 0 if none has been set
-PS.Leave = function (x, y, data)
-{
-  "use strict";
-};
+// TODO track leaving the grid?
+PS.Leave = function (x, y, data) {};
 
-// PS.KeyDown (key, shift, ctrl)
-// This function is called whenever a key on the keyboard is pressed
-// It doesn't have to do anything
-// key = the ASCII code of the pressed key, or one of the following constants:
-// Arrow keys = PS.ARROW_UP, PS.ARROW_DOWN, PS.ARROW_LEFT, PS.ARROW_RIGHT
-// Function keys = PS.F1 through PS.F1
-// shift = true if shift key is held down, false otherwise
-// ctrl = true if control key is held down, false otherwise
+// Select a tool
 PS.KeyDown = function (key, shift, ctrl)
 {
   "use strict";
   var str = String.fromCharCode(key);
   if (str === "c" || str === "C") {
     TOOL = zone.bind(this, "commercial", shift ? 1 : 0.5);
-    PS.StatusText("Zone for commercial");
+    PS.StatusText("Zone for commercial" + (shift ? "" : " (light)"));
   } else if (str === "r" || str === "R") {
     TOOL = zone.bind(this, "residential", shift ? 1 : 0.5);
-    PS.StatusText("Zone for residential");
+    PS.StatusText("Zone for residential" + (shift ? "" : " (light)"));
   } else if (str === "i" || str === "I") {
     TOOL = zone.bind(this, "industrial", shift ? 1 : 0.5);
-    PS.StatusText("Zone for industrial");
+    PS.StatusText("Zone for industrial" + (shift ? "" : " (light)"));
   } else if (str === "s" || str === "S") {
     TOOL = streets;
     PS.StatusText("Build streets");
@@ -286,34 +260,18 @@ PS.KeyDown = function (key, shift, ctrl)
   }
 };
 
-// PS.KeyUp (key, shift, ctrl)
-// This function is called whenever a key on the keyboard is released
-// It doesn't have to do anything
-// key = the ASCII code of the pressed key, or one of the following constants:
-// Arrow keys = PS.ARROW_UP, PS.ARROW_DOWN, PS.ARROW_LEFT, PS.ARROW_RIGHT
-// Function keys = PS.F1 through PS.F12
-// shift = true if shift key is held down, false otherwise
-// ctrl = true if control key is held down, false otherwise
-PS.KeyUp = function (key, shift, ctrl)
-{
-  "use strict";
-};
+PS.KeyUp = function (key, shift, ctrl) {};
+PS.Wheel = function (dir) {};
 
-// PS.Wheel (dir)
-// This function is called whenever the mouse wheel moves forward or backward
-// It doesn't have to do anything
-// dir = 1 if mouse wheel moves forward, -1 if backward
-PS.Wheel = function (dir)
-{
-  "use strict";
-};
-
-// PS.Tick ()
-// This function is called on every clock tick
-// if a timer has been activated with a call to PS.Timer()
-// It doesn't have to do anything
+// Update world on every tick and redraw world and selection
 PS.Tick = function ()
 {
   "use strict";
   update_world();
+  update_region(WORLD)
+  if (WORLD.selection && WORLD.selection.ok) {
+    WORLD.selection.iterate(function(x, y) {
+        PS.BeadBorderColor(x, y, BORDERS[WORLD.selection.type]);
+      });
+  }
 };

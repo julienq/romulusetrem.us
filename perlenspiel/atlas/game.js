@@ -38,6 +38,25 @@ var LEVELS =
     [0,1,0,1,1,0,0,0],
     [0,1,1,1,1,0,0,0],
     [0,0,0,0,0,0,0,0],
+  ], ["Checkerboard",
+    [0,0,0,0,0,0],
+    [0,1,3,1,3,0],
+    [0,3,1,3,1,0],
+    [0,1,7,1,3,0],
+    [0,3,1,3,1,0],
+    [0,0,0,0,0,0],
+  ], ["Hmmm... what's up with that?",
+    [0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0],
+    [7,1,1,1,1,1,7],
+    [0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0]
+  ], ["There can be only one",
+    [7,1,1,1,1,1,1],
+    [0,0,0,3,0,0,0],
+    [1,1,1,1,1,1,7],
   ], ["That's it; you won the game!",
     [0,1,3],
     [1,3,0],
@@ -45,11 +64,30 @@ var LEVELS =
   ]
 ]
 
-var W, H, Px, Py, T, WON;
+var W, H, T, OVER;
+
+function adjacent(x, y)
+{
+  var adj = [];
+  for (var i = -1; i <= 1; i += 2) {
+    var x_ = x + i;
+    if (x_ >= 0 && x_ < W) {
+      var data = PS.BeadData(x_, y);
+      if (data & 4) adj.push([x_, y]);
+    }
+  }
+  for (var i = -1; i <= 1; i += 2) {
+    var y_ = y + i;
+    if (y_ >= 0 && y_ < H) {
+      var data = PS.BeadData(x, y_);
+      if (data & 4) adj.push([x, y_]);
+    }
+  }
+  return adj;
+}
 
 function update_cell(x, y, data)
 {
-  "use strict";
   if (data === undefined) {
     data = PS.BeadData(x, y);
   } else {
@@ -61,10 +99,6 @@ function update_cell(x, y, data)
     var p = data & 4;
     PS.BeadBorderColor(x, y, BORDER_COLORS[p >> 2]);
     PS.BeadBorderWidth(x, y, 1 + p);
-    if (!!p) {
-      Px = x;
-      Py = y;
-    }
   } else {
     PS.BeadShow(x, y, false);
   }
@@ -72,53 +106,66 @@ function update_cell(x, y, data)
 
 function show_level(n)
 {
-  "use strict";
   var level = LEVELS[n];
-  PS.StatusText("Atlas | " + level[0]);
-  WON = false;
+  PS.StatusText("Atlas (" + (n + 1) + ") " + level[0]);
+  OVER = false;
   H = level.length - 1;
   W = level[1].length;
-  T = [0, 0];
+  T = [0, 0, 0];
   PS.GridSize(W, H);
   for (var y = 0; y < H; ++y) {
     for (var x = 0; x < W; ++x) {
       var data = level[y + 1][x];
       update_cell(x, y, data);
-      if (data) ++T[(data & 2) >> 1];
+      if (data) {
+        ++T[(data & 2) >> 1];  // count the tiles of each color
+        if (data & 4) ++T[2];  // and the "player" tiles
+      }
     }
   }
-  PS.AudioPlay("fx_beep");
+  PS.AudioPlay("fx_tick");
 }
 
-function won()
+function over(won)
 {
-  PS.StatusText("Well done! Click anywhere for next level");
-  WON = true;
-  ++LEVEL;
-  PS.AudioPlay("fx_tada");
+  OVER = true;
+  if (won) { ++LEVEL;
+    PS.StatusText("Well done! Click any tile for next level");
+    PS.AudioPlay("fx_tada");
+  } else {
+    PS.StatusText("D'oh! Click any tile to try again.");
+    PS.AudioPlay("fx_uhoh");
+  }
 }
+
+
+// PS functions that need to be defined
 
 PS.Init = function ()
 {
-  "use strict";
   PS.GridSize(8, 8);
   show_level(LEVEL);
 };
 
 PS.Click = function (x, y, data)
 {
-  "use strict";
-  if (WON) {
+  if (OVER) {
     show_level(LEVEL);
-  } else if (data && Math.abs(Px - x) + Math.abs(Py - y) === 1) {
-    var c = 1 - ((data & 2) >> 1);
-    update_cell(Px, Py, PS.BeadData(Px, Py) - 4);
-    update_cell(x, y, 5 + 2 * c);
-    ++T[c];
-    PS.AudioPlay("fx_pop");
-    if (--T[1 - c] === 0) won();
   } else {
-    PS.AudioPlay("fx_click");
+    var adj = adjacent(x, y);
+    if (data && adj.length) {
+      var c = 1 - ((data & 2) >> 1);
+      adj.forEach(function(p) {
+          update_cell(p[0], p[1], PS.BeadData(p[0], p[1]) - 4);
+        });
+      update_cell(x, y, 5 + 2 * c);
+      ++T[c];
+      T[2] -= (adj.length - 1);
+      PS.AudioPlay("fx_pop");
+      if (--T[1 - c] === 0) over(T[2] === 1);
+    } else {
+      PS.AudioPlay("fx_click");
+    }
   }
 };
 
