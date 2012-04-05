@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Character Set Graphics</title>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
+      canvas { background-color: #00f; width: 960px; height: 756px;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast; }
+    </style>
+  </head>
+  <body>
+    <canvas width="320" height="192"></canvas>
+    <script src="../../flexo.js"></script>
+    <script>
+
+      var canvas = document.querySelector("canvas");
+
+      var context = canvas.getContext("2d");
+
+      function make_sprite(frames)
+      {
+        var sprite = { frames: [], frame: 0 };
+        frames.forEach(function(frame) {
+            var image = context.createImageData(16, 48);
+            var offset = 0;
+            frame.forEach(function(c) {
+                for (var j = 0, mask = 128; j < 8; ++j, offset += 4, mask >>= 1) {
+                  image.data[offset] = 255;
+                  image.data[offset + 1] = 255;
+                  image.data[offset + 2] = 255;
+                  image.data[offset + 3] = 255 * ((c & mask) >> (7 - j));
+                }
+              });
+            sprite.frames.push(image);
+          });
+        return sprite;
+      }
+
+
+      var sprite = make_sprite([
+        [  0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,  28,
+           0,  62,
+           0,  62,
+           0,  62,
+           0,  28,
+           0, 240,
+           3, 240,
+          15, 240,
+          29, 240,
+          59, 251,
+          51, 255,
+           7, 220,
+           7, 192,
+          15, 192,
+         252, 227,
+         224, 118,
+         112,  60,
+          48,  24],
+        [  0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,  56,
+           0, 124,
+           0, 124,
+           0, 124,
+           0,  56,
+           1, 224,
+           7, 224,
+          15, 224,
+          31, 224,
+          55, 246,
+          55, 254,
+           7, 192,
+         111, 128,
+         125, 192,
+         248, 224,
+         192, 224,
+          65, 248],
+        [  0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0, 112,
+           0, 248,
+           0, 248,
+           0, 248,
+           0, 112,
+           3, 192,
+           7, 192,
+          15, 128,
+          31, 128,
+          31, 128,
+          31, 224,
+          31, 224,
+         222,   0,
+         254,   0,
+         251,   0,
+         231,   0,
+         206,   0,
+          15, 128],
+        [  0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0, 224,
+           1, 240,
+           1, 240,
+           0, 224,
+           7, 128,
+          31, 128,
+          31, 128,
+          31, 128,
+          31, 176,
+          31, 240,
+          15,   0,
+          15, 128,
+          13, 192,
+          31, 128,
+         123, 192,
+         112, 128,
+         124,   0],
+        [  0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           0,   0,
+           1, 192,
+           3, 224,
+           3, 224,
+           3, 224,
+           1, 192,
+           7,   0,
+          15,   0,
+          31,   0,
+          30,   0,
+          62,   0,
+          62,   0,
+          63,   0,
+          63,   0,
+          60,   0,
+         124,   0,
+         120,   0,
+         112,   0,
+         112,   0,
+         252,   0] ]);
+
+      var fps = 12;
+      var rate = 1000 / fps;
+      var last = 0;
+      var cycle = function(time)
+      {
+        if (time - last >= rate) {
+          last = time;
+          context.clearRect(0, 0, 16, 48);
+          context.putImageData(sprite.frames[sprite.frame], 0, 0);
+          sprite.frame = (sprite.frame + 1) % sprite.frames.length;
+        }
+        requestAnimationFrame(cycle);
+      };
+      cycle(rate);
+
+    </script>
+  </body>
+</html>
+
