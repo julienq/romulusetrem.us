@@ -36,6 +36,7 @@ PS.Init = function ()
   document.addEventListener("dragleave", dragleave, false);
   document.addEventListener("drop", drop, false);
   PS.StatusText("Drag an image");
+  PS.AudioLoad("fx_pop");
   PS.Clock(80);
 };
 
@@ -67,6 +68,7 @@ function drop(e)
           PS.ImageBlit(PS.ImageData(img, true));
           PS.Tick();
           PS.StatusText("Mosaic");
+          PS.AudioPlay("fx_pop");
           canvas = null;
           context = null;
           img = null;
