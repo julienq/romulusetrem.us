@@ -1,0 +1,46 @@
+<!--
+Perlenspiel is Copyright © 2009-12 Worcester Polytechnic Institute.
+This file is part of Perlenspiel.
+
+Perlenspiel is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Perlenspiel is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You may have received a copy of the GNU Lesser General Public License
+along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+		<title>Perlenspiel 2.1</title>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />		
+		<meta name="description" content="Perlenspiel 2.1" />
+		<meta name="viewport" content="width=device-width; initial-scale=1.0" />
+		<link rel="stylesheet" href="http://users.wpi.edu/~bmoriarty/ps/ps.css" type="text/css">
+		<script type="text/javascript" src="http://users.wpi.edu/~bmoriarty/ps/ps2.1.js"></script>
+    </head>
+    <body onload="PS.Sys();" onkeydown="return PS.SysKeyDown(event);" onkeyup="return PS.SysKeyUp(event);">
+        <div id="main">
+        	<input id="status" name="status" type="text" readonly value="Perlenspiel"/>
+			<canvas id="screen" name="screen" width=480 height=480>No HTML5 canvas!</canvas>
+       		<p id="footer" name="footer">V</p>
+       	</div>
+       	<div id="debug" name="debug" style="display: none;">
+       		<textarea id="monitor" name="monitor" cols=57 rows=8 wrap=soft readonly=true>
+      		</textarea> 
+       	</div>
+
+		<!-- Do not touch ANYTHING above this line! EVER! -->		
+		<!-- Add any scripts needed by your game here -->
+
+		<script type="text/javascript" src="game.js"></script>
+    </body>
+</html>

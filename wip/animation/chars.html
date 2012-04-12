@@ -4,10 +4,16 @@
     <title>Character Set Graphics</title>
     <meta charset="UTF-8">
     <style>
-      body { font-family: "Helvetica Neue", Helvetica, sans-serif; }
-      canvas { background-color: #00f; width: 960px; height: 756px;
+      body {
+        font-family: "Helvetica Neue", Helvetica, sans-serif;
+      }
+      canvas {
+        background-color: #00f;
+        width: 640px;
+        height: 394px;
         image-rendering: -moz-crisp-edges;
-        image-rendering: -webkit-optimize-contrast; }
+        image-rendering: -webkit-optimize-contrast;
+      }
     </style>
   </head>
   <body>
@@ -163,13 +169,19 @@
       var fps = 12;
       var rate = 1000 / fps;
       var last = 0;
+      var x = 0;
+      var frame_incr = 1;
       var cycle = function(time)
       {
         if (time - last >= rate) {
           last = time;
           context.clearRect(0, 0, 16, 48);
-          context.putImageData(sprite.frames[sprite.frame], 0, 0);
-          sprite.frame = (sprite.frame + 1) % sprite.frames.length;
+          context.putImageData(sprite.frames[sprite.frame], x, 0);
+          sprite.frame += frame_incr;
+          if (sprite.frame < 0 || sprite.frame >= sprite.frames.length) {
+            frame_incr *= -1;
+            sprite.frame += 2 * frame_incr;
+          }
         }
         requestAnimationFrame(cycle);
       };

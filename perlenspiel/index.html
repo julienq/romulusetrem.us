@@ -4,37 +4,96 @@
     <title>Perlenspiel</title>
     <meta charset="UTF-8">
     <style>
-      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
-        margin: 0 auto; padding: 0; background-color: white; width: 900px; }
-      a { text-decoration: none; color: #ff4040; }
+      body {
+        background-color: white;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        margin: 0 auto;
+        width: 960px;
+      }
+      a {
+        color: #ff4040;
+        text-decoration: none;
+      }
       .roman { font-variant: small-caps; }
-      footer { margin-top: 4em; text-align: center; font-size: smaller }
-      section { width: 620px; }
+      footer {
+        clear: both;
+        font-size: smaller;
+        margin-top: 4em;
+        text-align: center;
+      }
+      .g2, .g8 {
+        display: inline;
+        float: left;
+        margin: 0 10px;
+        position: relative;
+      }
+      .g2 { width: 140px; }
+      .g8 { width: 620px; }
+      .clear {
+        clear: both;
+        display: block;
+        overflow: hidden;
+        visibility: hidden;
+        width: 0;
+        height: 0;
+      }
     </style>
   </head>
   <body>
 
-    <section>
+    <div class="g8">
       <h1>Perlenspiel</h1>
       <p>Some experiments made with Brian Moriarty's <a
         href="http://perlenspiel.org">Perlenspiel</a>. Works best in Firefox.</p>
       <ul>
+        <!--
         <li><a href="atlas/game.html">Atlas</a>: puzzle game where you need to
         flip every tile to the same color. Your position is shown by a green
         outline; you can move to adjacent tiles by clicking them. Entering a tile
         will flip its color.</li>
+        -->
         <li><a href="picopolis/game.html">Picopolis</a>: this will remind you of a
         very famous game... Choose tools with the following keys: <code>R</code>
         for residential, <code>C</code> for commercial, and <code>I</code> for
-        industrial zoning; <code>S</code> for streets. This is very much in
-        progress!</li>
+        industrial zoning; <code>S</code> for streets. The interface is working
+        but not the simulation, so stay tuned for updates.</li>
+        <li><a href="mosaic/game.html">Mosaic</a>: drag an image to make a
+        mosaic.</li>
         <li><a href="xylophone/game.html">Xylophone</a>: a simple sequencer;
         toggle cells to play or mute notes; use up/down arrow key to change the
         tempo.</li>
         <li><a href="colors/game.html">Colors</a>: a simple color toy; move the
         mouse and the scroll wheel.</li>
       </ul>
-    </section>
+    </div>
+
+    <div class="g2">
+      <p>
+        <a href="picopolis/game.html">
+          <img src="images/picopolis.png" alt="Picopolis">
+        </a>
+      </p>
+      <p>
+        <a href="xylophone/game.html">
+          <img src="images/xylophone.png" alt="Xylophone"/>
+        </a>
+      </p>
+    </div>
+
+    <div class="g2">
+      <p>
+        <a href="mosaic/game.html">
+          <img src="images/mosaic.png" alt="Mosaic"/>
+        </a>
+      </p>
+      <p>
+        <a href="colors/game.html">
+          <img src="images/colors.png" alt="Colors"/>
+        </a>
+      </p>
+    </div>
+
+    <div class="clear"></div>
 
     <footer>
     Copyright © <span class="roman">mmxii</span>,
