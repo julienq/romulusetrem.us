@@ -61,41 +61,42 @@
   </body>
   <script>
 
-    var m = Object.create(machine);
+    var m = Object.create(dcpu16.machine);
     flexo.listen(m, "@register", function(e) {
         document.getElementById(e.which).textContent = e.which === "SKIP" ?
-          e.value : hex(e.value);
+          e.value : dcpu16.hex(e.value);
       });
     m.init();
 
-    m.set_ram(0x0000, 0x7c01);  // SET A, 0x30
+    m.set_ram(0x0000, 0x7c01);  //               SET A, 0x30
     m.set_ram(0x0001, 0x0030);
-    m.set_ram(0x0002, 0x7de1);  // SET [0x1000], 0x20
+    m.set_ram(0x0002, 0x7de1);  //               SET [0x1000], 0x20
     m.set_ram(0x0003, 0x1000);
     m.set_ram(0x0004, 0x0020);
-    m.set_ram(0x0005, 0x7803);  // SUB A, [0x1000]
+    m.set_ram(0x0005, 0x7803);  //               SUB A, [0x1000]
     m.set_ram(0x0006, 0x1000);
-    m.set_ram(0x0007, 0xc00d);  // IFN A, 0x10
-    m.set_ram(0x0008, 0x7dc1);  //   SET PC, crash
+    m.set_ram(0x0007, 0xc00d);  //               IFN A, 0x10
+    m.set_ram(0x0008, 0x7dc1);  //                  SET PC, crash
     m.set_ram(0x0009, 0x001a);
-    m.set_ram(0x000a, 0xa861);  // SET I, 10
-    m.set_ram(0x000b, 0x7c01);  // SET A, 0x2000
+    m.set_ram(0x000a, 0xa861);  //               SET I, 10
+    m.set_ram(0x000b, 0x7c01);  //               SET A, 0x2000
     m.set_ram(0x000c, 0x2000);
-    m.set_ram(0x000d, 0x2161);  // :loop SET [0x2000+I], [A]
+    m.set_ram(0x000d, 0x2161);  // :loop         SET [0x2000+I], [A]
     m.set_ram(0x000e, 0x2000);
-    m.set_ram(0x000f, 0x8463);  // SUB I, 1
-    m.set_ram(0x0010, 0x806d);  // IFN I, 0
-    m.set_ram(0x0011, 0x7dc1);  //   SET PC, loop
+    m.set_ram(0x000f, 0x8463);  //               SUB I, 1
+    m.set_ram(0x0010, 0x806d);  //               IFN I, 0
+    m.set_ram(0x0011, 0x7dc1);  //                  SET PC, loop
     m.set_ram(0x0012, 0x000d);
-    m.set_ram(0x0013, 0x9031);  // SET X, 0x4
-    m.set_ram(0x0014, 0x7c10);  // JSR testsub
+    m.set_ram(0x0013, 0x9031);  //               SET X, 0x4
+    m.set_ram(0x0014, 0x7c10);  //               JSR testsub
     m.set_ram(0x0015, 0x0018);
-    m.set_ram(0x0016, 0x7dc1);  // SET PC, crash
+    m.set_ram(0x0016, 0x7dc1);  //               SET PC, crash
     m.set_ram(0x0017, 0x001a);
-    m.set_ram(0x0018, 0x9037);  // :testsub SHL X, 4
-    m.set_ram(0x0019, 0x61c1);  // SET PC, POP
-    m.set_ram(0x001a, 0x7dc1);  // :crash SET PC, crash
+    m.set_ram(0x0018, 0x9037);  // :testsub      SHL X, 4
+    m.set_ram(0x0019, 0x61c1);  //               SET PC, POP
+    m.set_ram(0x001a, 0x7dc1);  // :crash        SET PC, crash
     m.set_ram(0x001b, 0x001a);
+
     m.exec();
 
   </script>
