@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>DCPU-16</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <style>
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      a {
+        text-decoration: none;
+        color: #ff4040;
+      }
+      table { border-collapse: collapse; }
+      th, td {
+        border: solid thin black;
+        padding: 4px;
+      }
+      td { font-family: Menlo, Consolas, monospace; }
+    </style>
+    <script src="../../flexo.js"></script>
+    <script src="dcpu-16.js"></script>
+  </head>
+  <body>
+    <p><a href="http://0x10c.com/doc/dcpu-16.txt">DCPU-16 Specification</a></p>
+    <table>
+      <tbody>
+        <tr>
+          <th>A</th>
+          <th>B</th>
+          <th>C</th>
+          <th>X</th>
+          <th>Y</th>
+          <th>Z</th>
+        </tr>
+        <tr>
+          <td id="A"></td>
+          <td id="B"></td>
+          <td id="C"></td>
+          <td id="X"></td>
+          <td id="Y"></td>
+          <td id="Z"></td>
+        </tr>
+        <tr>
+          <th>I</th>
+          <th>J</th>
+          <th>PC</th>
+          <th>SP</th>
+          <th>O</th>
+          <th>SKIP</th>
+        </th>
+        </tr>
+          <td id="I"></td>
+          <td id="J"></td>
+          <td id="PC"></td>
+          <td id="SP"></td>
+          <td id="O"></td>
+          <td id="SKIP"></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+  <script>
+
+    var m = Object.create(machine);
+    flexo.listen(m, "@register", function(e) {
+        document.getElementById(e.which).textContent = e.which === "SKIP" ?
+          e.value : hex(e.value);
+      });
+    m.init();
+
+    m.set_ram(0x0000, 0x7c01);  // SET A, 0x30
+    m.set_ram(0x0001, 0x0030);
+    m.set_ram(0x0002, 0x7de1);  // SET [0x1000], 0x20
+    m.set_ram(0x0003, 0x1000);
+    m.set_ram(0x0004, 0x0020);
+    m.set_ram(0x0005, 0x7803);  // SUB A, [0x1000]
+    m.set_ram(0x0006, 0x1000);
+    m.set_ram(0x0007, 0xc00d);  // IFN A, 0x10
+    m.set_ram(0x0008, 0x7dc1);  //   SET PC, crash
+    m.set_ram(0x0009, 0x001a);
+    m.set_ram(0x000a, 0xa861);  // SET I, 10
+    m.set_ram(0x000b, 0x7c01);  // SET A, 0x2000
+    m.set_ram(0x000c, 0x2000);
+    m.set_ram(0x000d, 0x2161);  // :loop SET [0x2000+I], [A]
+    m.set_ram(0x000e, 0x2000);
+    m.set_ram(0x000f, 0x8463);  // SUB I, 1
+    m.set_ram(0x0010, 0x806d);  // IFN I, 0
+    m.set_ram(0x0011, 0x7dc1);  //   SET PC, loop
+    m.set_ram(0x0012, 0x000d);
+    m.set_ram(0x0013, 0x9031);  // SET X, 0x4
+    m.set_ram(0x0014, 0x7c10);  // JSR testsub
+    m.set_ram(0x0015, 0x0018);
+    m.set_ram(0x0016, 0x7dc1);  // SET PC, crash
+    m.set_ram(0x0017, 0x001a);
+    m.set_ram(0x0018, 0x9037);  // :testsub SHL X, 4
+    m.set_ram(0x0019, 0x61c1);  // SET PC, POP
+    m.set_ram(0x001a, 0x7dc1);  // :crash SET PC, crash
+    m.set_ram(0x001b, 0x001a);
+    m.exec();
+
+  </script>
+</html>
