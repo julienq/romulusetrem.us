@@ -2,7 +2,7 @@
 // Created: Apr 11, 2012
 // Modified: Apr 19, 2012 (clean up for JSLint; comments)
 // This code is copyright © 2012 romulusetrem.us and is distributed under the
-// same terms as Perlenspiel itself, see http://perlsenspiel.org/ and
+// same terms as Perlenspiel itself, see http://perlenspiel.org/ and
 // http://romulusetrem.us/perlenspiel/ for more info.
 
 // These are for JSLint. There should be no warning using these options:
