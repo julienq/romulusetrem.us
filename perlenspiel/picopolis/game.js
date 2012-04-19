@@ -20,7 +20,15 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 /*global PS */
 
-var SZ = 32;
+// The simulated world
+var SIM =
+{
+  size: 32,
+  demand: { c: 0, r: 0, i: 100 },
+  capacity: { c: 0, r: 0, i: 0 },
+  population: { c: 0, r: 0, i: 0 },
+  zones: { c: [], i: [], r: [] },
+};
 
 var TOOL = null;     // current tool (functions like streets, zone, etc.)
 var ACTIVE = false;  // tool is currently active (when dragging)
@@ -89,7 +97,7 @@ function update_region(rect)
 }
 
 // Rect for the whole world
-var WORLD = make_rect(0, 0, SZ, SZ);
+var WORLD = make_rect(0, 0, SIM.size, SIM.size);
 
 // Create a new map with some water and trees
 function terraform()
@@ -102,12 +110,12 @@ function terraform()
   var coast = PS.Random(5) - 1;
   var depth = coast === 4 ? 0 : PS.Random(3) + 2;
   for (var i = 0; i < depth; ++i) {
-    var x = coast === 0 ? SZ - i - 1 : coast === 2 ? i : PS.ALL;
-    var y = coast === 1 ? i : coast === 3 ? SZ - i - 1 : PS.ALL;
+    var x = coast === 0 ? SIM.size - i - 1 : coast === 2 ? i : PS.ALL;
+    var y = coast === 1 ? i : coast === 3 ? SIM.size - i - 1 : PS.ALL;
     PS.BeadData(x, y, { type: "water" })
   }
   // And a river
-  var j = Math.round(PS.Random(SZ / 2) + SZ / 4);
+  var j = Math.round(PS.Random(SIM.size / 2) + SIM.size / 4);
   var w = PS.Random(3) + (coast === 4 ? 1 : 0);
   if (coast === 4) coast = PS.Random(4) - 1;
   for (var i = 0; i < w; ++i) {
@@ -203,7 +211,7 @@ function zone(type, cap, x, y, data)
 PS.Init = function ()
 {
   "use strict";
-  PS.GridSize(SZ, SZ);
+  PS.GridSize(SIM.size, SIM.size);
   PS.BeadFlash(PS.ALL, PS.ALL, false);
   terraform();
   PS.StatusText("Picopolis");
