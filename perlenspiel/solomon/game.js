@@ -16,7 +16,7 @@
     RATE = 40,  // Clock rate for animations (in 100th of second)
     Px, Py,     // Player position
     ENEMIES,    // Number of enemies left
-    LEVEL = 0,  // Current level number
+    LEVEL = 1,  // Current level number
 
     LEVELS = [
       [ "****************",
@@ -35,6 +35,7 @@
         "****************",
         "****************",
         "****************"],
+
       [ "****************",
         "****************",
         "****************",
@@ -61,7 +62,7 @@
     // @ is the player
     // $ is an enemy flame
     //   is an empty space
-    COLORS = { "*": 0x3f3f3f, "<": 0x3fbfff, ">": 0x3fbfff, "=": 0x3fbfff,
+    COLORS = { "*": 0x403530, "<": 0x3fbfff, ">": 0x3fbfff, "=": 0x3fbfff,
       "#": 0x7fffff, "@": 0x007f00, "$": 0xff7f00, " ": 0xffffff },
 
     ICE = { "#": true, "<": true, ">": true, "=": true },  // ice blocks
@@ -70,7 +71,7 @@
     add_animation;  // forward declaration of add_animation
 
   // Set a cell to a new value and optionally check cells above for falling
-  // objects, setting new animations if necessary
+  // objects, initiating new animations if necessary
   function set_cell(x, y, cell, check_above) {
     var data;
     PS.BeadData(x, y, cell);
@@ -89,15 +90,16 @@
   }
 
   // Run animation for object #i, removing it from the list if it reaches a
-  // stable position
+  // stable position.
   function animate_i(i) {
-    var p = ANIMATIONS[i],
+    var
+      p = ANIMATIONS[i],
       x = p.x + p.dx,
       y = p.y + p.dy,
       data = PS.BeadData(x, y),
       d;
     if (data === " ") {
-      set_cell(p.x, p.y, " ", p.dx !== 0);
+      set_cell(p.x, p.y, " ", true);
       set_cell(x, y, p.data);
       p.x = x;
       p.y = y;
@@ -112,26 +114,29 @@
         }
       }
     } else {
-      if (data === "$") {
-        if (p.data === "#") {
-          set_cell(p.x, p.y, " ");
-          set_cell(x, y, " ");
-          ENEMIES -= 1;
-        }
+      if (data === "$" && p.data === "#") {
+        ANIMATIONS.splice(i, 1);
+        set_cell(p.x, p.y, " ");
+        set_cell(x, y, " ", true);
+        ENEMIES -= 1;
+      } else {
+        ANIMATIONS.splice(i, 1);
       }
-      ANIMATIONS.splice(i, 1);
     }
   }
 
   // Add a new animation to the list, starting the clock if necessary
-  // TODO sort by y for gravity
+  // The animations are sorted by increasing y coordinate
+  // TODO allow to add animation later as well (for falling blocks)
   add_animation = function (p, now) {
-    ANIMATIONS.unshift(p);
+    var i;
+    for (i = 0; i < ANIMATIONS.length && ANIMATIONS[i].y < p.y; i += 1);
+    ANIMATIONS.splice(i, 0, p);
     if (ANIMATIONS.length === 1) {
       PS.Clock(RATE);
     }
     if (now) {
-      animate_i(ANIMATIONS.length - 1);
+      animate_i(i);
     }
   };
 
@@ -165,13 +170,16 @@
   // y = the y-position of the bead on the grid
   // data = the data value associated with this bead, 0 if none has been set
 
-  // Move, push, create or destroy blocks.
+  // Move, push, create or destroy blocks. Interactions are suspended while
+  // animations are running.
   PS.Click = function (x, y, data) {
     var dx, d;
     if (!ANIMATIONS.length) {
       if (x === Px - 1 || x === Px + 1) {
         if (y === Py) {
           if (data === " ") {
+            // Move left or right to an empty cell, possibly falling down
+            // TODO die when falling on an enemy
             set_cell(Px, Py, " ", true);
             Px = x;
             set_cell(Px, Py, "@");
@@ -179,6 +187,7 @@
               add_animation({ x: Px, y: Py, data: "@", dx: 0, dy: 1 });
             }
           } else if (data === "#") {
+            // Push a free-standing block
             dx = x - Px;
             if (PS.BeadData(x + dx, y) === " ") {
               add_animation({ x: x, y: y, data: "#", dx: dx, dy: 0 }, true);
@@ -186,6 +195,7 @@
           }
           if (!ANIMATIONS.length && (ICE[data] || data === "*") &&
               PS.BeadData(x, y - 1) === " ") {
+            // Climb up on a rock or an unmovable block
             set_cell(Px, Py, " ", true);
             Px = x;
             Py = y - 1;
@@ -193,12 +203,38 @@
           }
         } else if (y === Py + 1) {
           if (data === " ") {
+            // Create a block of ice, possibly tied to its neighbor(s)
             set_cell(x, y,
                 PS.BeadData(x - 1, y) === " " ?
                   PS.BeadData(x + 1, y) === " " ? "#" : ">" :
                   PS.BeadData(x + 1, y) === " " ? "<" : "=");
+            d = PS.BeadData(x - 1, y);
+            if (d === "<") {
+              set_cell(x - 1, y, "=");
+            } else if (d === "#") {
+              set_cell(x - 1, y, ">");
+            }
+            d = PS.BeadData(x + 1, y);
+            if (d === ">") {
+              set_cell(x + 1, y, "=");
+            } else if (d === "#") {
+              set_cell(x + 1, y, "<");
+            }
           } else if (ICE[data]) {
+            // Remove a block of ice
             set_cell(x, y, " ", true);
+            d = PS.BeadData(x - 1, y);
+            if (d === "=") {
+              set_cell(x - 1, y, "<");
+            } else if (d === ">") {
+              set_cell(x - 1, y, "#");
+            }
+            d = PS.BeadData(x + 1, y);
+            if (d === "=") {
+              set_cell(x + 1, y, ">");
+            } else if (d === "<") {
+              set_cell(x + 1, y, "#");
+            }
           }
         } else if (y === Py - 1 && data === " ") {
           d = PS.BeadData(x, y + 1);
