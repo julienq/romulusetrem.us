@@ -91,6 +91,7 @@ if (typeof require === "function") var flexo = require("../../flexo.js");
       for (var i = this.registers.length - 1; i >= 0; --i) {
         this.set_register(i, 0);
       }
+      this.init_chars();
       this.set_pc(0);
       this.set_sp(0xffff);
       this.set_o(0);
@@ -105,6 +106,12 @@ if (typeof require === "function") var flexo = require("../../flexo.js");
       address = address & 0xffff;
       this.ram[address] = v & 0xffff;
       flexo.notify(this, "@memory", { address: address });
+    },
+
+    init_chars: function()
+    {
+      this.set_ram(0x8182, 0x7e09);  // A
+      this.set_ram(0x8183, 0x7e00);
     },
 
     set_register: function(i, v)

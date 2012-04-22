@@ -16,12 +16,21 @@
         padding: 4px;
       }
       td { font-family: Menlo, Consolas, monospace; }
+      canvas {
+        background-color: #000;
+        width: 512px;
+        height: 384px;
+        border: solid black 64px;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+      }
     </style>
     <script src="../../flexo.js"></script>
     <script src="dcpu-16.js"></script>
   </head>
   <body>
     <p><a href="http://0x10c.com/doc/dcpu-16.txt">DCPU-16 Specification</a></p>
+    <canvas width="128" height="96"></canvas>
     <table>
       <tbody>
         <tr>
@@ -61,10 +70,55 @@
   </body>
   <script>
 
+    var canvas = document.querySelector("canvas");
+    var context = canvas.getContext("2d");
+
     var m = Object.create(dcpu16.machine);
     flexo.listen(m, "@register", function(e) {
         document.getElementById(e.which).textContent = e.which === "SKIP" ?
           e.value : dcpu16.hex(e.value);
+      });
+    flexo.listen(m, "@memory", function(e) {
+        if (e.address >= 0x8000 && e.address < 0x8180) {
+          var value = e.source.ram[e.address];
+          var c = value & 0x7f;
+          // var blink = value & 0x80 >> 7;
+          // var color = value & 0xff00 >> 8
+          var image = context.createImageData(8, 8);
+          var cols = e.source.ram[0x8180 + 2 * c]
+          for (var x = 0; x < 2; ++x) {
+            for (var y = 0; y < 8; ++y) {
+              var offset = (y * 8 + x * 2) * 4;
+              var mask = 1 << (8 * (x + 1 % 2) + 7 - y);
+              var m = cols & mask ? 1 : 0;
+              image.data[offset] = 255 * m;
+              image.data[offset + 1] = 255 * m;
+              image.data[offset + 2] = 255 * m;
+              image.data[offset + 3] = 255 * m;
+              image.data[offset + 4] = 255 * m;
+              image.data[offset + 5] = 255 * m;
+              image.data[offset + 6] = 255 * m;
+              image.data[offset + 7] = 255 * m;
+            }
+          }
+          cols = e.source.ram[0x8180 + 2 * c]
+          for (var x = 2; x < 4; ++x) {
+            for (var y = 0; y < 8; ++y) {
+              var offset = (y * 8 + x * 2) * 4;
+              var mask = 1 << (8 * (x + 1 % 2) + 7 - y);
+              var m = cols & mask ? 1 : 0;
+              image.data[offset] = 255 * m;
+              image.data[offset + 1] = 255 * m;
+              image.data[offset + 2] = 255 * m;
+              image.data[offset + 3] = 255 * m;
+              image.data[offset + 4] = 255 * m;
+              image.data[offset + 5] = 255 * m;
+              image.data[offset + 6] = 255 * m;
+              image.data[offset + 7] = 255 * m;
+            }
+          }
+          context.putImageData(image, 0, 0);
+        }
       });
     m.init();
 
@@ -97,7 +151,10 @@
     m.set_ram(0x001a, 0x7dc1);  // :crash        SET PC, crash
     m.set_ram(0x001b, 0x001a);
 
-    m.exec();
+    // m.exec();
+
+    // Test characters
+    m.set_ram(0x8000, 0x0001);
 
   </script>
 </html>
