@@ -13,12 +13,14 @@
   "use strict";
 
   var
-    RATE = 40,  // Clock rate for animations (in 100th of second)
-    Px, Py,     // Player position
-    ENEMIES,    // Number of enemies left
-    LEVEL = 1,  // Current level number
+    RATE = 40,     // Clock rate for animations (in 100th of second)
+    Px, Py,        // Player position
+    ENEMIES,       // Number of enemies left
+    WORLD = 0,     // Current world number
+    LEVEL = 0,     // Current level number
+    DEAD = false,  // when falling on an enemy
 
-    LEVELS = [
+    WORLDS = [[
       [ "****************",
         "****************",
         "****************",
@@ -39,6 +41,72 @@
       [ "****************",
         "****************",
         "****************",
+        "****************",
+        "****************",
+        "**     * >==< **",
+        "**      * #$  **",
+        "**@# $* * #$  **",
+        "*******   #$$ **",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************"],
+
+      [ "****************",
+        "****************",
+        "****************",
+        "***          ***",
+        "**  #         **",
+        "**  **  $ #   **",
+        "**  ** #$ # @ **",
+        "**  ************",
+        "**  *****  *****",
+        "**        $*****",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************"],
+
+      [ "****************",
+        "****************",
+        "****************",
+        "****************",
+        "***          ***",
+        "***          ***",
+        "***<>      <>***",
+        "***$<=>  <=>$***",
+        "****$ <==> $****",
+        "*****$#@ #$*****",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
+        "****************"],
+
+      [ "****************",
+        "****************",
+        "****************",
+        "****    ********",
+        "***       ******",
+        "***#        ****",
+        "***=*         **",
+        "*** **        **",
+        "*** ** # #    **",
+        "*** ****** @ ***",
+        "*** ******===***",
+        "***$******===***",
+        "****************",
+        "****************",
+        "****************"],
+
+      [ "****************",
+        "****************",
+        "****************",
         "***       *  ***",
         "***       *@ ***",
         "*** #     **=***",
@@ -52,7 +120,7 @@
         "****************",
         "****************",
         "****************"]
-    ],
+    ]],
 
     // * is a rock
     // # is a free-standing ice block
@@ -70,87 +138,88 @@
 
     add_animation;  // forward declaration of add_animation
 
-  // Set a cell to a new value and optionally check cells above for falling
-  // objects, initiating new animations if necessary
-  function set_cell(x, y, cell, check_above) {
-    var data;
-    PS.BeadData(x, y, cell);
-    PS.BeadColor(x, y, COLORS[cell]);
-    if (cell === " ") {
-      while (check_above) {
-        y -= 1;
+  // Scan the world for falling blocks (ice, enemy and player alike)
+  // TODO chunks of ice
+  // TODO make a list of objects
+  function gravity() {
+    var x, y, x1, x2, i, free, data, below;
+    for (x = 0; x < 16; x += 1) {
+      for (y = 15, below = "*"; y >= 0; y -= 1) {
         data = PS.BeadData(x, y);
-        if (data === "#" || data === "$") {
+        if (((data === "@" || data === "#") && (below === " " || below === "$"))
+            || (data === "$" && below === " ")) {
           add_animation({ x: x, y: y, data: data, dx: 0, dy: 1 });
-        } else {
-          check_above = false;
         }
+        below = data;
       }
     }
   }
 
+  // Set a cell to a new value and redraw it
+  function set_cell(x, y, cell) {
+    PS.BeadData(x, y, cell);
+    PS.BeadColor(x, y, COLORS[cell]);
+  }
+
   // Run animation for object #i, removing it from the list if it reaches a
   // stable position.
-  function animate_i(i) {
-    var
-      p = ANIMATIONS[i],
+  function animate(p) {
+    var d,
       x = p.x + p.dx,
       y = p.y + p.dy,
-      data = PS.BeadData(x, y),
-      d;
+      data = PS.BeadData(x, y);
     if (data === " ") {
-      set_cell(p.x, p.y, " ", true);
+      set_cell(p.x, p.y, " ");
       set_cell(x, y, p.data);
       p.x = x;
       p.y = y;
       if (p.data === "@") {
+        // Update the player position
         Px = x;
         Py = y;
-      } else if (p.dy === 0) {
-        d = PS.BeadData(x, y + 1);
-        if (d === " " || d === "$") {
-          p.dx = 0;
-          p.dy = 1;
-        }
       }
-    } else {
-      if (data === "$" && p.data === "#") {
-        ANIMATIONS.splice(i, 1);
+    } else if (data === "$") {
+      if (p.data === "#") {
+        // Block falling on an enemy
         set_cell(p.x, p.y, " ");
-        set_cell(x, y, " ", true);
+        set_cell(x, y, " ");
+        p.dx = 0;
         ENEMIES -= 1;
-      } else {
-        ANIMATIONS.splice(i, 1);
+        if (ENEMIES === 0) {
+          PS.StatusText("Well done!");
+        }
+      } else if (p.data === "@") {
+        // Player falling on an enemy
+        PS.StatusText("OH NOES!!!");
+        DEAD = true;
       }
     }
   }
 
   // Add a new animation to the list, starting the clock if necessary
   // The animations are sorted by increasing y coordinate
-  // TODO allow to add animation later as well (for falling blocks)
   add_animation = function (p, now) {
-    var i;
-    for (i = 0; i < ANIMATIONS.length && ANIMATIONS[i].y < p.y; i += 1);
-    ANIMATIONS.splice(i, 0, p);
+    console.log("+++", p, now);
+    for (var i = 0, n = ANIMATIONS.length; i < n &&
+        (ANIMATIONS[i].x !== p.x || ANIMATIONS[i].y !== p.y); i += 1);
+    if (i < n) {
+      ANIMATIONS[i] = p;
+    } else {
+      ANIMATIONS.push(p);
+    }
     if (ANIMATIONS.length === 1) {
       PS.Clock(RATE);
     }
     if (now) {
-      animate_i(i);
+      animate(p);
     }
   };
 
-  // PS.Init ()
-  // Initializes the game
-  // This function normally includes a call to PS.GridSize (x, y)
-  // where x and y are the desired dimensions of the grid
-
-  // Load the current level
-  PS.Init = function () {
-    PS.GridSize(16, 16);
-    PS.Clock(0);
+  // Reset the game for the current level; update the status text as well
+  function reset_level() {
+    PS.StatusText("Level " + (WORLD + 1) + "-" + (LEVEL + 1));
     ENEMIES = 0;
-    LEVELS[LEVEL].forEach(function (row, y) {
+    WORLDS[WORLD][LEVEL].forEach(function (row, y) {
       [].forEach.call(row, function (cell, x) {
         set_cell(x, y, cell);
         if (cell === "@") {
@@ -161,6 +230,18 @@
         }
       });
     });
+  }
+
+  // PS.Init ()
+  // Initializes the game
+  // This function normally includes a call to PS.GridSize (x, y)
+  // where x and y are the desired dimensions of the grid
+
+  // Load the current level
+  PS.Init = function () {
+    PS.GridSize(16, 16);
+    PS.Clock(0);
+    reset_level();
   };
 
   // PS.Click (x, y, data)
@@ -175,28 +256,34 @@
   PS.Click = function (x, y, data) {
     var dx, d;
     if (!ANIMATIONS.length) {
-      if (x === Px - 1 || x === Px + 1) {
+      if (ENEMIES === 0) {
+        // Move to next level
+        LEVEL += 1;
+        reset_level();
+      } else if (DEAD) {
+        reset_level();
+      } else if (x === Px - 1 || x === Px + 1) {
         if (y === Py) {
           if (data === " ") {
-            // Move left or right to an empty cell, possibly falling down
-            // TODO die when falling on an enemy
-            set_cell(Px, Py, " ", true);
+            // Move left or right to an empty cell
+            set_cell(Px, Py, " ");
             Px = x;
             set_cell(Px, Py, "@");
-            if (PS.BeadData(x, y + 1) === " ") {
-              add_animation({ x: Px, y: Py, data: "@", dx: 0, dy: 1 });
-            }
+            gravity();
           } else if (data === "#") {
-            // Push a free-standing block
+            // Push a free-standing block if the next square is empty or has an
+            // enemy
             dx = x - Px;
-            if (PS.BeadData(x + dx, y) === " ") {
+            d = PS.BeadData(x + dx, y);
+            if (d === " " || d === "$") {
               add_animation({ x: x, y: y, data: "#", dx: dx, dy: 0 }, true);
+              gravity();
+              return;
             }
           }
-          if (!ANIMATIONS.length && (ICE[data] || data === "*") &&
-              PS.BeadData(x, y - 1) === " ") {
+          if ((ICE[data] || data === "*") && PS.BeadData(x, y - 1) === " ") {
             // Climb up on a rock or an unmovable block
-            set_cell(Px, Py, " ", true);
+            set_cell(Px, Py, " ");
             Px = x;
             Py = y - 1;
             set_cell(Px, Py, "@");
@@ -222,7 +309,7 @@
             }
           } else if (ICE[data]) {
             // Remove a block of ice
-            set_cell(x, y, " ", true);
+            set_cell(x, y, " ");
             d = PS.BeadData(x - 1, y);
             if (d === "=") {
               set_cell(x - 1, y, "<");
@@ -235,14 +322,24 @@
             } else if (d === "<") {
               set_cell(x + 1, y, "#");
             }
+            gravity();
           }
         } else if (y === Py - 1 && data === " ") {
+          // Climb above a stationary object
           d = PS.BeadData(x, y + 1);
           if (ICE[d] || d === "*") {
-            set_cell(Px, Py, " ", true);
+            if (d === "#") {
+              dx = x - Px;
+              d = PS.BeadData(x + dx, y + 1);
+              if (d === " " || d === "$") {
+                return;
+              }
+            }
+            set_cell(Px, Py, " ");
             Px = x;
             Py = y;
             set_cell(Px, Py, "@");
+            gravity();
           }
         }
       }
@@ -256,9 +353,12 @@
 
   // Run animations
   PS.Tick = function () {
-    var i;
-    for (i = ANIMATIONS.length - 1; i >= 0; i -= 1) {
-      animate_i(i);
+    ANIMATIONS.forEach(animate);
+    if (ANIMATIONS.length > 0) {
+      console.log("<<<", ANIMATIONS);
+      ANIMATIONS = ANIMATIONS.filter(function (p) { return p.dx !== 0; });
+      console.log(">>>", ANIMATIONS);
+      gravity();
     }
     if (ANIMATIONS.length === 0) {
       PS.Clock(0);
