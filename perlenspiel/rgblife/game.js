@@ -28,6 +28,13 @@
     return neighbors;
   }
 
+  function set_bead(x, y, data) {
+    PS.BeadColor(x, y,
+        ((data[0] ? 256 - C : 0) + Math.floor(Math.random() * C) << 16) +
+        ((data[1] ? 256 - C : 0) + Math.floor(Math.random() * C) << 8) +
+        (data[2] ? 256 - C : 0) + Math.floor(Math.random() * C));
+  }
+
   function update_grid() {
     var x, y, neighbors, i, cell, cells = [];
     for (x = 0; x < SZ; x += 1) {
@@ -38,10 +45,7 @@
           cell[i] = (cell[i] && (neighbors[i] === 2 || neighbors[i] === 3)) ||
             (!cell[i] && neighbors[i] === 3);
         }
-        PS.BeadColor(x, y,
-            ((cell[0] ? 256 - C : 0) + Math.floor(Math.random() * C) << 16) +
-            ((cell[1] ? 256 - C : 0) + Math.floor(Math.random() * C) << 8) +
-            (cell[2] ? 256 - C : 0) + Math.floor(Math.random() * C));
+        set_bead(x, y, cell);
         cells.push(cell);
       }
     }
@@ -59,6 +63,7 @@
   PS.Init = function () {
     var x, y;
     PS.GridSize(SZ, SZ);
+    PS.StatusText("RGB Life");
     for (x = 0; x < SZ; x += 1) {
       for (y = 0; y < SZ; y += 1) {
         PS.BeadData(x, y,
@@ -69,6 +74,20 @@
     PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
     update_grid();
     PS.Clock(RATE);
+  };
+
+  // PS.Click (x, y, data)
+  // This function is called whenever a bead is clicked
+  // It doesn't have to do anything
+  // x = the x-position of the bead on the grid
+  // y = the y-position of the bead on the grid
+  // data = the data value associated with this bead, 0 if none has been set
+
+  PS.Click = function (x, y) {
+    var r = 1 + Math.floor(Math.random() * 7),
+      data = [(r & 1) === 1, (r & 2) === 2, (r & 4) === 4];
+    PS.BeadData(x, y, data);
+    set_bead(x, y, data);
   };
 
   // PS.Tick ()
@@ -83,15 +102,6 @@
 
 
   // These are not used but need to be defined
-
-  // PS.Click (x, y, data)
-  // This function is called whenever a bead is clicked
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
-
-  PS.Click = function () {};
 
   // PS.KeyDown (key, shift, ctrl)
   // This function is called whenever a key on the keyboard is pressed
