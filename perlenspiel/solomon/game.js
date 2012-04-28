@@ -9,8 +9,8 @@
 /*global PS: false */
 /*jslint maxerr: 50, indent: 2 */
 
-//(function () {
-//  "use strict";
+(function () {
+  "use strict";
 
   var SZ = 16,     // Size of the game world
     RATE = 35,     // Clock rate for animations (in 100th of second)
@@ -30,6 +30,10 @@
     //   is an empty space
     COLORS = { "*": 0x403530, "<": 0x3fbfff, ">": 0x3fbfff, "=": 0x3fbfff,
       "#": 0x7fffff, "@": 0x007f00, "$": 0xff7f00, " ": 0xffffff },
+
+    // Notes for falling blocks
+    NOTES = ["d7", "c7", "b6", "f6", "e6", "d6", "c6", "b5", "a5", "g5", "f5",
+      "e5", "d5", "c5", "b4", "a4"],
 
     WORLDS = [[
       [ "****************",
@@ -150,11 +154,14 @@
 
   // Move a block from its current position to (x, y)
   function move_block(b, x, y, offset) {
-    set_bead(b.x + (offset || 0), b.y, " ");
+    set_bead(b.x + offset, b.y, " ");
     set_bead(x, y, b);
-    if (!(offset > 0)) {
+    if (offset === 0) {
       b.x = x;
       b.y = y;
+    }
+    if (b === PLAYER && b.dy === 0) {
+      PS.AudioPlay("fx_tick");
     }
   }
 
@@ -181,6 +188,7 @@
       BLOCKS.splice(i, 1);
     }
     set_bead(b.x + offset, b.y, " ");
+    PS.AudioPlay("perc_shaker");
   }
 
   // Reset the game for the current level; update the status text as well
@@ -254,6 +262,7 @@
           remove_block(b, i);
           ENEMIES -= 1;
           if (ENEMIES === 0) {
+            PS.AudioPlay("fx_ding");
             PS.StatusText("Well done!");
           }
         }
@@ -262,6 +271,11 @@
       }
     }
     // Stop falling and let gravity do the rest
+    if (b.dy === 1) {
+      PS.AudioPlay("xylo_" + NOTES[y]);
+    } else if (b.dx !== 0) {
+      PS.AudioPlay("piano_" + NOTES[SZ - x - 1]);
+    }
     b.dy = 0;
   }
 
@@ -273,6 +287,14 @@
   // Load the current level
   PS.Init = function () {
     PS.GridSize(SZ, SZ);
+    PS.AudioLoad("fx_tick");      // moving
+    PS.AudioLoad("fx_ding");      // won level
+    PS.AudioLoad("fx_bucket");    // kicked a block
+    PS.AudioLoad("perc_shaker");  // enemy disappearing
+    NOTES.forEach(function (note) {
+      PS.AudioLoad("xylo_" + note);
+      PS.AudioLoad("piano_" + note);
+    });
     reset_level();
     PS.Clock(RATE);
   };
@@ -299,12 +321,13 @@
         if (y === PLAYER.y) {
           if (data === " ") {
             // Move left or right to an empty cell
-            move_block(PLAYER, x, y);
+            move_block(PLAYER, x, y, 0);
             return gravity();
           }
           if (data.data === "#") {
             // Push a free-standing block if the next square is empty or has an
             // enemy
+            PS.AudioPlay("fx_bucket");
             dx = x - PLAYER.x;
             d = PS.BeadData(x + dx, y);
             if (d === " " || d.data === "$") {
@@ -317,7 +340,7 @@
               PS.BeadData(PLAYER.x, y - 1) === " ") {
             // Climb up on a rock or an unmovable block
             // The space right above the player has to be free as well
-            move_block(PLAYER, x, y - 1);
+            move_block(PLAYER, x, y - 1, 0);
           }
         } else if (y === PLAYER.y + 1) {
           if (data === " ") {
@@ -337,7 +360,7 @@
                 return;
               }
             }
-            move_block(PLAYER, x, y);
+            move_block(PLAYER, x, y, 0);
             gravity();
           }
         }
@@ -420,4 +443,4 @@
 
   PS.Wheel = function () {};
 
-//}());
+}());
