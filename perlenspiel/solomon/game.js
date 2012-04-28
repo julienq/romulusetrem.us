@@ -18,7 +18,7 @@
     BLOCKS,        // All movable blocks (player, ice, enemies; not rocks)
     ENEMIES,       // Number of enemies left
     WORLD = 0,     // Current world number
-    LEVEL = 0,     // Current level number
+    LEVEL = 1,     // Current level number
 
     // * is a rock
     // # is a free-standing ice block
@@ -30,7 +30,6 @@
     //   is an empty space
     COLORS = { "*": 0x403530, "<": 0x3fbfff, ">": 0x3fbfff, "=": 0x3fbfff,
       "#": 0x7fffff, "@": 0x007f00, "$": 0xff7f00, " ": 0xffffff },
-    ICE = { "#": true, "<": true, ">": true, "=": true },
 
     WORLDS = [[
       [ "****************",
@@ -137,32 +136,34 @@
   // Set a bead to a new value and redraw it. If a block is given, update its
   // position as well
   function set_bead(x, y, data) {
-    if (typeof x === "object") {
-      data = x;
-      x = data.x;
-      y = data.y;
-    }
     PS.BeadData(x, y, data);
     PS.BeadColor(x, y, COLORS[data.data || data]);
   }
 
   // Move a block from its current position to (x, y)
-  function move_block(b, x, y) {
-    set_bead(b.x, b.y, " ");
-    b.x = x;
-    b.y = y;
-    set_bead(b);
+  function move_block(b, x, y, offset) {
+    set_bead(b.x + (offset || 0), b.y, " ");
+    set_bead(x, y, b);
+    if (!(offset > 0)) {
+      console.log("Move", b.data, b.x, b.y, x, y);
+      b.x = x;
+      b.y = y;
+    }
   }
 
   // Remove a block (ice melting, enemy destroyed)
+  // TODO break chunks
+  // TODO add_block to create ice/chunks
   function remove_block(b) {
     var i = BLOCKS.indexOf(b);
     BLOCKS.splice(i, 1);
     set_bead(b.x, b.y, " ");
+    return 1;
   }
 
   // Reset the game for the current level; update the status text as well
   function reset_level() {
+    var chunk;
     PS.StatusText("Level " + (WORLD + 1) + "-" + (LEVEL + 1));
     ENEMIES = 0;
     BLOCKS = [];
@@ -172,53 +173,67 @@
         if (cell === "$") {
           ENEMIES += 1;
         }
-        if (cell !== " " && cell !== "*") {
-          BLOCKS.push({ x: x, y: y, dx: 0, dy: 0, data: cell });
+        if (cell === "@" || cell === "$" || cell === "#") {
+          BLOCKS.push({ x: x, y: y, dx: 0, dy: 0, data: cell, width: 1 });
           PS.BeadData(x, y, BLOCKS[BLOCKS.length - 1]);
           if (cell === "@") {
             PLAYER = BLOCKS[BLOCKS.length - 1];
           }
+          chunk = undefined;
+        } else if (cell === "<" || cell === "=" || cell === ">") {
+          if (chunk) {
+            chunk.width += 1;
+            chunk.right = cell;
+          } else {
+            chunk = { x: x, y: y, dx: 0, dy: 0, data: "=", width: 1,
+              left: cell, right: cell };
+            BLOCKS.push(chunk);
+          }
+          PS.BeadData(x, y, chunk);
+        } else {
+          chunk = undefined;
         }
       });
     });
   }
 
   // Scan the world for falling blocks (ice, enemy and player alike)
-  // TODO chunks of ice as one block (add width param)
   function gravity() {
     BLOCKS.forEach(function (b) {
-      var below = b.y === SZ - 1 ? "*" : PS.BeadData(b.x, b.y + 1);
-      if (below === " " ||
-        ((b.data === "@" || b.data === "#") && below.data === "$")) {
+      var falling, i, below;
+      for (falling = true, i = 0, below = "*"; falling && i < b.width; i += 1) {
+        below = b.y === SZ - 1 ? "*" : PS.BeadData(b.x + i, b.y + 1);
+        falling = below === " " || (b.data !== "$" && below.data === "$");
+      }
+      if (falling && i === b.width) {
         b.dx = 0;
         b.dy = 1;
-        console.log("Gravity:", b);
       }
     });
   }
 
   // Run animation for a single block
   function animate(b) {
-    var
-      x = b.x + b.dx,
-      y = b.y + b.dy,
-      bb = PS.BeadData(x, y);  // next position
-    if (bb === " ") {
-      // Move to a free space
-      move_block(b, x, y);
-    } else if (bb.data === "$") {
-      if (b.data === "#") {
-        // Block extinguishing an enemy
-        remove_block(b);
-        remove_block(bb);
-        ENEMIES -= 1;
-        if (ENEMIES === 0) {
-          PS.StatusText("Well done!");
+    var i, x, y, bb;
+    for (i = b.width - 1; i >= 0; i -= 1) {
+      x = b.x + b.dx + i;
+      y = b.y + b.dy;
+      bb = PS.BeadData(x, y);
+      if (bb === " ") {
+        move_block(b, x, y, i);
+      } else if (bb.data === "$") {
+        if (b.data === "@") {
+          PS.StatusText("OH NOES!!!");
+          PLAYER.dead = true;
+        } else if (b.data === "#" || b.data === "=") {
+          remove_block(bb);
+          ENEMIES -= remove_block(b);
+          if (ENEMIES === 0) {
+            PS.StatusText("Well done!");
+          }
         }
-      } else if (b.data === "@") {
-        // Player falling on an enemy
-        PS.StatusText("OH NOES!!!");
-        PLAYER.dead = true;
+      } else {
+        b.dx = 0;
       }
     }
     // Stop falling and let gravity do the rest
@@ -247,7 +262,7 @@
   // Move, push, create or destroy blocks. Interactions are suspended while
   // animations are running.
   PS.Click = function (x, y, data) {
-    var dx, d, b;
+    var dx, d;
     if (!BLOCKS.some(function (b) { return b.dx !== 0 || b.dy !== 0; })) {
       if (ENEMIES === 0) {
         // Move to next level
@@ -272,17 +287,20 @@
               return gravity();
             }
           }
-          if ((ICE[data.data] || data === "*") &&
-              PS.BeadData(x, y - 1) === " ") {
+          if ((data === "*" || data.data === "=" || data.data === "#") &&
+              PS.BeadData(x, y - 1) === " " &&
+              PS.BeadData(PLAYER.x, y - 1) === " ") {
             // Climb up on a rock or an unmovable block
-            move_block(PLAYER, x, y - 1, "@", PLAYER);
+            // The space right above the player has to be free as well
+            move_block(PLAYER, x, y - 1);
           }
-        } else if (y === PLAYER.y - 1 && data === " ") {
+        } else if (y === PLAYER.y - 1 && data === " " &&
+            PS.BeadData(PLAYER.x, y) === " ") {
           // Climb above a stationary object
           d = PS.BeadData(x, y + 1);
-          if (ICE[data.data] || d === "*") {
-            if (d === "#") {
-              dx = x - Px;
+          if (d === "*" || d.data === "=" || d.data === "#") {
+            if (d.data === "#" || d.data === "=") {
+              dx = x - PLAYER.x;
               d = PS.BeadData(x + dx, y + 1);
               if (d === " " || d === "$") {
                 return;
