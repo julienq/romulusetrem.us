@@ -18,7 +18,7 @@
     BLOCKS,        // All movable blocks (player, ice, enemies; not rocks)
     ENEMIES,       // Number of enemies left
     WORLD = 0,     // Current world number
-    LEVEL = 1,     // Current level number
+    LEVEL = 3,     // Current level number
 
     // * is a rock
     // # is a free-standing ice block
@@ -97,6 +97,7 @@
         "****************",
         "****************",
         "****************",
+        "****************",
         "****************"],
 
       [ "****************",
@@ -140,25 +141,46 @@
     PS.BeadColor(x, y, COLORS[data.data || data]);
   }
 
+  function add_block(x, y) {
+    // var left = PS.BeadData(x - 1, y), right = PS.BeadData(x + 1, y);
+    var b = { x: x, y: y, dx: 0, dy: 0, data: "#" };
+    BLOCKS.push(b);
+    set_bead(x, y, b);
+  }
+
   // Move a block from its current position to (x, y)
   function move_block(b, x, y, offset) {
     set_bead(b.x + (offset || 0), b.y, " ");
     set_bead(x, y, b);
     if (!(offset > 0)) {
-      console.log("Move", b.data, b.x, b.y, x, y);
       b.x = x;
       b.y = y;
     }
   }
 
   // Remove a block (ice melting, enemy destroyed)
-  // TODO break chunks
-  // TODO add_block to create ice/chunks
-  function remove_block(b) {
-    var i = BLOCKS.indexOf(b);
-    BLOCKS.splice(i, 1);
-    set_bead(b.x, b.y, " ");
-    return 1;
+  function remove_block(b, offset) {
+    var splice = true, i = BLOCKS.indexOf(b);
+    if (b.width > 1) {
+      splice = false;
+      if (offset === 0) {
+        b.width -= 1;
+        b.x += 1;
+        b.left = false;
+      } else if (offset === b.width - 1) {
+        b.width -= 1;
+        b.right = false;
+      } else {
+        BLOCKS.push({ x: b.x + offset + 1, y: b.y, dx: 0, dy: 0, data: "=",
+          width: b.width - offset - 1, left: false, right: b.right });
+        b.width = offset;
+        b.right = false;
+      }
+    }
+    if (splice) {
+      BLOCKS.splice(i, 1);
+    }
+    set_bead(b.x + offset, b.y, " ");
   }
 
   // Reset the game for the current level; update the status text as well
@@ -183,10 +205,11 @@
         } else if (cell === "<" || cell === "=" || cell === ">") {
           if (chunk) {
             chunk.width += 1;
-            chunk.right = cell;
+            chunk.right = cell === "=" || cell === "<";
           } else {
             chunk = { x: x, y: y, dx: 0, dy: 0, data: "=", width: 1,
-              left: cell, right: cell };
+              left: cell === "=" || cell === ">",
+              right: cell === "=" || cell === "<" };
             BLOCKS.push(chunk);
           }
           PS.BeadData(x, y, chunk);
@@ -198,6 +221,7 @@
   }
 
   // Scan the world for falling blocks (ice, enemy and player alike)
+  // TODO check left/right side of chunk
   function gravity() {
     BLOCKS.forEach(function (b) {
       var falling, i, below;
@@ -214,8 +238,8 @@
 
   // Run animation for a single block
   function animate(b) {
-    var i, x, y, bb;
-    for (i = b.width - 1; i >= 0; i -= 1) {
+    var i, offsets, x, y, bb;
+    for (i = b.width - 1, offsets = []; i >= 0; i -= 1) {
       x = b.x + b.dx + i;
       y = b.y + b.dy;
       bb = PS.BeadData(x, y);
@@ -226,8 +250,9 @@
           PS.StatusText("OH NOES!!!");
           PLAYER.dead = true;
         } else if (b.data === "#" || b.data === "=") {
-          remove_block(bb);
-          ENEMIES -= remove_block(b);
+          remove_block(bb, 0);
+          remove_block(b, i);
+          ENEMIES -= 1;
           if (ENEMIES === 0) {
             PS.StatusText("Well done!");
           }
@@ -293,6 +318,12 @@
             // Climb up on a rock or an unmovable block
             // The space right above the player has to be free as well
             move_block(PLAYER, x, y - 1);
+          }
+        } else if (y === PLAYER.y + 1) {
+          if (data === " ") {
+            add_block(x, y);
+          } else if (data.data === "#" || data.data === "=") {
+            remove_block(data);
           }
         } else if (y === PLAYER.y - 1 && data === " " &&
             PS.BeadData(PLAYER.x, y) === " ") {
