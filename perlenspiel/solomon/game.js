@@ -13,12 +13,12 @@
   "use strict";
 
   var SZ = 16,     // Size of the game world
-    RATE = 35,     // Clock rate for animations (in 100th of second)
+    RATE = 30,     // Clock rate for animations (in 100th of second)
     PLAYER,        // Player block
     BLOCKS,        // All movable blocks (player, ice, enemies; not rocks)
     ENEMIES,       // Number of enemies left
     WORLD = 0,     // Current world number
-    LEVEL = 3,     // Current level number
+    LEVEL = 0,     // Current level number
 
     // * is a rock
     // # is a free-standing ice block
@@ -29,114 +29,236 @@
     // $ is an enemy flame
     //   is an empty space
     COLORS = { "*": 0x403530, "<": 0x3fbfff, ">": 0x3fbfff, "=": 0x3fbfff,
-      "#": 0x7fffff, "@": 0x007f00, "$": 0xff7f00, " ": 0xffffff },
+      "#": 0x7fffff, "@": 0x007f00, "$": 0xff7f00, " ": 0xffffff,
+      R: 0xff7fff, S: 0x7fff00, B: 0xffff7f },
 
     // Notes for falling blocks
-    NOTES = ["d7", "c7", "b6", "f6", "e6", "d6", "c6", "b5", "a5", "g5", "f5",
-      "e5", "d5", "c5", "b4", "a4"],
+    /*NOTES = ["d7", "c7", "b6", "f6", "e6", "d6", "c6", "b5", "a5", "g5", "f5",
+      "e5", "d5", "c5", "b4", "a4"],*/
 
-    WORLDS = [[
-      [ "****************",
-        "****************",
-        "****************",
-        "****        ****",
-        "****  $ # @ ****",
-        "**** ***********",
-        "**** #   *******",
-        "**** # $    ****",
-        "**** # $    ****",
-        "**** # $    ****",
-        "*********$  ****",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************"],
+    WORLDS = [
+      [
+        [ "****************",  // 1-1
+          "****************",
+          "****************",
+          "****        ****",
+          "****  $ # @ ****",
+          "**** ***********",
+          "**** #   *******",
+          "**** # $    ****",
+          "**** # $    ****",
+          "**** # $    ****",
+          "*********$  ****",
+          "****************",
+          "****************",
+          "****************",
+          "*R************S*",
+          "****************"],
 
-      [ "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "**     * >==< **",
-        "**      * #$  **",
-        "**@# $* * #$  **",
-        "*******   #$$ **",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************"],
+        [ "****************",  // 1-2
+          "****************",
+          "****************",
+          "****************",
+          "****************",
+          "**     * <==> **",
+          "**      * #$  **",
+          "**@# $* * #$  **",
+          "*******   #$$ **",
+          "****************",
+          "****************",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
 
-      [ "****************",
-        "****************",
-        "****************",
-        "***          ***",
-        "**  #         **",
-        "**  **  $ #   **",
-        "**  ** #$ # @ **",
-        "**  ************",
-        "**  *****  *****",
-        "**        $*****",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************"],
+        [ "****************",  // 1-3
+          "****************",
+          "****************",
+          "***          ***",
+          "**  #         **",
+          "**  **  $ #   **",
+          "**  ** #$ # @ **",
+          "**  ************",
+          "**  *****  *****",
+          "**        $*****",
+          "****************",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
 
-      [ "****************",
-        "****************",
-        "****************",
-        "****************",
-        "***          ***",
-        "***          ***",
-        "***<>      <>***",
-        "***$<=>  <=>$***",
-        "****$ <==> $****",
-        "*****$#@ #$*****",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************",
-        "****************"],
+        [ "****************",  // 1-4
+          "****************",
+          "****************",
+          "****************",
+          "***          ***",
+          "***          ***",
+          "***<>      <>***",
+          "***$<=>  <=>$***",
+          "****$ <==> $****",
+          "*****$#@ #$*****",
+          "****************",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
 
-      [ "****************",
-        "****************",
-        "****************",
-        "****    ********",
-        "***       ******",
-        "***#        ****",
-        "***=*         **",
-        "*** **        **",
-        "*** ** # #    **",
-        "*** ****** @ ***",
-        "*** ******===***",
-        "***$******===***",
-        "****************",
-        "****************",
-        "****************"],
+        [ "****************",  // 1-5
+          "****************",
+          "****************",
+          "****    ********",
+          "***       ******",
+          "***#        ****",
+          "***=*         **",
+          "*** **        **",
+          "*** ** # #    **",
+          "*** ****** @ ***",
+          "*** ******===***",
+          "***$******===***",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
 
-      [ "****************",
-        "****************",
-        "****************",
-        "***       *  ***",
-        "***       *@ ***",
-        "*** #     **=***",
-        "***=**       ***",
-        "***  * # # # ***",
-        "***$ ***********",
-        "**<=========#***",
-        "***          ***",
-        "***$$$$$$$$$$***",
-        "****************",
-        "****************",
-        "****************",
-        "****************"]
-    ]];
+        [ "****************",  // 1-6
+          "****************",
+          "****************",
+          "***       *  ***",
+          "***       *@ ***",
+          "*** #     **=***",
+          "***=**       ***",
+          "***  * # # # ***",
+          "***$ ***********",
+          "**<=========>***",
+          "***          ***",
+          "***$$$$$$$$$$***",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 1-7
+          "****************",
+          "****************",
+          "****        ****",
+          "****     #@ ****",
+          "****  $ <===****",
+          "******=*********",
+          "*****      *****",
+          "*****      *****",
+          "*********  *****",
+          "*******$  ******",
+          "*******$$$******",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 1-8
+          "****************",
+          "****************",
+          "*****      *****",
+          "****        ****",
+          "**** #    $ ****",
+          "*******@ *=*****",
+          "********** *****",
+          "****$       ****",
+          "****<=====> ****",
+          "****$$$$$$<>****",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 1-9
+          "****************",
+          "****************",
+          "***********   **",
+          "** @#       ****",
+          "**==========****",
+          "**$        $****",
+          "***$      $*****",
+          "****$    $******",
+          "*****$  $*******",
+          "******$$********",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 1-10 TODO lava ^^^^^ at the bottom
+          "*              *",
+          "*   **         *",
+          "*      *       *",
+          "*        *     *",
+          "*   $      *   *",
+          "*  ****      ***",
+          "*           *  *",
+          "*       @ *    *",
+          "*     $ *      *",
+          "*     *        *",
+          "*   *          *",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"]],
+
+      [
+        [ "****************",  // 2-1
+          "****************",
+          "****************",
+          "****     # $****",
+          "****>  *********",
+          "****  <*********",
+          "****>   @# $****",
+          "****   *********",
+          "****   *********",
+          "****   *********",
+          "**** $     $****",
+          "****************",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 2-2
+          "****************",
+          "***          ***",
+          "***@  # $ <> ***",
+          "****> ****** ***",
+          "************ ***",
+          "***       ** ***",
+          "***       ** ***",
+          "***     *  * ***",
+          "****   ***   ***",
+          "****   **  * ***",
+          "****$$$***  $***",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"],
+
+        [ "****************",  // 2-3
+          "****************",
+          "****************",
+          "**    ****    **",
+          "**<>        #$**",
+          "** **      **=**",
+          "** **$ @ # ** **",
+          "** ********** **",
+          "**            **",
+          "** <========> **",
+          "**$# $$$$$$ $ **",
+          "****$******$****",
+          "****************",
+          "****************",
+          "*R***********BS*",
+          "****************"]]];
 
   // Set a bead to a new value and redraw it. If a block is given, update its
   // position as well
@@ -145,11 +267,48 @@
     PS.BeadColor(x, y, COLORS[data.data || data]);
   }
 
+  // Add a new ice block at (x, y), creating chunks if necessary
   function add_block(x, y) {
-    // var left = PS.BeadData(x - 1, y), right = PS.BeadData(x + 1, y);
-    var b = { x: x, y: y, dx: 0, dy: 0, data: "#" };
-    BLOCKS.push(b);
-    set_bead(x, y, b);
+    var left = PS.BeadData(x - 1, y), right = PS.BeadData(x + 1, y), b, i;
+    if (left.data === "#") {
+      // Merge with left ice block, become a chunk
+      b = left;
+      b.data = "=";
+      b.width = 2;
+    } else if (left.data === "=") {
+      // Merge with left chunk; b.right will be set next
+      b = left;
+      b.width += 1;
+    } else if (left === "*") {
+      // Stick to the left wall
+      b = { x: x, y: y, dx: 0, dy: 0, data: "=", width: 1, left: true };
+      BLOCKS.push(b);
+    } else {
+      // Free... for the moment
+      b = { x: x, y: y, dx: 0, dy: 0, data: "#", width: 1 };
+      BLOCKS.push(b);
+    }
+    if (right.data === "#") {
+      // Merge with the right ice block and remove it
+      b.width += 1;
+      b.right = false;
+      b.data = "=";
+      BLOCKS.splice(BLOCKS.indexOf(right), 1);
+    } else if (right.data === "=") {
+      // Merge with the right chunk and remove it
+      b.width += right.width;
+      b.right = right.right;
+      b.data = "=";
+      BLOCKS.splice(BLOCKS.indexOf(right), 1);
+    } else if (right === "*") {
+      b.right = true;
+      b.data = "=";
+    } else {
+      b.right = false;
+    }
+    for (i = 0; i < b.width; i += 1) {
+      set_bead(b.x + i, b.y, b);
+    }
   }
 
   // Move a block from its current position to (x, y)
@@ -160,14 +319,15 @@
       b.x = x;
       b.y = y;
     }
-    if (b === PLAYER && b.dy === 0) {
+    /*if (b === PLAYER && b.dy === 0) {
       PS.AudioPlay("fx_tick");
-    }
+    }*/
   }
 
   // Remove a block (ice melting, enemy destroyed)
   function remove_block(b, offset) {
-    var splice = true, i = BLOCKS.indexOf(b);
+    var splice = true, i = BLOCKS.indexOf(b), bb, j;
+    set_bead(b.x + offset, b.y, " ");
     if (b.width > 1) {
       splice = false;
       if (offset === 0) {
@@ -178,17 +338,26 @@
         b.width -= 1;
         b.right = false;
       } else {
-        BLOCKS.push({ x: b.x + offset + 1, y: b.y, dx: 0, dy: 0, data: "=",
-          width: b.width - offset - 1, left: false, right: b.right });
+        bb = { x: b.x + offset + 1, y: b.y, dx: 0, dy: 0,
+          data: b.width - offset - 1 === 1 && !b.right ? "#" : "=",
+          width: b.width - offset - 1, left: false, right: b.right };
+        BLOCKS.push(bb);
+        for (j = 0; j < bb.width; j += 1) {
+          set_bead(bb.x + j, bb.y, bb);
+        }
         b.width = offset;
         b.right = false;
       }
     }
     if (splice) {
       BLOCKS.splice(i, 1);
+    } else {
+      if (b.width === 1 && !b.left && !b.right) {
+        b.data = "#";
+        set_bead(b.x, b.y, b);
+      }
     }
-    set_bead(b.x + offset, b.y, " ");
-    PS.AudioPlay("perc_shaker");
+    // PS.AudioPlay("perc_shaker");
   }
 
   // Reset the game for the current level; update the status text as well
@@ -228,12 +397,34 @@
     });
   }
 
+  function next_level(incr) {
+    LEVEL += incr;
+    if (LEVEL < 0) {
+      if (WORLD > 0) {
+        WORLD -= 1;
+        LEVEL = WORLDS[WORLD].length - 1;
+      } else {
+        LEVEL = 0;
+        return;
+      }
+    } else if (LEVEL > WORLDS[WORLD].length - 1) {
+      if (WORLD < WORLDS.length - 1) {
+        WORLD += 1;
+        LEVEL = 0;
+      } else {
+        LEVEL = WORLDS[WORLD].length - 1;
+        return;
+      }
+    }
+    reset_level();
+  }
+
   // Scan the world for falling blocks (ice, enemy and player alike)
-  // TODO check left/right side of chunk
   function gravity() {
     BLOCKS.forEach(function (b) {
       var falling, i, below;
-      for (falling = true, i = 0, below = "*"; falling && i < b.width; i += 1) {
+      for (falling = !b.left && !b.right, i = 0, below = "*";
+          falling && i < b.width; i += 1) {
         below = b.y === SZ - 1 ? "*" : PS.BeadData(b.x + i, b.y + 1);
         falling = below === " " || (b.data !== "$" && below.data === "$");
       }
@@ -246,36 +437,45 @@
 
   // Run animation for a single block
   function animate(b) {
-    var i, offsets, x, y, bb;
-    for (i = b.width - 1, offsets = []; i >= 0; i -= 1) {
+    var i, x, y, bb, enemies;
+    // Move the block (go from the end so that the x/y position are updated
+    // last)
+    for (i = b.width - 1, enemies = []; i >= 0; i -= 1) {
       x = b.x + b.dx + i;
       y = b.y + b.dy;
       bb = PS.BeadData(x, y);
       if (bb === " ") {
         move_block(b, x, y, i);
       } else if (bb.data === "$") {
-        if (b.data === "@") {
-          PS.StatusText("OH NOES!!!");
-          PLAYER.dead = true;
-        } else if (b.data === "#" || b.data === "=") {
-          remove_block(bb, 0);
-          remove_block(b, i);
-          ENEMIES -= 1;
-          if (ENEMIES === 0) {
-            PS.AudioPlay("fx_ding");
-            PS.StatusText("Well done!");
-          }
+        enemies.push(bb);
+        if (b.data !== "@") {
+          move_block(b, x, y, i);
         }
       } else {
         b.dx = 0;
       }
     }
-    // Stop falling and let gravity do the rest
-    if (b.dy === 1) {
+    // Remove enemies if hit by the ice or die if the player hit an enemy
+    enemies.forEach(function (e) {
+      if (b.data === "@") {
+        PS.StatusText("OH NOES!!!");
+        PLAYER.dead = true;
+      } else {
+        remove_block(e, 0);
+        remove_block(b, e.x - b.x);
+      }
+    });
+    ENEMIES -= enemies.length;
+    if (ENEMIES === 0) {
+      // PS.AudioPlay("fx_ding");
+      PS.StatusText("Well done!");
+    }
+    /*if (b.dy === 1) {
       PS.AudioPlay("xylo_" + NOTES[y]);
     } else if (b.dx !== 0) {
       PS.AudioPlay("piano_" + NOTES[SZ - x - 1]);
-    }
+    }*/
+    // Stop falling and let gravity do the rest
     b.dy = 0;
   }
 
@@ -287,14 +487,16 @@
   // Load the current level
   PS.Init = function () {
     PS.GridSize(SZ, SZ);
-    PS.AudioLoad("fx_tick");      // moving
+    // PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
+    PS.BeadFlash(PS.ALL, PS.ALL, false);
+    /*PS.AudioLoad("fx_tick");      // moving
     PS.AudioLoad("fx_ding");      // won level
     PS.AudioLoad("fx_bucket");    // kicked a block
     PS.AudioLoad("perc_shaker");  // enemy disappearing
     NOTES.forEach(function (note) {
       PS.AudioLoad("xylo_" + note);
       PS.AudioLoad("piano_" + note);
-    });
+    });*/
     reset_level();
     PS.Clock(RATE);
   };
@@ -310,11 +512,20 @@
   // animations are running.
   PS.Click = function (x, y, data) {
     var dx, d;
-    if (!BLOCKS.some(function (b) { return b.dx !== 0 || b.dy !== 0; })) {
+    if (data === "R") {
+      // Retry
+      // TODO confirmation
+      reset_level();
+    } else if (data === "S") {
+      // Skip
+      next_level(1);
+    } else if (data === "B") {
+      // Go back
+      next_level(-1);
+    } else if (!BLOCKS.some(function (b) { return b.dx !== 0 || b.dy !== 0; })) {
       if (ENEMIES === 0) {
         // Move to next level
-        LEVEL += 1;
-        reset_level();
+        next_level(1);
       } else if (PLAYER.dead) {
         reset_level();
       } else if (x === PLAYER.x - 1 || x === PLAYER.x + 1) {
@@ -327,7 +538,7 @@
           if (data.data === "#") {
             // Push a free-standing block if the next square is empty or has an
             // enemy
-            PS.AudioPlay("fx_bucket");
+            // PS.AudioPlay("fx_bucket");
             dx = x - PLAYER.x;
             d = PS.BeadData(x + dx, y);
             if (d === " " || d.data === "$") {
@@ -346,7 +557,8 @@
           if (data === " ") {
             add_block(x, y);
           } else if (data.data === "#" || data.data === "=") {
-            remove_block(data);
+            remove_block(data, x - data.x);
+            gravity();
           }
         } else if (y === PLAYER.y - 1 && data === " " &&
             PS.BeadData(PLAYER.x, y) === " ") {
