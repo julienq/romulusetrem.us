@@ -43,6 +43,23 @@
         "****************"],
 
       [ "****************",
+        "***    *********",
+        "*** $        ***",
+        "***           **",
+        "****     #  @ **",
+        "***           **",
+        "**            **",
+        "**            **",
+        "**           ***",
+        "* #      #  ****",
+        "*         ******",
+        "*#        ******",
+        "*         ******",
+        "****************",
+        "*R***********BS*",
+        "****************"],
+
+      [ "****************",
         "****************",
         "***    *********",
         "**  $  *********",
@@ -82,6 +99,7 @@
 
   // Reset the game for the current level; update the status text as well
   function reset_level(incr) {
+    PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
     LEVEL = Math.max(Math.min(LEVEL + (incr || 0), LEVELS.length - 1), 0);
     PS.StatusText("Freeeeze ☃ Level " + (LEVEL + 1));
     BLOCKS = [];
@@ -96,6 +114,9 @@
           BLOCKS.push(data);
         }
         set_bead(x, y, data);
+        if (data !== "*") {
+          PS.BeadBorderWidth(x, y, 1);
+        }
       });
     });
   }
@@ -108,8 +129,9 @@
   // Load the current level
   PS.Init = function () {
     PS.GridSize(SZ, SZ);
+    PS.GridBGColor(COLORS["*"]);
+    PS.StatusColor(COLORS["#"]);
     PS.BeadFlash(PS.ALL, PS.ALL, false);
-    PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
     PS.AudioLoad("perc_shaker");  // enemy disappearing
     PS.AudioLoad("fx_bucket");    // kicked a block
     PS.AudioLoad("fx_swoosh");    // sliding a block
