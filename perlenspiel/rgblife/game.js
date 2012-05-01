@@ -11,7 +11,7 @@
 (function () {
   "use strict";
 
-  var SZ = 32, P = 0.2, RATE = 20, C = 64;
+  var SZ = 32, P = 0.2, RATE = 20, C = 64, CLICK_R = 3;
 
   function get_neighbors(x, y) {
     var i, j, k, data, neighbors = [0, 0, 0];
@@ -83,11 +83,16 @@
   // y = the y-position of the bead on the grid
   // data = the data value associated with this bead, 0 if none has been set
 
+  // Create new cells in a 3-square radius
   PS.Click = function (x, y) {
-    var r = 1 + Math.floor(Math.random() * 7),
-      data = [(r & 1) === 1, (r & 2) === 2, (r & 4) === 4];
-    PS.BeadData(x, y, data);
-    set_bead(x, y, data);
+    var i, j, data;
+    for (i = -CLICK_R; i < CLICK_R + 1; i += 1) {
+      for (j = -CLICK_R; j < CLICK_R + 1; j += 1) {
+        data = [Math.random() < P, Math.random() < P, Math.random() < P];
+        PS.BeadData((x + SZ + i) % SZ, (y + SZ + j) % SZ, data);
+        set_bead((x + SZ + i) % SZ, (y + SZ + j) % SZ, data);
+      }
+    }
   };
 
   // PS.Tick ()
