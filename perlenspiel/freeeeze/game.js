@@ -20,9 +20,10 @@
     // # is an ice block
     // $ is an enemy
     // @ is the player
+    // % is a hole
     //   is an empty space (ice)
     COLORS = { "*": 0x403530, "#": 0x7fffff, "@": 0x007f00, $: 0xff7f00,
-      " ": 0xdfffff, R: 0xff7fff, S: 0x7fff00, B: 0xffff7f },
+      "%": 0x102040, " ": 0xdfffff, R: 0xff7fff, S: 0x7fff00, B: 0xffff7f },
 
     LEVELS = [
       [ "****************",
@@ -38,6 +39,23 @@
         "******    ******",
         "******   *******",
         "******* $*******",
+        "****************",
+        "*R***********BS*",
+        "****************"],
+
+      [ "****************",
+        "****************",
+        "***    *********",
+        "**  $  *********",
+        "**     *********",
+        "***       ******",
+        "****    #@ *****",
+        "***       ******",
+        "*      *********",
+        "*      *********",
+        "*     **********",
+        "*     **********",
+        "*    ***********",
         "****************",
         "*R***********BS*",
         "****************"],
@@ -61,17 +79,17 @@
 
       [ "****************",
         "****************",
-        "***    *********",
-        "**  $  *********",
-        "**     *********",
-        "***       ******",
-        "****    #@ *****",
-        "***       ******",
-        "*      *********",
-        "*      *********",
-        "*     **********",
-        "*     **********",
-        "*    ***********",
+        "**      ********",
+        "**           ***",
+        "**     %      **",
+        "**             *",
+        "***            *",
+        "***$   @   # %**",
+        "*****      *****",
+        "****************",
+        "****************",
+        "****************",
+        "****************",
         "****************",
         "*R***********BS*",
         "****************"]
@@ -84,6 +102,7 @@
   function set_bead(x, y, data) {
     PS.BeadData(x, y, data);
     PS.BeadColor(x, y, COLORS[data.data || data]);
+    PS.BeadBorderWidth(x, y, data === "*" ? 0 : 1);
   }
 
   // Make a new block object
@@ -95,6 +114,14 @@
   function remove_block(b) {
     BLOCKS.splice(BLOCKS.indexOf(b), 1);
     set_bead(b.x, b.y, " ");
+  }
+
+  function die(b) {
+    remove_block(b);
+    if (b === PLAYER) {
+      PS.AudioPlay("fx_wilhelm");
+      PS.StatusText("OH NOES!!! ☠☠☠");
+    }
   }
 
   // Reset the game for the current level; update the status text as well
@@ -114,9 +141,6 @@
           BLOCKS.push(data);
         }
         set_bead(x, y, data);
-        if (data !== "*") {
-          PS.BeadBorderWidth(x, y, 1);
-        }
       });
     });
   }
@@ -210,11 +234,11 @@
             if (!BLOCKS.some(function (b) { return b.data === "$"; })) {
               PS.StatusText("Well done!");
             }
-          } else if (b === PLAYER) {
-            remove_block(PLAYER);
-            PS.AudioPlay("fx_wilhelm");
-            PS.StatusText("OH NOES!!! ☠☠☠");
+          } else {
+            die(b);
           }
+        } else if (data === "%") {
+          die(b);
         } else {
           PS.AudioPlay("fx_bucket");
         }
