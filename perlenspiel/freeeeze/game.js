@@ -96,7 +96,7 @@
 
     ],
 
-    LEVEL = LEVELS.length - 1;    // Current level
+    LEVEL = 0; // LEVELS.length - 1;    // Current level
 
   // Set a bead to a new value and redraw it.
   function set_bead(x, y, data) {
@@ -119,7 +119,7 @@
   function die(b) {
     remove_block(b);
     if (b === PLAYER) {
-      PS.AudioPlay("fx_wilhelm");
+      // PS.AudioPlay("fx_wilhelm");
       PS.StatusText("OH NOES!!! ☠☠☠");
     }
   }
@@ -156,10 +156,10 @@
     PS.GridBGColor(COLORS["*"]);
     PS.StatusColor(COLORS["#"]);
     PS.BeadFlash(PS.ALL, PS.ALL, false);
-    PS.AudioLoad("perc_shaker");  // enemy disappearing
-    PS.AudioLoad("fx_bucket");    // kicked a block
-    PS.AudioLoad("fx_swoosh");    // sliding a block
-    PS.AudioLoad("fx_wilhelm");   // player dying
+    // PS.AudioLoad("perc_shaker");  // enemy disappearing
+    // PS.AudioLoad("fx_bucket");    // kicked a block
+    // PS.AudioLoad("fx_swoosh");    // sliding a block
+    // PS.AudioLoad("fx_wilhelm");   // player dying
     reset_level();
   };
 
@@ -197,7 +197,7 @@
         dx = x - PLAYER.x;
       }
       if (dx !== 0 || dy !== 0) {
-        PS.AudioPlay("fx_swoosh");
+        // PS.AudioPlay("fx_swoosh");
         PLAYER.dx = dx < 0 ? -1 : dx > 0 ? 1 : 0;
         PLAYER.dy = dy < 0 ? -1 : dy > 0 ? 1 : 0;
         PS.Clock(RATE);
@@ -223,14 +223,14 @@
         b.y += b.dy;
       } else {
         if (data.data === "#") {
-          PS.AudioPlay("fx_bucket");
+          // PS.AudioPlay("fx_bucket");
           data.dx = b.dx;
           data.dy = b.dy;
         } else if (data.data === "$") {
           if (b.data === "#") {
             remove_block(data);
             remove_block(b);
-            PS.AudioPlay("perc_shaker");
+            // PS.AudioPlay("perc_shaker");
             if (!BLOCKS.some(function (b) { return b.data === "$"; })) {
               PS.StatusText("Well done!");
             }
@@ -240,7 +240,7 @@
         } else if (data === "%") {
           die(b);
         } else {
-          PS.AudioPlay("fx_bucket");
+          // PS.AudioPlay("fx_bucket");
         }
         b.dx = 0;
         b.dy = 0;
