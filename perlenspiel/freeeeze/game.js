@@ -21,9 +21,11 @@
     // $ is an enemy
     // @ is the player
     // % is a hole
+    // & is a shallow hole
     //   is an empty space (ice)
     COLORS = { "*": 0x403530, "#": 0x7fffff, "@": 0x007f00, $: 0xff7f00,
-      "%": 0x102040, " ": 0xdfffff, R: 0xff7fff, S: 0x7fff00, B: 0xffff7f },
+      "%": 0x102040, "&": 0x007fff, " ": 0xdfffff, ",": 0xbfffff,
+      R: 0xff7fff, S: 0x7fff00, B: 0xffff7f },
 
     LEVELS = [
       [ "****************",
@@ -92,11 +94,45 @@
         "****************",
         "****************",
         "*R***********BS*",
-        "****************"]
+        "****************"],
+
+      [ "****************",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*             &*",
+        "*              *",
+        "*  $  & #  #  @*",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "****************",
+        "*R***********BS*",
+        "****************"],
+
+      [ "****************",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*  $  & #,,#,,@*",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "*              *",
+        "****************",
+        "*R***********BS*",
+        "****************"],
 
     ],
 
-    LEVEL = 0; // LEVELS.length - 1;    // Current level
+    LEVEL = LEVELS.length - 1;    // Current level
 
   // Set a bead to a new value and redraw it.
   function set_bead(x, y, data) {
@@ -113,7 +149,7 @@
   // Remove a block
   function remove_block(b) {
     BLOCKS.splice(BLOCKS.indexOf(b), 1);
-    set_bead(b.x, b.y, " ");
+    set_bead(b.x, b.y, b.after || " ");
   }
 
   function die(b) {
@@ -216,11 +252,12 @@
       return b.dx !== 0 || b.dy !== 0;
     }).forEach(function (b) {
       var x = b.x + b.dx, y = b.y + b.dy, data = PS.BeadData(x, y);
-      if (data === " ") {
-        set_bead(b.x, b.y, " ");
+      if (data === " " || data === ",") {
+        set_bead(b.x, b.y, b.after || " ");
         set_bead(x, y, b);
         b.x += b.dx;
         b.y += b.dy;
+        b.after = data === "," ? "%" : " ";
       } else {
         if (data.data === "#") {
           // PS.AudioPlay("fx_bucket");
@@ -239,6 +276,9 @@
           }
         } else if (data === "%") {
           die(b);
+        } else if (data === "&") {
+          die(b);
+          set_bead(b.x + b.dx, b.y + b.dy, " ");
         } else {
           // PS.AudioPlay("fx_bucket");
         }
