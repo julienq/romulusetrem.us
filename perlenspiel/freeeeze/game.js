@@ -25,10 +25,10 @@
     // & is a shallow hole (TODO review color)
     //   is an empty space
     // , is thin ice (TODO review color)
-    // ~ is lava (TODO review color)
+    // ~ is lava
     COLORS = { "*": 0x403530, "#": 0xb1f1ff, "@": 0x164e4a, "^": 0xed372a,
       $: 0xfbb829, "%": 0x102040, "&": 0x00755e, " ": 0xfcf9f0, ",": 0xbfffff,
-      "~": 0xca0a00, R: 0x320943, B: 0xffff00, S: 0x7fff24 },
+      "~": 0xfd7033, R: 0x320943, B: 0xffff00, S: 0x7fff24 },
 
     IS_BLOCK = { "#": true, "@": true, $: true, "^": true },  // blocks
     IS_EMPTY = { " ": true, ",": true },                      // empty squares
@@ -212,12 +212,12 @@
       }
       var x = b.x + b.dx, y = b.y + b.dy, data;
       data = x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : "*";
-      if (IS_EMPTY[data]) {
+      if (IS_EMPTY[data] || (data === "~" && is_enemy(b))) {
         set_bead(b.x, b.y, b.after || " ");
         set_bead(x, y, b);
         b.x += b.dx;
         b.y += b.dy;
-        b.after = data === "," ? "%" : " ";
+        b.after = data === "," ? "%" : data === "~" ? "~" : " ";
       } else {
         if (data.data === "#") {
           if (is_enemy(b)) {
@@ -229,7 +229,10 @@
         } else if (data.data === "$" || data.data === "^") {
           if (b.data === "#") {
             remove_enemy(b, data);
-          } else {
+          } else if (b.data === "^") {
+            data.dx = b.dx;
+            data.dy = b.dy;
+          } else if (b.data === "@") {
             die(b);
           }
         } else if (data.data === "@") {
@@ -239,6 +242,8 @@
         } else if (data === "&") {
           die(b);
           set_bead(b.x + b.dx, b.y + b.dy, " ");
+        } else if (data === "~") {
+          die(b);
         }
         b.dx = 0;
         b.dy = 0;
@@ -250,6 +255,23 @@
   // The levels
 
   LEVELS = [
+
+    [ "           ^    ",
+      "                ",
+      "           $    ",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "                ",
+      "    *           ",
+      "  #             ",
+      "                ",
+      "                ",
+      "                ",
+      "                ",
+      "           @    "],
 
     [ "****************",
       "****************",
