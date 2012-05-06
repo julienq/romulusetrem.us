@@ -1,4 +1,4 @@
-// A puzzle game inspired by Rasende Roboter
+// A puzzle game inspired by Rasende Roboter and Solomon's Key 2
 // Created: Apr 30, 2012
 // This code is copyright © 2012 romulusetrem.us and is distributed under the
 // same terms as Perlenspiel itself, see http://perlenspiel.org/ and
@@ -77,6 +77,14 @@
   // Test whether a block is an enemy block
   function is_enemy(b) {
     return b.data === "$" || b.data === "^";
+  }
+
+  function remove_enemy(b1, b2) {
+    remove_block(b1);
+    remove_block(b2);
+    if (!BLOCKS.some(is_enemy)) {
+      PS.StatusText("Well done!");
+    }
   }
 
   // Set a row of beads for a level; add block objects for the player, ice
@@ -212,15 +220,15 @@
         b.after = data === "," ? "%" : " ";
       } else {
         if (data.data === "#") {
-          data.dx = b.dx;
-          data.dy = b.dy;
+          if (is_enemy(b)) {
+            remove_enemy(b, data);
+          } else {
+            data.dx = b.dx;
+            data.dy = b.dy;
+          }
         } else if (data.data === "$" || data.data === "^") {
           if (b.data === "#") {
-            remove_block(data);
-            remove_block(b);
-            if (!BLOCKS.some(is_enemy)) {
-              PS.StatusText("Well done!");
-            }
+            remove_enemy(b, data);
           } else {
             die(b);
           }
@@ -244,6 +252,7 @@
   LEVELS = [
 
     [ "****************",
+      "****************",
       "*********  $ ***",
       "***  **    # ***",
       "**$ #     #  ***",
@@ -256,7 +265,6 @@
       "******    ******",
       "******   *******",
       "******* $*******",
-      "****************",
       "****************",
       "****************"],
 
