@@ -14,6 +14,9 @@
   var SZ = 16,    // Size of the game world
     RATE = 20,    // Clock rate for animations (in 100th of second)
     BLOCKS = [],  // All movable blocks (player, ice, enemies; not rocks)
+    LAVA = [],    // Lava blocks
+    LAVA_P = 0.1,
+    LAVA_ALPHA = 15,
     PLAYER,       // Player block
 
     // * is a rock
@@ -42,6 +45,7 @@
     PS.BeadData(x, y, data);
     PS.BeadColor(x, y, COLORS[data.data || data]);
     PS.BeadBorderWidth(x, y, data === "*" ? 0 : 1);
+    PS.BeadAlpha(x, y, 100);
   }
 
   // Find out the destination of the block from its starting position and
@@ -106,6 +110,8 @@
         }
         data = { x: x, y: y, dx: 0, dy: 0, data: data };
         BLOCKS.splice(i, 0, data);
+      } else if (data === "~") {
+        LAVA.push([x, y]);
       }
       set_bead(x, y, data);
     });
@@ -117,6 +123,7 @@
     LEVEL = Math.max(Math.min(LEVEL + (incr || 0), LEVELS.length - 1), 0);
     PS.StatusText("Freeeeze ☃ Level " + (LEVEL + 1));
     BLOCKS = [];
+    LAVA = [];
     LEVELS[LEVEL].forEach(set_row);
     BOTTOM.forEach(function (row, y) { set_row(row, y + SZ); });
     PLAYER = BLOCKS[0];
@@ -133,6 +140,7 @@
     PS.GridBGColor(COLORS["*"]);
     PS.StatusColor(COLORS["#"]);
     PS.BeadFlash(PS.ALL, PS.ALL, false);
+    PS.Clock(RATE);
     reset_level();
   };
 
@@ -241,12 +249,23 @@
           die(b);
         } else if (data === "&") {
           die(b);
-          set_bead(b.x + b.dx, b.y + b.dy, " ");
+          if (is_enemy(b)) {
+            set_bead(b.x + b.dx, b.y + b.dy, "~");
+            DATA.push([b.x + b.dx, b.y + b.dy]);
+          } else {
+            set_bead(b.x + b.dx, b.y + b.dy, " ");
+          }
         } else if (data === "~") {
           die(b);
         }
         b.dx = 0;
         b.dy = 0;
+      }
+    });
+    LAVA.forEach(function (p) {
+      if (PS.BeadData(p[0], p[1]) === "~" && Math.random() < LAVA_P) {
+        PS.BeadAlpha(p[0], p[1],
+          (100 - LAVA_ALPHA + Math.ceil(Math.random() * LAVA_ALPHA)));
       }
     });
   };
