@@ -37,13 +37,14 @@
     // ~ is lava
     COLORS = { "*": 0x403530, "#": 0xb1f1ff, "@": 0x164e4a, "^": 0xed372a,
       $: 0xfbb829, "%": 0x102040, "&": 0x00755e, " ": 0xfcf9f0, ",": 0xbfffff,
-      "~": 0xfd7033, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5 },
+      "~": 0xfd7033, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5,
+      G: 0xc5aa9e },
 
     IS_BLOCK = { "#": true, "@": true, $: true, "^": true },  // blocks
     IS_EMPTY = { " ": true, ",": true },                      // empty squares
 
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
-    BOTTOM_EDIT = ["****************", "E*R****@ #$^~,&%"],  // bottom for edit
+    BOTTOM_EDIT = ["****************", "ERG****@ #$^~,&%"],  // bottom for edit
     LEVEL = 0, // LEVELS.length - 1;    // Current level
     LEVELS;    // actual levels below
 
@@ -58,6 +59,11 @@
   // Test whether a block is an enemy block
   function is_enemy(b) {
     return b.data === "$" || b.data === "^";
+  }
+
+  // Test whether a block is moving
+  function is_moving(b) {
+    return b.dx !== 0 || b.dy !== 0;
   }
 
   // Find out the destination of the block from its starting position and
@@ -154,6 +160,25 @@
     }
   }
 
+  function unhighlight() {
+    var i;
+    if (HIGHLIGHT) {
+      if (HIGHLIGHT.hasOwnProperty("x")) {
+        for (i = 0; i < SZ; i += 1) {
+          if (!lava([HIGHLIGHT.x, i])) {
+            PS.BeadAlpha(HIGHLIGHT.x, i, 100);
+          }
+        }
+      } else if (HIGHLIGHT.hasOwnProperty("y")) {
+        for (i = 0; i < SZ; i += 1) {
+          if (!lava([i, HIGHLIGHT.y])) {
+            PS.BeadAlpha(i, HIGHLIGHT.y, 100);
+          }
+        }
+      }
+    }
+  }
+
   // PS.Init ()
   // Initializes the game
   // This function normally includes a call to PS.GridSize (x, y)
@@ -192,6 +217,9 @@
         }
       }
       reset_level();
+    } else if (data === "G") {
+      // Ghost
+      run_ghost();
     } else if (y === SZ + 1) {
       // Choose a tool
       EDIT_TOOL = data;
@@ -232,9 +260,7 @@
     } else if (!BLOCKS.some(is_enemy)) {
       // No more enemy: move to the next level
       reset_level(1);
-    } else if (!BLOCKS.some(function (b) {
-        return b.dx !== 0 || b.dy !== 0;
-      })) {
+    } else if (!BLOCKS.some(is_moving)) {
       // No animation running, move the player when clicking its column/row
       if (x === PLAYER.x) {
         dy = y - PLAYER.y;
@@ -262,6 +288,7 @@
             b.dy = b_dest.dy;
           }
         });
+        unhighlight();
         PS.Clock(RATE);
       }
     }
@@ -286,7 +313,7 @@
   PS.Enter = function (x, y) {
     if (PAINTING) {
       paint_bead(x, y, EDIT_TOOL);
-    } else if (!EDIT) {
+    } else if (!EDIT && !BLOCKS.some(is_moving)) {
       if (x === PLAYER.x && y !== PLAYER.y) {
         PS.BeadAlpha(x, PS.ALL, HIGHLIGHT_ALPHA);
         HIGHLIGHT = { x: x };
@@ -307,23 +334,8 @@
   // data = the data value associated with this bead, 0 if none has been set
 
   PS.Leave = function () {
-    var i;
-    if (HIGHLIGHT) {
-      if (HIGHLIGHT.hasOwnProperty("x")) {
-        for (i = 0; i < SZ; i += 1) {
-          if (!lava([HIGHLIGHT.x, i])) {
-            PS.BeadAlpha(HIGHLIGHT.x, i, 100);
-          }
-        }
-      } else if (HIGHLIGHT.hasOwnProperty("y")) {
-        for (i = 0; i < SZ; i += 1) {
-          if (!lava([i, HIGHLIGHT.y])) {
-            PS.BeadAlpha(i, HIGHLIGHT.y, 100);
-          }
-        }
-      }
-    }
-  }
+    unhighlight();
+  };
 
   // PS.Release (x, y, data)
   // This function is called whenever a mouse button is released over a bead
