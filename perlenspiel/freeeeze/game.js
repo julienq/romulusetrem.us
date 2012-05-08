@@ -11,17 +11,19 @@
 (function () {
   "use strict";
 
-  var SZ = 16,         // Size of the game world
-    RATE = 20,         // Clock rate for animations (in 100th of second)
-    BLOCKS = [],       // All movable blocks (player, ice, enemies; not rocks)
-    LAVA = [],         // Lava blocks
-    LAVA_P = 0.05,     // Probability of lava bead bubbling
-    LAVA_ALPHA = 15,   // Alpha range for lava
-    PLAYER,            // Player block
-    EDIT = false,      // edit mode
-    EDIT_LEVEL,        // level being edited
-    EDIT_TOOL = " ",   // current tool while editing
-    PAINTING = false,  // mouse down for painting
+  var SZ = 16,             // Size of the game world
+    RATE = 20,             // Clock rate for animations (in 100th of second)
+    BLOCKS = [],           // All movable blocks (player, ice cubes, enemies)
+    LAVA = [],             // Lava blocks
+    LAVA_P = 0.05,         // Probability of lava bead bubbling
+    LAVA_ALPHA = 15,       // Alpha range for lava
+    PLAYER,                // Player block
+    EDIT = false,          // edit mode
+    EDIT_LEVEL,            // level being edited
+    EDIT_TOOL = " ",       // current tool while editing
+    PAINTING = false,      // mouse down for painting
+    HIGHLIGHT_ALPHA = 90,  // alpha for highlighting
+    HIGHLIGHT,             // last highlighted position
 
     // * is a rock
     // # is an ice block
@@ -40,7 +42,7 @@
     IS_BLOCK = { "#": true, "@": true, $: true, "^": true },  // blocks
     IS_EMPTY = { " ": true, ",": true },                      // empty squares
 
-    BOTTOM_PLAY = ["****************", "E************RBS"],  // bottom of levels
+    BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
     BOTTOM_EDIT = ["****************", "E*R****@ #$^~,&%"],  // bottom for edit
     LEVEL = 0, // LEVELS.length - 1;    // Current level
     LEVELS;    // actual levels below
@@ -49,7 +51,7 @@
   function set_bead(x, y, data) {
     PS.BeadData(x, y, data);
     PS.BeadColor(x, y, COLORS[data.data || data]);
-    PS.BeadBorderWidth(x, y, data === "*" ? 0 : 1);
+    PS.BeadBorderWidth(x, y, EDIT || data !== "*" ? 1 : 0);
     PS.BeadAlpha(x, y, 100);
   }
 
@@ -143,6 +145,15 @@
     set_bead(x, y, data);
   }
 
+  // Make the lava bubble
+  function lava(p) {
+    if (PS.BeadData(p[0], p[1]) === "~" && Math.random() < LAVA_P) {
+      PS.BeadAlpha(p[0], p[1],
+        (100 - LAVA_ALPHA + Math.ceil(Math.random() * LAVA_ALPHA)));
+      return true;
+    }
+  }
+
   // PS.Init ()
   // Initializes the game
   // This function normally includes a call to PS.GridSize (x, y)
@@ -184,6 +195,9 @@
     } else if (y === SZ + 1) {
       // Choose a tool
       EDIT_TOOL = data;
+      PS.StatusText({ "@": "Player", " ": "Ice", "#": "Ice cube", $: "Enemy",
+        "^": "Skater", "~": "Lava", ",": "Thin ice", "&": "Shallow hole",
+        "%": "Bottomless pit", "*": "Rock" }[EDIT_TOOL]);
     } else if (y < SZ) {
       // Paint
       paint_bead(x, y, EDIT_TOOL);
@@ -268,12 +282,48 @@
   // y = the y-position of the bead on the grid
   // data = the data value associated with this bead, 0 if none has been set
 
-  // Paint
+  // Paint in edit mode, highlight row or column for movement in play mode
   PS.Enter = function (x, y) {
     if (PAINTING) {
       paint_bead(x, y, EDIT_TOOL);
+    } else if (!EDIT) {
+      if (x === PLAYER.x && y !== PLAYER.y) {
+        PS.BeadAlpha(x, PS.ALL, HIGHLIGHT_ALPHA);
+        HIGHLIGHT = { x: x };
+      } else if (x !== PLAYER.x && y === PLAYER.y) {
+        PS.BeadAlpha(PS.ALL, y, HIGHLIGHT_ALPHA);
+        HIGHLIGHT = { y: y };
+      } else {
+        HIGHLIGHT = null;
+      }
     }
   };
+
+  // PS.Leave (x, y, data)
+  // This function is called whenever the mouse moves away from a bead
+  // It doesn't have to do anything
+  // x = the x-position of the bead on the grid
+  // y = the y-position of the bead on the grid
+  // data = the data value associated with this bead, 0 if none has been set
+
+  PS.Leave = function () {
+    var i;
+    if (HIGHLIGHT) {
+      if (HIGHLIGHT.hasOwnProperty("x")) {
+        for (i = 0; i < SZ; i += 1) {
+          if (!lava([HIGHLIGHT.x, i])) {
+            PS.BeadAlpha(HIGHLIGHT.x, i, 100);
+          }
+        }
+      } else if (HIGHLIGHT.hasOwnProperty("y")) {
+        for (i = 0; i < SZ; i += 1) {
+          if (!lava([i, HIGHLIGHT.y])) {
+            PS.BeadAlpha(i, HIGHLIGHT.y, 100);
+          }
+        }
+      }
+    }
+  }
 
   // PS.Release (x, y, data)
   // This function is called whenever a mouse button is released over a bead
@@ -344,35 +394,28 @@
         b.dy = 0;
       }
     });
-    LAVA.forEach(function (p) {
-      if (PS.BeadData(p[0], p[1]) === "~" && Math.random() < LAVA_P) {
-        PS.BeadAlpha(p[0], p[1],
-          (100 - LAVA_ALPHA + Math.ceil(Math.random() * LAVA_ALPHA)));
-      }
-    });
+    LAVA.forEach(lava);
   };
-
 
   // The levels
 
   LEVELS = [
-
-    [ "           ^    ",
-      "                ",
-      "           $    ",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "                ",
-      "    *           ",
-      "  #             ",
-      "                ",
-      "                ",
-      "                ",
-      "                ",
-      "           @    "],
+    [ "****************",
+      "****************",
+      "****************",
+      "****************",
+      "***       ******",
+      "***       ******",
+      "***       ******",
+      "***  $  #  @  **",
+      "***           **",
+      "*******       **",
+      "*********     **",
+      "*********     **",
+      "**********   ***",
+      "****************",
+      "****************",
+      "****************"],
 
     [ "****************",
       "****************",
@@ -391,24 +434,6 @@
       "****************",
       "****************"],
 
-    [ "                ",
-      "                ",
-      "                ",
-      "                ",
-      "    ^           ",
-      "                ",
-      "                ",
-      "           *    ",
-      "         #      ",
-      "    *           ",
-      "                ",
-      "                ",
-      "           @    ",
-      "                ",
-      "                ",
-      "                "]
-
-        /*
     [ "****************",
       "****************",
       "***    *********",
@@ -423,7 +448,7 @@
       "*     **********",
       "*    ***********",
       "****************",
-      "*R***********BS*",
+      "****************",
       "****************"],
 
     [ "****************",
@@ -440,7 +465,7 @@
       "*#        ******",
       "*         ******",
       "****************",
-      "*R***********BS*",
+      "****************",
       "****************"],
 
     [ "****************",
@@ -457,8 +482,43 @@
       "****************",
       "****************",
       "****************",
-      "*R***********BS*",
+      "****************",
       "****************"],
+
+      /*
+    [ "           ^    ",
+      "                ",
+      "           $    ",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~",
+      "                ",
+      "    *           ",
+      "  #             ",
+      "                ",
+      "                ",
+      "                ",
+      "                ",
+      "           @    "],
+
+    [ "                ",
+      "                ",
+      "                ",
+      "                ",
+      "    ^           ",
+      "                ",
+      "                ",
+      "           *    ",
+      "         #      ",
+      "    *           ",
+      "                ",
+      "                ",
+      "           @    ",
+      "                ",
+      "                ",
+      "                "]
 
     [ "****************",
       "*              *",
@@ -498,15 +558,6 @@
 
 
   // These are not used but need to be defined
-
-  // PS.Leave (x, y, data)
-  // This function is called whenever the mouse moves away from a bead
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
-
-  PS.Leave = function () {};
 
   // PS.KeyDown (key, shift, ctrl)
   // This function is called whenever a key on the keyboard is pressed
