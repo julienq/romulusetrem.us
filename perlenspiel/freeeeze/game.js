@@ -14,7 +14,7 @@
   var SZ = 16,             // Size of the game world
     RATE = 20,             // Clock rate for animations (in 100th of second)
     BLOCKS = [],           // All movable blocks (player, ice cubes, enemies)
-    LAVA = [],             // Lava blocks
+    LAVA_ALL = [],         // Lava blocks
     LAVA_P = 0.05,         // Probability of lava bead bubbling
     LAVA_ALPHA = 15,       // Alpha range for lava
     PLAYER,                // Player block
@@ -25,26 +25,26 @@
     HIGHLIGHT_ALPHA = 90,  // alpha for highlighting
     HIGHLIGHT,             // last highlighted position
 
-    // * is a rock
-    // # is an ice block
-    // $ is an enemy
-    // ^ is a skater
-    // @ is the player
-    // % is a hole (TODO review color)
-    // & is a shallow hole (TODO review color)
-    //   is an empty space
-    // , is thin ice (TODO review color)
-    // ~ is lava
-    COLORS = { "*": 0x403530, "#": 0xb1f1ff, "@": 0x164e4a, "^": 0xed372a,
-      $: 0xfbb829, "%": 0x102040, "&": 0x00755e, " ": 0xfcf9f0, ",": 0xbfffff,
-      "~": 0xfd7033, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5,
+    EMPTY = " ",           // empty space
+    AVATAR = "!",          // player avatar
+    ICE_BLOCK = "#",       // ice block
+    ROCK = "*",            // rock
+    SKATER = "$",          // enemy skater
+    ENEMY = "%",           // enemy block
+    LAVA = "&",            // lava block
+    THIN_ICE = ",",        // thin ice (disappears after it's been stepped on)
+    PIT = ":",             // bottomless pit
+    HOLE = ";",            // shallow hole, becomes empty space (ice) or lava
+    COLORS = { " ": 0xfcf9f0, "!": 0x164e4a, "#": 0xb1f1ff, "*": 0x403530,
+      $: 0xed372a, "%": 0xfbb829, "&": 0xfd7033, ",": 0xcadee1, ":": 0x000000,
+      ";": 0x808080, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5,
       G: 0xc5aa9e },
 
-    IS_BLOCK = { "#": true, "@": true, $: true, "^": true },  // blocks
+    MOVABLE = { "!": true, "#": true, $: true, "%": true },  // movable blocks
     IS_EMPTY = { " ": true, ",": true },                      // empty squares
 
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
-    BOTTOM_EDIT = ["****************", "ERG****@ #$^~,&%"],  // bottom for edit
+    BOTTOM_EDIT = ["****************", "ERG**** !#$%&,:;"],  // bottom for edit
     LEVEL = 0, // LEVELS.length - 1;    // Current level
     LEVELS;    // actual levels below
 
@@ -52,13 +52,20 @@
   function set_bead(x, y, data) {
     PS.BeadData(x, y, data);
     PS.BeadColor(x, y, COLORS[data.data || data]);
-    PS.BeadBorderWidth(x, y, EDIT || data !== "*" ? 1 : 0);
+    PS.BeadBorderWidth(x, y, EDIT || data !== ROCK ? 1 : 0);
     PS.BeadAlpha(x, y, 100);
+  }
+
+  // Can be called as is_empty(x, y, block) or is_empty(data, block)
+  function is_empty(x, y, b) {
+    var data = b ? PS.BeadData(x, y) : x;
+    return data === EMPTY || data === THIN_ICE ||
+      (data === LAVA && is_enemy(b || y));
   }
 
   // Test whether a block is an enemy block
   function is_enemy(b) {
-    return b.data === "$" || b.data === "^";
+    return b.data === SKATER || b.data === ENEMY;
   }
 
   // Test whether a block is moving
@@ -74,9 +81,7 @@
     do {
       x += b.dx;
       y += b.dy;
-    } while (x >= 0 && x < SZ && y >= 0 && y < SZ &&
-        (IS_EMPTY[PS.BeadData(x, y)] ||
-         (PS.BeadData(x, y) === "~" && is_enemy(b))));
+    } while (x >= 0 && x < SZ && y >= 0 && y < SZ && is_empty(x, y, b));
     x -= b.dx;
     y -= b.dy;
     return { x: x, y: y, dx: b.dx, dy: b.dy, data: PS.BeadData(x, y) };
@@ -86,13 +91,13 @@
   function remove_block(b) {
     BLOCKS.splice(BLOCKS.indexOf(b), 1);
     b.removed = true;
-    set_bead(b.x, b.y, b.after || " ");
+    set_bead(b.x, b.y, b.after || EMPTY);
   }
 
   // Remove the block; if it's the player, show a dying message
   function die(b) {
     remove_block(b);
-    if (b.data === "@") {
+    if (b.data === AVATAR) {
       PS.StatusText("OH NOES!!! ☠☠☠");
     }
   }
@@ -106,26 +111,20 @@
   }
 
   // Set a row of beads for a level; add block objects for the player, ice
-  // blocks, and enemies
+  // blocks, and enemies and keep track of lava for the bubbling animation
   function set_row(row, y) {
     [].forEach.call(row, function (data, x) {
-      if (y < SZ && IS_BLOCK[data]) {
+      if (y < SZ && MOVABLE[data]) {
         // Insert a new block in the following order: player, ice blocks,
         // skaters, enemies
         var i = 0;
-        while (i < BLOCKS.length &&
-            ((data === "#" && (BLOCKS[i].data === "@" ||
-                             BLOCKS[i].data === "#")) ||
-              (data === "^" && (BLOCKS[i].data === "@" ||
-                             BLOCKS[i].data === "#" ||
-                             BLOCKS[i].data === "^")) ||
-               data === "$")) {
+        while (i < BLOCKS.length && data >= BLOCKS[i].data) {
           i += 1;
         }
         data = { x: x, y: y, dx: 0, dy: 0, data: data };
         BLOCKS.splice(i, 0, data);
-      } else if (data === "~") {
-        LAVA.push([x, y]);
+      } else if (data === LAVA) {
+        LAVA_ALL.push([x, y]);
       }
       set_bead(x, y, data);
     });
@@ -137,7 +136,7 @@
     LEVEL = (LEVEL + LEVELS.length + (incr || 0)) % LEVELS.length;
     PS.StatusText("Freeeeze ☃ Level " + (LEVEL + 1));
     BLOCKS = [];
-    LAVA = [];
+    LAVA_ALL = [];
     LEVELS[LEVEL].forEach(set_row);
     (EDIT ? BOTTOM_EDIT : BOTTOM_PLAY).forEach(function (row, y) {
       set_row(row, y + SZ);
@@ -145,21 +144,25 @@
     PLAYER = BLOCKS[0];
   }
 
+  // Update the level for new data at (x, y)
   function paint_bead(x, y, data) {
-    LEVELS[LEVEL][y] = LEVELS[LEVEL][y].substr(0, x) + data +
-      LEVELS[LEVEL][y].substr(x + 1);
-    set_bead(x, y, data);
+    if (x >= 0 && x < SZ && y >= 0 && y < SZ) {
+      LEVELS[LEVEL][y] = LEVELS[LEVEL][y].substr(0, x) + data +
+        LEVELS[LEVEL][y].substr(x + 1);
+      set_bead(x, y, data);
+    }
   }
 
   // Make the lava bubble
   function lava(p) {
-    if (PS.BeadData(p[0], p[1]) === "~" && Math.random() < LAVA_P) {
+    if (PS.BeadData(p[0], p[1]) === LAVA && Math.random() < LAVA_P) {
       PS.BeadAlpha(p[0], p[1],
         (100 - LAVA_ALPHA + Math.ceil(Math.random() * LAVA_ALPHA)));
       return true;
     }
   }
 
+  // Clear the highlight row or column
   function unhighlight() {
     var i;
     if (HIGHLIGHT) {
@@ -179,27 +182,44 @@
     }
   }
 
-  // PS.Init ()
-  // Initializes the game
-  // This function normally includes a call to PS.GridSize (x, y)
-  // where x and y are the desired dimensions of the grid
+  // Run the ghost to find winning and losing positions; reachable spots?
+  // TODO move other blocks; at the moment, only reachable
+  function run_ghost() {
+    var x, y, reachable = [], obstacle = [], px, py, data, move, queue = [];
 
-  // Load the current level
-  PS.Init = function () {
-    PS.GridSize(SZ, SZ + 2);
-    PS.GridBGColor(COLORS["*"]);
-    PS.StatusColor(COLORS["#"]);
-    PS.BeadFlash(PS.ALL, PS.ALL, false);
-    PS.Clock(RATE);
-    reset_level();
-  };
+    function encode(x, y, data) {
+      return String.fromCharCode(x | (y << 4) | (data.charCodeAt(0) << 8));
+    }
 
-  // PS.Click (x, y, data)
-  // This function is called whenever a bead is clicked
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
+    function decode(c) {
+      return { x: c & 0xf, y: (c & 0xf0) >> 4,
+        data: String.fromCharCode(c >> 8) };
+    }
+
+    /*
+    move = function (dir) {
+      var dx = dir % 2 === 0 ? 1 - dir : 0,
+        dy = dir % 2 === 1 ? 2 - dir : 0;
+
+    };
+
+    for (y = 0; y < SZ; y += 1) {
+      reachable[y] = [];
+      obstacle[y] = [];
+      for (x = 0; x < SZ; x += 1) {
+        reachable[y][x] = false;
+        data = PS.BeadData(x, y);
+        obstacle[y][x] = data !== " ";
+        if (data.data === "!") {
+          px = x;
+          py = y;
+        }
+      }
+    }
+    */
+
+
+  }
 
   // Handle clicks in edit mode
   function click_edit(x, y, data) {
@@ -223,9 +243,9 @@
     } else if (y === SZ + 1) {
       // Choose a tool
       EDIT_TOOL = data;
-      PS.StatusText({ "@": "Player", " ": "Ice", "#": "Ice cube", $: "Enemy",
-        "^": "Skater", "~": "Lava", ",": "Thin ice", "&": "Shallow hole",
-        "%": "Bottomless pit", "*": "Rock" }[EDIT_TOOL]);
+      PS.StatusText({ " ": "Ice", "!": "Player", "#": "Ice cube", "*": "Rock",
+        $: "Skater", "%": "Enemy", "&": "Lava", ",": "Thin ice",
+        ":": "Bottomless pit", ";": "Shallow hole" }[EDIT_TOOL]);
     } else if (y < SZ) {
       // Paint
       paint_bead(x, y, EDIT_TOOL);
@@ -274,7 +294,7 @@
         // which direction will bring them closer
         dest = destination(PLAYER);
         BLOCKS.forEach(function (b) {
-          if (b.data === "^") {
+          if (b.data === SKATER) {
             var b_dest = [0, 1, 2, 3].map(function (dir) {
               b.dx = dir % 2 === 0 ? 1 - dir : 0;
               b.dy = dir % 2 === 1 ? 2 - dir : 0;
@@ -294,6 +314,16 @@
     }
   }
 
+  // Load the current level
+  PS.Init = function () {
+    PS.GridSize(SZ, SZ + 2);
+    PS.GridBGColor(COLORS[ROCK]);
+    PS.StatusColor(COLORS[EMPTY]);
+    PS.BeadFlash(PS.ALL, PS.ALL, false);
+    PS.Clock(RATE);
+    reset_level();
+  };
+
   PS.Click = function (x, y, data) {
     if (EDIT) {
       click_edit(x, y, data);
@@ -301,13 +331,6 @@
       click_play(x, y, data);
     }
   };
-
-  // PS.Enter (x, y, button, data)
-  // This function is called whenever the mouse moves over a bead
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
 
   // Paint in edit mode, highlight row or column for movement in play mode
   PS.Enter = function (x, y) {
@@ -326,32 +349,13 @@
     }
   };
 
-  // PS.Leave (x, y, data)
-  // This function is called whenever the mouse moves away from a bead
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
-
   PS.Leave = function () {
     unhighlight();
   };
 
-  // PS.Release (x, y, data)
-  // This function is called whenever a mouse button is released over a bead
-  // It doesn't have to do anything
-  // x = the x-position of the bead on the grid
-  // y = the y-position of the bead on the grid
-  // data = the data value associated with this bead, 0 if none has been set
-
   PS.Release = function () {
     PAINTING = false;
   };
-
-  // PS.Tick ()
-  // This function is called on every clock tick
-  // if a timer has been activated with a call to PS.Timer()
-  // It doesn't have to do anything
 
   // Run one step of animation for every moving object
   PS.Tick = function () {
@@ -363,50 +367,50 @@
         return;
       }
       var x = b.x + b.dx, y = b.y + b.dy, data;
-      data = x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : "*";
-      if (IS_EMPTY[data] || (data === "~" && is_enemy(b))) {
+      data = x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : ROCK;
+      if (is_empty(data, b)) {
         set_bead(b.x, b.y, b.after || " ");
         set_bead(x, y, b);
         b.x += b.dx;
         b.y += b.dy;
-        b.after = data === "," ? "%" : data === "~" ? "~" : " ";
+        b.after = data === THIN_ICE ? PIT : data === LAVA ? LAVA : EMPTY;
       } else {
-        if (data.data === "#") {
+        if (data.data === ICE_BLOCK) {
           if (is_enemy(b)) {
             remove_enemy(b, data);
           } else {
             data.dx = b.dx;
             data.dy = b.dy;
           }
-        } else if (data.data === "$" || data.data === "^") {
-          if (b.data === "#") {
+        } else if (data.data === SKATER || data.data === ENEMY) {
+          if (b.data === ICE_BLOCK) {
             remove_enemy(b, data);
-          } else if (b.data === "^") {
+          } else if (b.data === SKATER) {
             data.dx = b.dx;
             data.dy = b.dy;
-          } else if (b.data === "@") {
+          } else if (b.data === PLAYER) {
             die(b);
           }
-        } else if (data.data === "@") {
+        } else if (data.data === AVATAR) {
           die(data);
-        } else if (data === "%") {
+        } else if (data === PIT) {
           die(b);
-        } else if (data === "&") {
+        } else if (data === HOLE) {
           die(b);
           if (is_enemy(b)) {
-            set_bead(b.x + b.dx, b.y + b.dy, "~");
-            LAVA.push([b.x + b.dx, b.y + b.dy]);
+            set_bead(b.x + b.dx, b.y + b.dy, LAVA);
+            LAVA_ALL.push([b.x + b.dx, b.y + b.dy]);
           } else {
-            set_bead(b.x + b.dx, b.y + b.dy, " ");
+            set_bead(b.x + b.dx, b.y + b.dy, EMPTY);
           }
-        } else if (data === "~") {
+        } else if (data === LAVA) {
           die(b);
         }
         b.dx = 0;
         b.dy = 0;
       }
     });
-    LAVA.forEach(lava);
+    LAVA_ALL.forEach(lava);
   };
 
   // The levels
@@ -419,7 +423,7 @@
       "***       ******",
       "***       ******",
       "***       ******",
-      "***  $  #  @  **",
+      "***  %  #  !  **",
       "***           **",
       "*******       **",
       "*********     **",
@@ -431,28 +435,28 @@
 
     [ "****************",
       "****************",
-      "*********  $ ***",
+      "*********  % ***",
       "***  **    # ***",
-      "**$ #     #  ***",
+      "**% #     #  ***",
       "*             **",
       "*             **",
-      "**      @      *",
+      "**      !      *",
       "**             *",
-      "***         # $*",
+      "***         # %*",
       "*****   #     **",
       "******    ******",
       "******   *******",
-      "******* $*******",
+      "******* %*******",
       "****************",
       "****************"],
 
     [ "****************",
       "****************",
       "***    *********",
-      "**  $  *********",
+      "**  %  *********",
       "**     *********",
       "***       ******",
-      "****    #@ *****",
+      "****    #! *****",
       "***       ******",
       "*      *********",
       "*      *********",
@@ -465,9 +469,9 @@
 
     [ "****************",
       "***    *********",
-      "*** $        ***",
+      "*** %        ***",
       "***           **",
-      "****     #  @ **",
+      "****     #  ! **",
       "***           **",
       "**            **",
       "**            **",
@@ -484,10 +488,10 @@
       "****************",
       "**      ********",
       "**           ***",
-      "**     %      **",
+      "**     :      **",
       "**             *",
       "***            *",
-      "***$   @   # %**",
+      "***%   !   # ;**",
       "*****      *****",
       "****************",
       "****************",
@@ -495,77 +499,8 @@
       "****************",
       "****************",
       "****************",
-      "****************"],
-
-      /*
-    [ "           ^    ",
-      "                ",
-      "           $    ",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "~~~~~~~~~~~~~~~~",
-      "                ",
-      "    *           ",
-      "  #             ",
-      "                ",
-      "                ",
-      "                ",
-      "                ",
-      "           @    "],
-
-    [ "                ",
-      "                ",
-      "                ",
-      "                ",
-      "    ^           ",
-      "                ",
-      "                ",
-      "           *    ",
-      "         #      ",
-      "    *           ",
-      "                ",
-      "                ",
-      "           @    ",
-      "                ",
-      "                ",
-      "                "]
-
-    [ "****************",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*             &*",
-      "*              *",
-      "*  $  & #  #  @*",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "****************",
-      "*R***********BS*",
-      "****************"],
-
-    [ "****************",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*  $  & #,,#,,@*",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "*              *",
-      "****************",
-      "*R***********BS*",
       "****************"]
-        */
+
   ];
 
 
