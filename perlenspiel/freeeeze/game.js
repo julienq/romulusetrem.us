@@ -8,8 +8,8 @@
 /*global PS: false */
 /*jslint devel: true, maxerr: 50, indent: 2 */
 
-(function () {
-  "use strict";
+//(function () {
+//  "use strict";
 
   var SZ = 16,             // Size of the game world
     RATE = 20,             // Clock rate for animations (in 100th of second)
@@ -41,12 +41,43 @@
       G: 0xc5aa9e },
 
     MOVABLE = { "!": true, "#": true, $: true, "%": true },  // movable blocks
-    IS_EMPTY = { " ": true, ",": true },                      // empty squares
-
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
     BOTTOM_EDIT = ["****************", "ERG**** !#$%&,:;"],  // bottom for edit
-    LEVEL = 0, // LEVELS.length - 1;    // Current level
-    LEVELS;    // actual levels below
+    LEVEL = 0, // LEVELS.length - 1;                         // current level
+    LEVELS;                                                  // see below
+
+  // Return data at the given position, or ROCK if out of bounds
+  function data_at(x, y) {
+    return x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : ROCK;
+  }
+
+  function can_move_to(b, data) {
+    return data === EMPTY || data === LAVA || data === THIN_ICE ||
+      data === PIT || data === HOLE ||
+      (is_enemy(b) && (data.data === ICE_BLOCK || data.data === AVATAR)) ||
+      ((b.data === ICE_BLOCK || b.data === AVATAR) && is_enemy(data));
+  }
+
+  // Test whether the block b can push block data
+  function can_push(b, data, o, dist) {
+    var dest_x = o.x + dist * o.dx, dest_y = o.y + dist * o.dy,
+      dest_data = data_at(dest_x, dest_y);
+    return (((b.data === ICE_BLOCK || b.data === AVATAR) &&
+        data.data === ICE_BLOCK) || (is_enemy(b) && is_enemy(data))) &&
+      (can_move_to(data, dest_data) || can_push(data, dest_data, o, dist + 1));
+  }
+
+  // Test whether a block is an enemy block
+  function is_enemy(b) {
+    return b.data === SKATER || b.data === ENEMY;
+  }
+
+  // Can be called as is_empty(x, y, block) or is_empty(data, block)
+  function is_empty(x, y, b) {
+    var data = b ? data_at(x, y) : x;
+    return data === EMPTY || data === THIN_ICE ||
+      (data === LAVA && is_enemy(b || y));
+  }
 
   // Set a bead to a new value and redraw it.
   function set_bead(x, y, data) {
@@ -54,19 +85,89 @@
     PS.BeadColor(x, y, COLORS[data.data || data]);
     PS.BeadBorderWidth(x, y, EDIT || data !== ROCK ? 1 : 0);
     PS.BeadAlpha(x, y, 100);
+    if (data === LAVA) LAVA_ALL.push([x, y]);
   }
 
-  // Can be called as is_empty(x, y, block) or is_empty(data, block)
-  function is_empty(x, y, b) {
-    var data = b ? PS.BeadData(x, y) : x;
-    return data === EMPTY || data === THIN_ICE ||
-      (data === LAVA && is_enemy(b || y));
+  // Move a block to a destination x, y
+  function move(b, x, y, data) {
+    set_bead(b.x, b.y, b.after || EMPTY);
+    b.x = x;
+    b.y = y;
+    set_bead(x, y, b);
+    b.after = data === THIN_ICE ? PIT : data === LAVA ? LAVA : EMPTY;
   }
 
-  // Test whether a block is an enemy block
-  function is_enemy(b) {
-    return b.data === SKATER || b.data === ENEMY;
+  // Remove a block
+  function remove_block(b) {
+    BLOCKS.splice(BLOCKS.indexOf(b), 1);
+    b.removed = true;
+    if (b.pushed_by) {
+      delete b.pushed_by.push;
+      delete b.pushed_by;
+    }
+    set_bead(b.x, b.y, b.after || EMPTY);
   }
+
+  // Remove the block; if it's the player, show a dying message
+  function die(b) {
+    remove_block(b);
+    if (b.data === AVATAR) {
+      PS.StatusText("OH NOES!!! ☠☠☠");
+    } else if (!BLOCKS.some(is_enemy)) {
+      PS.StatusText("Well done!");
+    }
+  }
+
+  // Move a block by one step in the direction that it is currently going
+  function step(b) {
+    var dest_x = b.x + b.dx, dest_y = b.y + b.dy, dest_data;
+    if (!b.removed) {
+      if (b.push) step(b.push);
+      dest_data = data_at(dest_x, dest_y);
+      if (is_empty(dest_data, b)) {
+        // Move to an empty spot
+        move(b, dest_x, dest_y, dest_data);
+      } else if (can_push(b, dest_data, b, 2)) {
+        // Push the next block (which may push the next block, and so on)
+        b.push = dest_data;
+        dest_data.pushed_by = b;
+        dest_data.dx = b.dx;
+        dest_data.dy = b.dy;
+        step(dest_data);
+        move(b, dest_x, dest_y, dest_data);
+      } else {
+        if (!is_enemy(b) && is_enemy(dest_data)) {
+          // Player or ice block running into an enemy
+          if (b.data === ICE_BLOCK) {
+            die(dest_data);
+          }
+          die(b);
+        } else if ((is_enemy(b) && dest_data.data === ICE_BLOCK) ||
+            dest_data === LAVA || dest_data === PIT) {
+          // Enemy running into an ice block; player or ice block falling in
+          // lava; or any block falling in a pit: all die
+          die(b);
+        } else if (dest_data === HOLE) {
+          // When falling in a hole, an enemy fills it with lava or an ice block
+          // with ice. The player just dies :(
+          die(b);
+          if (b.data !== AVATAR) {
+            set_bead(dest_x, dest_y, is_enemy(b) ? LAVA : EMPTY);
+          }
+        }
+        b.dx = 0;
+        b.dy = 0;
+        if (b.pushed_by) {
+          delete b.pushed_by.push;
+          delete b.pushed_by;
+        }
+      }
+    }
+  }
+
+
+
+
 
   // Test whether a block is moving
   function is_moving(b) {
@@ -87,29 +188,6 @@
     return { x: x, y: y, dx: b.dx, dy: b.dy, data: PS.BeadData(x, y) };
   }
 
-  // Remove a block
-  function remove_block(b) {
-    BLOCKS.splice(BLOCKS.indexOf(b), 1);
-    b.removed = true;
-    set_bead(b.x, b.y, b.after || EMPTY);
-  }
-
-  // Remove the block; if it's the player, show a dying message
-  function die(b) {
-    remove_block(b);
-    if (b.data === AVATAR) {
-      PS.StatusText("OH NOES!!! ☠☠☠");
-    }
-  }
-
-  function remove_enemy(b1, b2) {
-    remove_block(b1);
-    remove_block(b2);
-    if (!BLOCKS.some(is_enemy)) {
-      PS.StatusText("Well done!");
-    }
-  }
-
   // Set a row of beads for a level; add block objects for the player, ice
   // blocks, and enemies and keep track of lava for the bubbling animation
   function set_row(row, y) {
@@ -123,8 +201,6 @@
         }
         data = { x: x, y: y, dx: 0, dy: 0, data: data };
         BLOCKS.splice(i, 0, data);
-      } else if (data === LAVA) {
-        LAVA_ALL.push([x, y]);
       }
       set_bead(x, y, data);
     });
@@ -185,7 +261,6 @@
   // Run the ghost to find winning and losing positions; reachable spots?
   // TODO move other blocks; at the moment, only reachable
   function run_ghost() {
-    var x, y, reachable = [], obstacle = [], px, py, data, move, queue = [];
 
     function encode(x, y, data) {
       return String.fromCharCode(x | (y << 4) | (data.charCodeAt(0) << 8));
@@ -196,29 +271,19 @@
         data: String.fromCharCode(c >> 8) };
     }
 
-    /*
-    move = function (dir) {
-      var dx = dir % 2 === 0 ? 1 - dir : 0,
-        dy = dir % 2 === 1 ? 2 - dir : 0;
-
-    };
-
-    for (y = 0; y < SZ; y += 1) {
-      reachable[y] = [];
-      obstacle[y] = [];
-      for (x = 0; x < SZ; x += 1) {
-        reachable[y][x] = false;
-        data = PS.BeadData(x, y);
-        obstacle[y][x] = data !== " ";
-        if (data.data === "!") {
-          px = x;
-          py = y;
+    var blocks = [], configs = {};
+    LEVELS[LEVEL].forEach(function (row, y) {
+      [].forEach.call(row, function (data, x) {
+        if (MOVABLE[data]) {
+          var b = encode(x, y, data), i = 0, n = blocks.length;
+          while (i < n && data > blocks[i]) {
+            i += 1;
+          }
+          blocks.splice(i, 0, b);
         }
-      }
-    }
-    */
-
-
+      });
+    });
+    configs[blocks.join("")] = true;
   }
 
   // Handle clicks in edit mode
@@ -359,55 +424,9 @@
 
   // Run one step of animation for every moving object
   PS.Tick = function () {
-    BLOCKS.filter(function (b) {
-      return b.dx !== 0 || b.dy !== 0;
-    }).forEach(function (b) {
-      // An enemy removed in this loop should not move anymore!
-      if (b.removed) {
-        return;
-      }
-      var x = b.x + b.dx, y = b.y + b.dy, data;
-      data = x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : ROCK;
-      if (is_empty(data, b)) {
-        set_bead(b.x, b.y, b.after || " ");
-        set_bead(x, y, b);
-        b.x += b.dx;
-        b.y += b.dy;
-        b.after = data === THIN_ICE ? PIT : data === LAVA ? LAVA : EMPTY;
-      } else {
-        if (data.data === ICE_BLOCK) {
-          if (is_enemy(b)) {
-            remove_enemy(b, data);
-          } else {
-            data.dx = b.dx;
-            data.dy = b.dy;
-          }
-        } else if (data.data === SKATER || data.data === ENEMY) {
-          if (b.data === ICE_BLOCK) {
-            remove_enemy(b, data);
-          } else if (b.data === SKATER) {
-            data.dx = b.dx;
-            data.dy = b.dy;
-          } else if (b.data === PLAYER) {
-            die(b);
-          }
-        } else if (data.data === AVATAR) {
-          die(data);
-        } else if (data === PIT) {
-          die(b);
-        } else if (data === HOLE) {
-          die(b);
-          if (is_enemy(b)) {
-            set_bead(b.x + b.dx, b.y + b.dy, LAVA);
-            LAVA_ALL.push([b.x + b.dx, b.y + b.dy]);
-          } else {
-            set_bead(b.x + b.dx, b.y + b.dy, EMPTY);
-          }
-        } else if (data === LAVA) {
-          die(b);
-        }
-        b.dx = 0;
-        b.dy = 0;
+    BLOCKS.forEach(function (b) {
+      if ((b.dx !== 0 || b.dy !== 0) && !b.pushed_by) {
+        step(b);
       }
     });
     LAVA_ALL.forEach(lava);
@@ -469,14 +488,14 @@
 
     [ "****************",
       "***    *********",
-      "*** %        ***",
+      "*** %       ****",
+      "***          ***",
       "***           **",
-      "****     #  ! **",
-      "***           **",
+      "****     # !  **",
       "**            **",
       "**            **",
       "**           ***",
-      "* #      #  ****",
+      "* #       # ****",
       "*         ******",
       "*#        ******",
       "*         ******",
@@ -535,4 +554,4 @@
 
   PS.Wheel = function () {};
 
-}());
+//}());
