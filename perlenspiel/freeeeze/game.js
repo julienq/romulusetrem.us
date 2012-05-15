@@ -8,8 +8,8 @@
 /*global PS: false */
 /*jslint devel: true, maxerr: 50, indent: 2 */
 
-//(function () {
-//  "use strict";
+(function () {
+  "use strict";
 
   var SZ = 16,             // Size of the game world
     RATE = 20,             // Clock rate for animations (in 100th of second)
@@ -44,12 +44,17 @@
     BOTTOM_NONE = ["****************", "****************"],  // no bottom
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
     BOTTOM_EDIT = ["****************", "ER***** !#$%&,:;"],  // bottom for edit
-    LEVEL = 0, // LEVELS.length - 1;                         // current level
+    LEVEL = 0,                                               // current level
     LEVELS;                                                  // see below
 
   // Return data at the given position, or ROCK if out of bounds
   function data_at(x, y) {
     return x >= 0 && x < SZ && y >= 0 && y < SZ ? PS.BeadData(x, y) : ROCK;
+  }
+
+  // Test whether a block is an enemy block
+  function is_enemy(b) {
+    return b.data === SKATER || b.data === ENEMY;
   }
 
   function can_move_to(b, data) {
@@ -68,11 +73,6 @@
       (can_move_to(data, dest_data) || can_push(data, dest_data, o, dist + 1));
   }
 
-  // Test whether a block is an enemy block
-  function is_enemy(b) {
-    return b.data === SKATER || b.data === ENEMY;
-  }
-
   // Can be called as is_empty(x, y, block) or is_empty(data, block)
   function is_empty(x, y, b) {
     var data = b ? data_at(x, y) : x;
@@ -86,7 +86,9 @@
     PS.BeadColor(x, y, COLORS[data.data || data]);
     PS.BeadBorderWidth(x, y, EDIT || data !== ROCK ? 1 : 0);
     PS.BeadAlpha(x, y, 100);
-    if (data === LAVA) LAVA_ALL.push([x, y]);
+    if (data === LAVA) {
+      LAVA_ALL.push([x, y]);
+    }
   }
 
   // Move a block to a destination x, y
@@ -123,7 +125,9 @@
   function step(b) {
     var dest_x = b.x + b.dx, dest_y = b.y + b.dy, dest_data;
     if (!b.removed) {
-      if (b.push) step(b.push);
+      if (b.push) {
+        step(b.push);
+      }
       dest_data = data_at(dest_x, dest_y);
       if (is_empty(dest_data, b)) {
         // Move to an empty spot
@@ -169,10 +173,6 @@
       }
     }
   }
-
-
-
-
 
   // Test whether a block is moving
   function is_moving(b) {
@@ -222,10 +222,10 @@
     PLAYER = BLOCKS[0];
     (EDIT ?
         BOTTOM_EDIT :
-      PLAYER && PLAYER.data === AVATAR && BLOCKS.length > 2 ?
-        BOTTOM_PLAY : BOTTOM_NONE).forEach(function (row, y) {
-        set_row(row, y + SZ);
-      });
+        PLAYER && PLAYER.data === AVATAR && BLOCKS.length > 2 ?
+            BOTTOM_PLAY : BOTTOM_NONE).forEach(function (row, y) {
+      set_row(row, y + SZ);
+    });
   }
 
   // Update the level for new data at (x, y)
@@ -409,8 +409,26 @@
     LAVA_ALL.forEach(lava);
   };
 
-  // The levels
+  // Use arrow keys to move or any key to skip
+  PS.KeyDown = function (key) {
+    if (!EDIT) {
+      if (PLAYER && PLAYER.data === AVATAR && BLOCKS.length > 2) {
+        if (key === PS.ARROW_LEFT && PLAYER.x > 0) {
+          PS.BeadTouch(PLAYER.x - 1, PLAYER.y);
+        } else if (key === PS.ARROW_RIGHT && PLAYER.x < SZ - 1) {
+          PS.BeadTouch(PLAYER.x + 1, PLAYER.y);
+        } else if (key === PS.ARROW_UP && PLAYER.y > 0) {
+          PS.BeadTouch(PLAYER.x, PLAYER.y - 1);
+        } else if (key === PS.ARROW_DOWN && PLAYER.y < SZ - 1) {
+          PS.BeadTouch(PLAYER.x, PLAYER.y + 1);
+        }
+      } else {
+        PS.BeadTouch(0, 0);
+      }
+    }
+  };
 
+  // The levels
   LEVELS = [
 
     [ "Freeeeze (click to begin)",
@@ -485,7 +503,7 @@
       "****************",
       "****************"],
 
-    [ "And melt ignited enemies",
+    [ "Melt ignited enemies",
       "****************",
       "****************",
       "****************",
@@ -524,13 +542,13 @@
     [ "Put out all the fires!",
       "****************",
       "****************",
-      "*********    ***",
-      "***  ** #   %***",
-      "**% #        ***",
-      "*             **",
-      "*             **",
-      "**      !   #  *",
-      "**             *",
+      "*********   ****",
+      "******* #   %***",
+      "*******      ***",
+      "******        **",
+      "*    *        **",
+      "*% #    !   #  *",
+      "*              *",
       "***            *",
       "*****   #   % **",
       "******    ******",
@@ -539,7 +557,7 @@
       "****************",
       "****************"],
 
-    [ "Let's build a wall",
+    [ "Let's stack",
       "****************",
       "***    *********",
       "*** %       ****",
@@ -557,7 +575,7 @@
       "****************",
       "****************"],
 
-    [ "Don't fall in a hole!",
+    [ "Don't fall in a hole",
       "****************",
       "****************",
       "**      ********",
@@ -630,36 +648,8 @@
       "&**#**&**#**&**#"]
   ];
 
-
   // These are not used but need to be defined
-
-  // PS.KeyDown (key, shift, ctrl)
-  // This function is called whenever a key on the keyboard is pressed
-  // It doesn't have to do anything
-  // key = the ASCII code of the pressed key, or one of the following constants:
-  // Arrow keys = PS.ARROW_UP, PS.ARROW_DOWN, PS.ARROW_LEFT, PS.ARROW_RIGHT
-  // Function keys = PS.F1 through PS.F1
-  // shift = true if shift key is held down, false otherwise
-  // ctrl = true if control key is held down, false otherwise
-
-  PS.KeyDown = function () {};
-
-  // PS.KeyUp (key, shift, ctrl)
-  // This function is called whenever a key on the keyboard is released
-  // It doesn't have to do anything
-  // key = the ASCII code of the pressed key, or one of the following constants:
-  // Arrow keys = PS.ARROW_UP, PS.ARROW_DOWN, PS.ARROW_LEFT, PS.ARROW_RIGHT
-  // Function keys = PS.F1 through PS.F12
-  // shift = true if shift key is held down, false otherwise
-  // ctrl = true if control key is held down, false otherwise
-
   PS.KeyUp = function () {};
-
-  // PS.Wheel (dir)
-  // This function is called whenever the mouse wheel moves forward or backward
-  // It doesn't have to do anything
-  // dir = 1 if mouse wheel moves forward, -1 if backward
-
   PS.Wheel = function () {};
 
-//}());
+}());
