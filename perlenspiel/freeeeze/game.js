@@ -41,8 +41,9 @@
       G: 0xc5aa9e },
 
     MOVABLE = { "!": true, "#": true, $: true, "%": true },  // movable blocks
+    BOTTOM_NONE = ["****************", "****************"],  // no bottom
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
-    BOTTOM_EDIT = ["****************", "ERG**** !#$%&,:;"],  // bottom for edit
+    BOTTOM_EDIT = ["****************", "ER***** !#$%&,:;"],  // bottom for edit
     LEVEL = 0, // LEVELS.length - 1;                         // current level
     LEVELS;                                                  // see below
 
@@ -142,6 +143,10 @@
             die(dest_data);
           }
           die(b);
+        } else if (is_enemy(b) &&
+            (dest_data.data === AVATAR || dest_data.data === ICE_BLOCK)) {
+          die(b);
+          die(dest_data);
         } else if ((is_enemy(b) && dest_data.data === ICE_BLOCK) ||
             dest_data === LAVA || dest_data === PIT) {
           // Enemy running into an ice block; player or ice block falling in
@@ -210,21 +215,24 @@
   function reset_level(incr) {
     PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
     LEVEL = (LEVEL + LEVELS.length + (incr || 0)) % LEVELS.length;
-    PS.StatusText("Freeeeze ☃ Level " + (LEVEL + 1));
+    PS.StatusText(EDIT ? "Edit mode" : LEVELS[LEVEL][0]);
     BLOCKS = [];
     LAVA_ALL = [];
-    LEVELS[LEVEL].forEach(set_row);
-    (EDIT ? BOTTOM_EDIT : BOTTOM_PLAY).forEach(function (row, y) {
-      set_row(row, y + SZ);
-    });
+    LEVELS[LEVEL].slice(1).forEach(set_row);
     PLAYER = BLOCKS[0];
+    (EDIT ?
+        BOTTOM_EDIT :
+      PLAYER && PLAYER.data === AVATAR && BLOCKS.length > 2 ?
+        BOTTOM_PLAY : BOTTOM_NONE).forEach(function (row, y) {
+        set_row(row, y + SZ);
+      });
   }
 
   // Update the level for new data at (x, y)
   function paint_bead(x, y, data) {
     if (x >= 0 && x < SZ && y >= 0 && y < SZ) {
-      LEVELS[LEVEL][y] = LEVELS[LEVEL][y].substr(0, x) + data +
-        LEVELS[LEVEL][y].substr(x + 1);
+      LEVELS[LEVEL][y + 1] = LEVELS[LEVEL][y + 1].substr(0, x) + data +
+        LEVELS[LEVEL][y + 1].substr(x + 1);
       set_bead(x, y, data);
     }
   }
@@ -258,34 +266,6 @@
     }
   }
 
-  // Run the ghost to find winning and losing positions; reachable spots?
-  // TODO move other blocks; at the moment, only reachable
-  function run_ghost() {
-
-    function encode(x, y, data) {
-      return String.fromCharCode(x | (y << 4) | (data.charCodeAt(0) << 8));
-    }
-
-    function decode(c) {
-      return { x: c & 0xf, y: (c & 0xf0) >> 4,
-        data: String.fromCharCode(c >> 8) };
-    }
-
-    var blocks = [], configs = {};
-    LEVELS[LEVEL].forEach(function (row, y) {
-      [].forEach.call(row, function (data, x) {
-        if (MOVABLE[data]) {
-          var b = encode(x, y, data), i = 0, n = blocks.length;
-          while (i < n && data > blocks[i]) {
-            i += 1;
-          }
-          blocks.splice(i, 0, b);
-        }
-      });
-    });
-    configs[blocks.join("")] = true;
-  }
-
   // Handle clicks in edit mode
   function click_edit(x, y, data) {
     if (data === "E") {
@@ -296,15 +276,12 @@
     } else if (data === "R") {
       // Reset
       for (y = 0; y < SZ; y += 1) {
-        LEVELS[LEVEL][y] = "";
+        LEVELS[LEVEL][y + 1] = "";
         for (x = 0; x < SZ; x += 1) {
-          LEVELS[LEVEL][y] += " ";
+          LEVELS[LEVEL][y + 1] += "*";
         }
       }
       reset_level();
-    } else if (data === "G") {
-      // Ghost
-      run_ghost();
     } else if (y === SZ + 1) {
       // Choose a tool
       EDIT_TOOL = data;
@@ -339,7 +316,7 @@
     } else if (data === "B") {
       // Go back to the previous level
       reset_level(-1);
-    } else if (BLOCKS.indexOf(PLAYER) < 0) {
+    } else if (PLAYER && BLOCKS.indexOf(PLAYER) < 0) {
       // Player died: reset
       reset_level();
     } else if (!BLOCKS.some(is_enemy)) {
@@ -401,7 +378,7 @@
   PS.Enter = function (x, y) {
     if (PAINTING) {
       paint_bead(x, y, EDIT_TOOL);
-    } else if (!EDIT && !BLOCKS.some(is_moving)) {
+    } else if (PLAYER && !EDIT && !BLOCKS.some(is_moving)) {
       if (x === PLAYER.x && y !== PLAYER.y) {
         PS.BeadAlpha(x, PS.ALL, HIGHLIGHT_ALPHA);
         HIGHLIGHT = { x: x };
@@ -435,7 +412,81 @@
   // The levels
 
   LEVELS = [
-    [ "****************",
+
+    [ "Freeeeze (click to begin)",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "****************"],
+
+    [ "An icy pond surrounded by rocks",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "***       ******",
+      "***       ******",
+      "***       ******",
+      "***           **",
+      "***           **",
+      "*******       **",
+      "*********     **",
+      "*********     **",
+      "**********   ***",
+      "****************",
+      "****************",
+      "****************"],
+
+    [ "You stand in the middle",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "***       ******",
+      "***       ******",
+      "***       ******",
+      "***        !  **",
+      "***           **",
+      "*******       **",
+      "*********     **",
+      "*********     **",
+      "**********   ***",
+      "****************",
+      "****************",
+      "****************"],
+
+    [ "Click to skid and push ice blocks",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "***       ******",
+      "***       ******",
+      "***       ******",
+      "***     #  !  **",
+      "***           **",
+      "*******       **",
+      "*********     **",
+      "*********     **",
+      "**********   ***",
+      "****************",
+      "****************",
+      "****************"],
+
+    [ "And melt ignited enemies",
+      "****************",
       "****************",
       "****************",
       "****************",
@@ -452,30 +503,14 @@
       "****************",
       "****************"],
 
-    [ "****************",
+    [ "Click the purple button if you're stuck",
       "****************",
-      "*********  % ***",
-      "***  **    # ***",
-      "**% #     #  ***",
-      "*             **",
-      "*             **",
-      "**      !      *",
-      "**             *",
-      "***         # %*",
-      "*****   #     **",
-      "******    ******",
-      "******   *******",
-      "******* %*******",
-      "****************",
-      "****************"],
-
-    [ "****************",
       "****************",
       "***    *********",
       "**  %  *********",
       "**     *********",
       "***       ******",
-      "****    #! *****",
+      "****   # ! *****",
       "***       ******",
       "*      *********",
       "*      *********",
@@ -486,7 +521,26 @@
       "****************",
       "****************"],
 
-    [ "****************",
+    [ "Put out all the fires!",
+      "****************",
+      "****************",
+      "*********    ***",
+      "***  ** #   %***",
+      "**% #        ***",
+      "*             **",
+      "*             **",
+      "**      !   #  *",
+      "**             *",
+      "***            *",
+      "*****   #   % **",
+      "******    ******",
+      "******   *******",
+      "******* %*******",
+      "****************",
+      "****************"],
+
+    [ "Let's build a wall",
+      "****************",
       "***    *********",
       "*** %       ****",
       "***          ***",
@@ -503,11 +557,12 @@
       "****************",
       "****************"],
 
-    [ "****************",
+    [ "Don't fall in a hole!",
+      "****************",
       "****************",
       "**      ********",
       "**           ***",
-      "**     :      **",
+      "**     ;      **",
       "**             *",
       "***            *",
       "***%   !   # ;**",
@@ -518,8 +573,61 @@
       "****************",
       "****************",
       "****************",
-      "****************"]
+      "****************"],
 
+    [ "It's safer to fill it",
+      "****************",
+      "****************",
+      "****************",
+      "****************",
+      "******   #    **",
+      "****          **",
+      "***    # !    **",
+      "**           ***",
+      "**     ; #   ***",
+      "***      *******",
+      "****   % *******",
+      "*****      *****",
+      "******      ****",
+      "******      ****",
+      "*********  *****",
+      "****************"],
+
+    [ "This place is giving me the creeps",
+      "****************",
+      "******  ! ******",
+      "****        ****",
+      "***          ***",
+      "**  *      *  **",
+      "** ***    *** **",
+      "** ***    *** **",
+      "**  *      *  **",
+      "**    *  *    **",
+      "**    *  *    **",
+      "**    #  #    **",
+      "***  ******  ***",
+      "***#********#***",
+      "*** ******** ***",
+      "***%        %***",
+      "****        ****"],
+
+    [ "You win! (or did you just skip?!)",
+      "#**&**#**&**#**&",
+      "****************",
+      "****************",
+      "&**#**&**#**&**#",
+      "****************",
+      "****************",
+      "#**&**#**&**#**&",
+      "****************",
+      "****************",
+      "&**#**&**#**&**#",
+      "****************",
+      "****************",
+      "#**&**#**&**#**&",
+      "****************",
+      "****************",
+      "&**#**&**#**&**#"]
   ];
 
 
