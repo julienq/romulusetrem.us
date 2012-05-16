@@ -8,8 +8,8 @@
 /*global PS: false */
 /*jslint devel: true, maxerr: 50, indent: 2 */
 
-//(function () {
-//  "use strict";
+(function () {
+  "use strict";
 
   var SZ = 16,             // Size of the game world
     RATE = 20,             // Clock rate for animations (in 100th of second)
@@ -35,10 +35,10 @@
     THIN_ICE = ",",        // thin ice (disappears after it's been stepped on)
     PIT = ":",             // bottomless pit
     HOLE = ";",            // shallow hole, becomes empty space (ice) or lava
-    COLORS = { " ": 0xfcf9f0, "!": 0x164e4a, "#": 0xb1f1ff, "*": 0x403530,
+    COLORS = { " ": 0xfcf9f0, "!": 0xc5aa9e, "#": 0xb1f1ff, "*": 0x403530,
       $: 0xed372a, "%": 0xfbb829, "&": 0xfd7033, ",": 0xcadee1, ":": 0x000000,
       ";": 0x808080, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5,
-      G: 0xc5aa9e },
+      G: 0x164e4a },
 
     MOVABLE = { "!": true, "#": true, $: true, "%": true },  // movable blocks
     BOTTOM_NONE = ["****************", "****************"],  // no bottom
@@ -65,9 +65,12 @@
   }
 
   // Test whether the block b can push block data
-  function can_push(b, data) {
-    return ((b.data === ICE_BLOCK || b.data === AVATAR) &&
-        data.data === ICE_BLOCK) || (is_enemy(b) && is_enemy(data));
+  function can_push(b, data, o, dist) {
+    var dest_x = o.x + dist * o.dx, dest_y = o.y + dist * o.dy,
+      dest_data = data_at(dest_x, dest_y);
+    return (((b.data === ICE_BLOCK || b.data === AVATAR) &&
+        data.data === ICE_BLOCK) || (is_enemy(b) && is_enemy(data))) &&
+      (can_move_to(data, dest_data) || can_push(data, dest_data, o, dist + 1));
   }
 
   // Can be called as is_empty(x, y, block) or is_empty(data, block)
@@ -101,6 +104,10 @@
   function remove_block(b) {
     BLOCKS.splice(BLOCKS.indexOf(b), 1);
     b.removed = true;
+    if (b.pushed_by) {
+      delete b.pushed_by.push;
+      delete b.pushed_by;
+    }
     set_bead(b.x, b.y, b.after || EMPTY);
   }
 
@@ -118,17 +125,21 @@
   function step(b) {
     var dest_x = b.x + b.dx, dest_y = b.y + b.dy, dest_data;
     if (!b.removed) {
+      if (b.push) {
+        step(b.push);
+      }
       dest_data = data_at(dest_x, dest_y);
       if (is_empty(dest_data, b)) {
         // Move to an empty spot
         move(b, dest_x, dest_y, dest_data);
-      } else if (can_push(b, dest_data)) {
+      } else if (can_push(b, dest_data, b, 2)) {
         // Push the next block (which may push the next block, and so on)
+        b.push = dest_data;
+        dest_data.pushed_by = b;
         dest_data.dx = b.dx;
         dest_data.dy = b.dy;
-        b.dx = 0;
-        b.dy = 0;
         step(dest_data);
+        move(b, dest_x, dest_y, dest_data);
       } else {
         if (!is_enemy(b) && is_enemy(dest_data)) {
           // Player or ice block running into an enemy
@@ -155,6 +166,10 @@
         }
         b.dx = 0;
         b.dy = 0;
+        if (b.pushed_by) {
+          delete b.pushed_by.push;
+          delete b.pushed_by;
+        }
       }
     }
   }
@@ -387,7 +402,7 @@
   // Run one step of animation for every moving object
   PS.Tick = function () {
     BLOCKS.forEach(function (b) {
-      if (b.dx !== 0 || b.dy !== 0) {
+      if ((b.dx !== 0 || b.dy !== 0) && !b.pushed_by) {
         step(b);
       }
     });
@@ -637,4 +652,4 @@
   PS.KeyUp = function () {};
   PS.Wheel = function () {};
 
-//}());
+}());
