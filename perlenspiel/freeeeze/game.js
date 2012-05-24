@@ -8,6 +8,10 @@
 /*global PS: false */
 /*jslint devel: true, maxerr: 50, indent: 2 */
 
+
+// TODO removed player, can move both enemies and ice blocks in order to clean
+// up the pond
+
 //(function () {
 //  "use strict";
 
@@ -17,30 +21,23 @@
     LAVA_ALL = [],         // Lava blocks
     LAVA_P = 0.05,         // Probability of lava bead bubbling
     LAVA_ALPHA = 15,       // Alpha range for lava
-    PLAYER,                // Player block
     EDIT = false,          // edit mode
     EDIT_LEVEL,            // level being edited
     EDIT_TOOL = " ",       // current tool while editing
     PAINTING = false,      // mouse down for painting
-    HIGHLIGHT_ALPHA = 90,  // alpha for highlighting
-    HIGHLIGHT,             // last highlighted position
 
     EMPTY = " ",           // empty space
-    AVATAR = "!",          // player avatar
     ICE_BLOCK = "#",       // ice block
     ROCK = "*",            // rock
-    SKATER = "$",          // enemy skater
     ENEMY = "%",           // enemy block
     LAVA = "&",            // lava block
     THIN_ICE = ",",        // thin ice (disappears after it's been stepped on)
     PIT = ":",             // bottomless pit
     HOLE = ";",            // shallow hole, becomes empty space (ice) or lava
-    COLORS = { " ": 0xfcf9f0, "!": 0x164e4a, "#": 0xb1f1ff, "*": 0x403530,
-      $: 0xed372a, "%": 0xfbb829, "&": 0xfd7033, ",": 0xcadee1, ":": 0x000000,
-      ";": 0x808080, R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5,
-      G: 0xc5aa9e },
+    COLORS = { " ": 0xfcf9f0, "#": 0xb1f1ff, "*": 0x403530,
+      "%": 0xfbb829, "&": 0xfd7033, ",": 0xcadee1, ":": 0x000000, ";": 0x808080,
+      R: 0x320943, B: 0xffff00, S: 0x7fff24, E: 0x1693a5, G: 0xc5aa9e },
 
-    MOVABLE = { "!": true, "#": true, $: true, "%": true },  // movable blocks
     BOTTOM_NONE = ["****************", "****************"],  // no bottom
     BOTTOM_PLAY = ["****************", "E************BRS"],  // bottom of levels
     BOTTOM_EDIT = ["****************", "ER***** !#$%&,:;"],  // bottom for edit
@@ -182,15 +179,8 @@
   // blocks, and enemies and keep track of lava for the bubbling animation
   function set_row(row, y) {
     [].forEach.call(row, function (data, x) {
-      if (y < SZ && MOVABLE[data]) {
-        // Insert a new block in the following order: player, ice blocks,
-        // skaters, enemies
-        var i = 0;
-        while (i < BLOCKS.length && data >= BLOCKS[i].data) {
-          i += 1;
-        }
-        data = { x: x, y: y, dx: 0, dy: 0, data: data };
-        BLOCKS.splice(i, 0, data);
+      if (y < SZ && (data === ICE_BLOCK || data === ENEMY)) {
+        BLOCKS.push({ x: x, y: y, dx: 0, dy: 0, data: data });
       }
       set_bead(x, y, data);
     });

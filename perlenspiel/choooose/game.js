@@ -1,25 +1,12 @@
-// game.js for Perlenspiel 2.1
+// A very simple choose your own adventure game/engine
+// Created: May 24, 2012
+// This code is copyright © 2012 romulusetrem.us and is distributed under the
+// same terms as Perlenspiel itself, see http://perlenspiel.org/ and
+// http://romulusetrem.us/perlenspiel/ for more info.
 
-/*
-Perlenspiel is Copyright © 2009-12 Worcester Polytechnic Institute.
-This file is part of Perlenspiel.
-
-Perlenspiel is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Perlenspiel is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You may have received a copy of the GNU Lesser General Public License
-along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-// The following comment line is for JSLint. Don't remove it!
+// These are for JSLint. There should be no warning using these options:
 /*global PS */
+/*jslint indent: 2, unparam: true */
 
 (function () {
   "use strict";
@@ -27,34 +14,47 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
   var W = 4, H = 4, POSITION = 1, HINT,
     COLORS = { here: 0xa0d4a4, there: 0xffffa7 },
     PARAGRAPHS = [
-      ["You enter the Dragon's cave",
+      ["The Dragon's Cave",  // 1
         ["A dark passage", 3],
-        ["A slope toward the abyss", 9]],
-      ["A dangerous looking platform",
-        ["11", 11],
-        ["14", 14],
-        ["A light in the distance", 15]],
-      ["You're in a dark corridor",
-        ["A shallow recess in the cave walls", 7],
+        ["A slope descending into the abyss", 9]],
+      ["A dangerous looking platform",  // 2
+        ["Such heat!", 11],
+        ["Foul smells", 14],
+        ["A wobbly light nearby", 15]],
+      ["In a dark corridor",  // 3
+        ["A shallow recess", 7],
         ["A dangerous looking bridge", 13]],
-      ["You plummet to your death!"],
-      ["5", ["14", 14]],
-      ["6", ["15", 15]],
-      ["You see mysterious black markings on the walls",
+      ["You plummet to your death!"],  // 4
+      ["Circumventing the Dragon",  // 5
+        ["A corridor leading away", 14]],
+      ["The light seems to be moving?",  // 6
+        ["The light is getting closer", 15]],
+      ["Mysterious black markings on the walls",  // 7
         ["A narrow bridge", 13]],
-      ["8", ["2", 2]],
-      ["Going deep into ...", ["8", 8], ["6", 6], ["12", 12]],
-      ["10", ["5", 5]],
-      ["11", ["10", 10], ["5", 5], ["16", 16]],
-      ["12", ["2", 2]],
-      ["A narrow bridge of black and gray stones",
+      ["A large, empty hallway",  // 8
+        ["A platform in the distance", 2]],
+      ["Deep in the Dragon's lair",  // 9
+        ["A large hallway", 8],
+        ["A dim light in the distance", 6],
+        ["A narrow corridor", 12]],
+      ["The Dragon is still close...",  // 10
+        ["Careful...", 5]],
+      ["You catch a glimpse of the Dragon nearby!",  // 11
+        ["Looks like a safer place", 10],
+        ["Keep your distance", 5],
+        ["The Dragon is sleeping", 16]],
+      ["A narrow and damp corridor",  // 12
+        ["Toward a large hallway", 2]],
+      ["A narrow bridge of black and gray stones",  // 13
         ["Walk on the black stones", 2],
         ["Walk on the gray stones", 4]],
-      ["14", ["8", 8]],
-      ["A hideous troll carrying a torch kills you!"],
-      ["You win! (16)"]
+      ["A moldy corridor",  // 14
+        ["Somewhat fresher air", 8]],
+      ["A hideous troll carrying a torch kills you!"],  // 15
+      ["You slay the sleeping Dragon!"]  // 16
     ];
 
+  // Show current position and destinations
   function update_position() {
     var p = POSITION - 1;
     PS.BeadColor(PS.ALL, PS.ALL, PS.DEFAULT);
@@ -74,15 +74,17 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
     HINT = false;
   }
 
+  // Setup the grid and start from the initial position
   PS.Init = function () {
-    "use strict";
     PS.GridSize(W, H);
+    PS.BeadBorderWidth(PS.ALL, PS.ALL, 0);
     PARAGRAPHS.forEach(function (data, i) {
       PS.BeadData(i % W, Math.floor(i / H), data);
     });
     update_position();
   };
 
+  // Show a hint for this bead, if any
   PS.Enter = function (x, y, data) {
     if (data) {
       PS.StatusText(data);
@@ -90,6 +92,7 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
     }
   };
 
+  // Remove the hint
   PS.Leave = function () {
     if (HINT) {
       PS.StatusText(PARAGRAPHS[POSITION - 1][0]);
