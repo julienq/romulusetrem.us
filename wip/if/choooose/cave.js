@@ -14,8 +14,14 @@ choooose.init_game({
     ["A corridor leading away", "foul_14"]],
   light_6: ["The light seems to be moving?",
     ["The light is getting closer", "troll_15"]],
-  recess_7: { pre: function () { console.log("pre!", this, this.game); },
-    desc: "Mysterious black markings on the walls",
+  recess_7: {
+    pre: function () {
+      var desc = "Mysterious {0} markings on the walls";
+      if (!this.game.bridge_color) {
+        this.game.bridge_color = choooose.random_element(["black", "gray"]);
+      }
+      this.desc = desc.fmt(this.game.bridge_color);
+    },
     dests: [["A narrow bridge", "bridge_13"]] },
   hallway_8: ["A large, empty hallway",
     ["A platform in the distance", "platform_2"]],
@@ -31,9 +37,22 @@ choooose.init_game({
     ["The Dragon is sleeping", "dragon_16"]],
   corridor_12: ["A narrow and damp corridor",
     ["Toward a platform", "platform_2"]],
-  bridge_13: ["A narrow bridge of black and gray stones",
-    ["Walk on the black stones", "platform_2"],
-    ["Walk on the gray stones", "plummet_4"]],
+  bridge_13: {
+    desc: "A narrow bridge of black and gray stones",
+    pre: function (from) {
+      this.clear_dests();
+      if (this.game.bridge_color === "black") {
+        this.add_dest(["Walk on the black stones", "platform_2"]);
+        this.add_dest(["Walk on the gray stones", "plummet_4"]);
+      } else if (this.game.bridge_color === "gray") {
+        this.add_dest(["Walk on the black stones", "plummet_4"]);
+        this.add_dest(["Walk on the gray stones", "platform_2"]);
+      } else {
+        this.add_dest(["Cross carefully", "plummet_4"]);
+        this.add_dest(["Take a step back", from.label]);
+      }
+    },
+  },
   foul_14: ["A moldy corridor",
     ["Somewhat fresher air", "hallway_8"]],
   troll_15: "☠ A hideous troll carrying a torch kills you!",

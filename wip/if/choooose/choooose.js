@@ -10,6 +10,20 @@
     });
   };
 
+  // Return a random element from an array
+  ch.random_element = function (a) {
+    return a[ch.random_int(a.length - 1)];
+  };
+
+  // Return a random integer in the [min, max] range
+  ch.random_int = function (min, max) {
+    if (max === undefined) {
+      max = min;
+      min = 0;
+    }
+    return min + Math.floor(Math.random() * (max + 1 - min));
+  };
+
   // Remove an item from an array
   ch.remove_from_array = function (array, item) {
     if (array) {
@@ -137,7 +151,11 @@
 
   var dest = {}, label = {}, game = {};
 
-  function new_dest(x) {
+  label.clear_dests = function () {
+    this.dests = {};
+  };
+
+  label.add_dest = function (x) {
     var d = Object.create(dest);
     if (typeof x === "string") {
       d.label = x;
@@ -145,7 +163,7 @@
       d.desc = x[0];
       d.label = x[1];
     }
-    return d;
+    this.dests[d.label] = d;
   }
 
   game.get_desc = function (dest) {
@@ -154,17 +172,19 @@
 
   game.move_to = function (q) {
     if (this.q && this.q.post) {
-      this.q.post.call(this.q);
+      this.q.post.call(this.q, q);
     }
+    var from = this.q;
     this.q = q;
     if (this.q.pre) {
-      this.q.pre.call(this.q);
+      this.q.pre.call(this.q, from);
     }
     ch.notify(this, "@move");
   };
 
   game.new_label = function (key, x) {
     var i, n, d, l = Object.create(label);
+    l.label = key;
     l.dests = {};
     l.game = this;
     if (typeof x === "string") {
@@ -174,17 +194,13 @@
       // List [description, dest, dest, ...]
       l.desc = x[0];
       for (i = 1, n = x.length; i < n; i += 1) {
-        d = new_dest(x[i]);
-        l.dests[d.label] = d;
+        l.add_dest(x[i]);
       }
     } else if (typeof x === "object") {
       // Object
       l.desc = x.desc;
       if (x.dests) {
-        x.dests.forEach(function (d) {
-          var dd = new_dest(d);
-          l.dests[dd.label] = dd;
-        });
+        x.dests.forEach(l.add_dest.bind(l));
       }
       l.pre = x.pre;
       l.post = x.post;
