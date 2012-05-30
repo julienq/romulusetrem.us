@@ -55,6 +55,8 @@ choooose.init_game({
   },
   foul_14: ["A moldy corridor",
     ["Somewhat fresher air", "hallway_8"]],
-  troll_15: "☠ A hideous troll carrying a torch kills you!",
+  troll_15: {
+    enemy: "a hideous troll carrying a torch",
+  },
   dragon_16: "You slay the sleeping Dragon!"
 });

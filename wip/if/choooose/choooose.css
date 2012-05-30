@@ -2,6 +2,10 @@
   font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
 }
 
+.ch-l10n {
+  display: none;
+}
+
 .ch-list {
   list-style-type: none;
   padding-left: 1em;

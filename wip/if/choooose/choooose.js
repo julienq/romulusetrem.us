@@ -1,6 +1,12 @@
 (function (ch) {
   "use strict";
 
+  // Localization
+  ch.l = {};  // localized strings
+  [].forEach.call(document.querySelectorAll("[data-l10n]"), function (li) {
+    ch.l[li.dataset.l10n] = li.textContent;
+  });
+
   // Simple format function for messages and templates. Use {0}, {1}...
   // as slots for parameters. Missing parameters are note replaced.
   String.prototype.fmt = function () {
@@ -164,7 +170,11 @@
       d.label = x[1];
     }
     this.dests[d.label] = d;
-  }
+  };
+
+  label.get_desc = function () {
+    return this.enemy ? ch.l.encounter.fmt(this.enemy) : this.desc;
+  };
 
   game.get_desc = function (dest) {
     return dest.desc || this.labels[dest.label].desc;
@@ -198,12 +208,14 @@
       }
     } else if (typeof x === "object") {
       // Object
-      l.desc = x.desc;
+      ["desc", "pre", "post", "enemy"].forEach(function (k) {
+        if (x.hasOwnProperty(k)) {
+          l[k] = x[k];
+        }
+      });
       if (x.dests) {
         x.dests.forEach(l.add_dest.bind(l));
       }
-      l.pre = x.pre;
-      l.post = x.post;
     }
     return l;
   };
@@ -222,7 +234,7 @@
         }
       });
     }
-    li.appendChild($("p.ch-desc", g.q.desc));
+    li.appendChild($("p.ch-desc", g.q.get_desc()));
     if (Object.keys(g.q.dests).length > 0) {
       u = $("ul.ch-list");
       li.appendChild(u);
