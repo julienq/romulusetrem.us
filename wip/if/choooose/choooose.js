@@ -10,6 +10,16 @@
     });
   };
 
+  // Remove an item from an array
+  ch.remove_from_array = function (array, item) {
+    if (array) {
+      var index = array.indexOf(item);
+      if (index >= 0) {
+        return array.splice(index, 1)[0];
+      }
+    }
+  };
+
   // Useful XML namespaces
   ch.SVG_NS = "http://www.w3.org/2000/svg";
   ch.XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -67,6 +77,56 @@
     }
   };
 
+  // Custom events
+
+  // Listen to a custom event. Listener is a function or an object whose
+  // "handleEvent" function will then be invoked.
+  ch.listen = function (target, type, listener) {
+    if (!(target.hasOwnProperty(type))) {
+      target[type] = [];
+    }
+    target[type].push(listener);
+  };
+
+  // Listen to an event only once
+  ch.listen_once = function (target, type, listener) {
+    var h = function (e) {
+      ch.unlisten(target, type, h);
+      if (typeof listener.handleEvent === "function") {
+        listener.handleEvent.call(listener, e);
+      } else {
+        listener(e);
+      }
+    };
+    ch.listen(target, type, h);
+  };
+
+  // Can be called as notify(e), notify(source, type) or notify(source, type, e)
+  ch.notify = function (source, type, e) {
+    if (e) {
+      e.source = source;
+      e.type = type;
+    } else if (type) {
+      e = { source: source, type: type };
+    } else {
+      e = source;
+    }
+    if (e.source.hasOwnProperty(e.type)) {
+      e.source[e.type].slice().forEach(function (listener) {
+        if (typeof listener.handleEvent === "function") {
+          listener.handleEvent.call(listener, e);
+        } else {
+          listener(e);
+        }
+      });
+    }
+  };
+
+  // Stop listening
+  ch.unlisten = function (target, type, listener) {
+    ch.remove_from_array(target[type], listener);
+  };
+
   function sdbm(str) {
     var h, i, n;
     for (i = 0, n = str.length, h = 0; i < n; i += 1) {
@@ -88,55 +148,89 @@
     return d;
   }
 
-  function new_label(key, desc) {
-    var i, n, d, l = Object.create(label);
-    l.dests = {};
-    if (typeof desc === "string") {
-      // Terminal label
-      l.desc = desc;
-    } else if (desc instanceof Array) {
-      // List [description, dest, dest, ...]
-      l.desc = desc[0];
-      for (i = 1, n = desc.length; i < n; i += 1) {
-        d = new_dest(desc[i]);
-        l.dests[d.label] = d;
-      }
-    } else if (typeof desc === "object") {
-      // Object
-      // TODO
-    }
-    return l;
-  }
-
   game.get_desc = function (dest) {
     return dest.desc || this.labels[dest.label].desc;
   }
 
   game.move_to = function (q) {
-    // TODO @event
-    var ul = document.querySelector("ul"),
-      li = ul.appendChild($("li")), u;
-    this.q = q;
-    li.appendChild($("p", this.q.desc));
-    if (Object.keys(this.q.dests).length > 0) {
-      u = $("ul");
-      li.appendChild(u);
-      Object.keys(this.q.dests).forEach(function (k) {
-        var li = u.appendChild($("li", this.get_desc(this.q.dests[k])));
-        li.addEventListener("click", function (e) {
-          e.preventDefault();
-          this.move_to(this.labels[this.q.dests[k].label]);
-        }.bind(this), false);
-      }, this);
+    if (this.q && this.q.post) {
+      this.q.post.call(this.q);
     }
+    this.q = q;
+    if (this.q.pre) {
+      this.q.pre.call(this.q);
+    }
+    ch.notify(this, "@move");
   };
+
+  game.new_label = function (key, x) {
+    var i, n, d, l = Object.create(label);
+    l.dests = {};
+    l.game = this;
+    if (typeof x === "string") {
+      // Terminal label
+      l.desc = x;
+    } else if (x instanceof Array) {
+      // List [description, dest, dest, ...]
+      l.desc = x[0];
+      for (i = 1, n = x.length; i < n; i += 1) {
+        d = new_dest(x[i]);
+        l.dests[d.label] = d;
+      }
+    } else if (typeof x === "object") {
+      // Object
+      l.desc = x.desc;
+      if (x.dests) {
+        x.dests.forEach(function (d) {
+          var dd = new_dest(d);
+          l.dests[dd.label] = dd;
+        });
+      }
+      l.pre = x.pre;
+      l.post = x.post;
+    }
+    return l;
+  };
+
+  function moved(e) {
+    var g = e.source,
+      ul = document.querySelector("ul"),
+      li = ul.appendChild($("li.ch-dest")), u;
+    if (li.previousSibling) {
+      li.previousSibling.classList.remove("ch-dest");
+      li.previousSibling.classList.add("ch-past");
+      [].forEach.call(li.previousSibling.querySelectorAll("li"), function (li) {
+        if (li.hasOwnProperty("h")) {
+          li.removeEventListener("click", li.h, false);
+          delete li.h;
+        }
+      });
+    }
+    li.appendChild($("p.ch-desc", g.q.desc));
+    if (Object.keys(g.q.dests).length > 0) {
+      u = $("ul.ch-list");
+      li.appendChild(u);
+      Object.keys(g.q.dests).forEach(function (k) {
+        var li = u.appendChild($("li", g.get_desc(g.q.dests[k])));
+        li.h = function (e) {
+          if (e.hasOwnProperty("button") && e.button !== 0) {
+            return;
+          }
+          e.preventDefault();
+          g.move_to(g.labels[g.q.dests[k].label]);
+        };
+        li.addEventListener("click", li.h, false);
+      });
+    }
+  }
 
   ch.init_game = function (desc) {
     var g = Object.create(game);
     g.labels = {};
     Object.keys(desc).forEach(function (key) {
-      g.labels[key] = new_label(key, desc[key]);
+      g.labels[key] = g.new_label(key, desc[key]);
     });
+    ch.listen(g, "@move", moved);
     g.move_to(g.labels.$start);
   };
 

@@ -1,0 +1,20 @@
+* {
+  font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.ch-list {
+  list-style-type: none;
+  padding-left: 1em;
+}
+
+.ch-desc {
+  font-weight: bold;
+}
+
+.ch-past {
+  color: #888;
+}
+
+.ch-dest li {
+  cursor: pointer;
+}
