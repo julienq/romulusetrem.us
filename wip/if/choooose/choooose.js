@@ -1,11 +1,7 @@
-(function (ch) {
-  "use strict";
+/*jslint browser: true, indent: 2 */
 
-  // Localization
-  ch.l = {};  // localized strings
-  [].forEach.call(document.querySelectorAll("[data-l10n]"), function (li) {
-    ch.l[li.dataset.l10n] = li.textContent;
-  });
+(function (ch) {
+  //"use strict";
 
   // Simple format function for messages and templates. Use {0}, {1}...
   // as slots for parameters. Missing parameters are note replaced.
@@ -15,6 +11,12 @@
       return args[p] === undefined ? s : args[p];
     });
   };
+
+  // Localization
+  ch.l = {};  // localized strings
+  [].forEach.call(document.querySelectorAll("[data-l10n]"), function (li) {
+    ch.l[li.dataset.l10n] = li.textContent;
+  });
 
   // Return a random element from an array
   ch.random_element = function (a) {
@@ -51,24 +53,25 @@
   // Simple way to create elements, giving ns id and class directly within the
   // name of the element (e.g. svg:rect#background.test)
   function $(name, maybe_attrs) {
-    var m, ns, name_, elem, split, classes, a, argc = 1, attrs = {};
-    if (typeof maybe_attrs === "object" && !(maybe_attrs instanceof Node)) {
+    var m, ns, nm, elem, split, classes, a, argc = 1, attrs = {};
+    if (typeof maybe_attrs === "object" &&
+        !(maybe_attrs instanceof window.Node)) {
       attrs = maybe_attrs;
       argc = 2;
     }
     classes = name.split(".");
-    name_ = classes.shift();
+    nm = classes.shift();
     if (classes.length > 0) {
       attrs["class"] =
         (attrs.hasOwnProperty("class") ? attrs["class"] + " " : "")
         + classes.join(" ");
     }
-    m = name_.match(/^(?:(\w+):)?([\w.\-]+)(?:#([\w:.\-]+))?$/);
+    m = nm.match(/^(?:(\w+):)?([\w.\-]+)(?:#([\w:.\-]+))?$/);
     if (m) {
       ns = (m[1] && ch["{0}_NS".fmt(m[1].toUpperCase())]) ||
-        document.documentElement.namespaceURI;
+          document.documentElement.namespaceURI;
       elem = ns ? document.createElementNS(ns, m[2]) :
-        document.createElement(m[2]);
+          document.createElement(m[2]);
       if (m[3]) {
         attrs.id = m[3];
       }
@@ -88,14 +91,14 @@
         if (i >= argc) {
           if (typeof ch === "string") {
             elem.appendChild(document.createTextNode(ch));
-          } else if (ch instanceof Node) {
+          } else if (ch instanceof window.Node) {
             elem.appendChild(ch);
           }
         }
       });
       return elem;
     }
-  };
+  }
 
   // Custom events
 
@@ -147,22 +150,14 @@
     ch.remove_from_array(target[type], listener);
   };
 
-  function sdbm(str) {
-    var h, i, n;
-    for (i = 0, n = str.length, h = 0; i < n; i += 1) {
-      h = str.charCodeAt(i) + (h << 6) + (h << 16) - h;
-    }
-    return h >>> 0;
-  }
+  var state = {}, game = {};
 
-  var dest = {}, label = {}, game = {};
-
-  label.clear_dests = function () {
+  state.clear_dests = function () {
     this.dests = {};
   };
 
-  label.add_dest = function (x) {
-    var d = Object.create(dest);
+  state.add_dest = function (x) {
+    var d = {};
     if (typeof x === "string") {
       d.label = x;
     } else if (x instanceof Array) {
@@ -172,58 +167,90 @@
     this.dests[d.label] = d;
   };
 
-  label.get_desc = function () {
+  state.check_disabled = function () {
+    if (this.__check) {
+      return this.disabled;
+    }
+    this.__check = true;
+    if (!this.disabled && this.dests) {
+      this.disabled = Object.keys(this.dests).map(function (label) {
+          return this.game.states[label].check_disabled();
+        }, this).every(function (disabled) {
+          return !!disabled;
+        });
+    }
+    return this.disabled;
+  };
+
+  state.get_desc = function () {
     return this.enemy ? ch.l.encounter.fmt(this.enemy) : this.desc;
   };
 
   game.get_desc = function (dest) {
-    return dest.desc || this.labels[dest.label].desc;
-  }
+    return this.disabled ? undefined :
+        dest.desc || this.states[dest.label].desc;
+  };
 
   game.move_to = function (q) {
+    var from, dests;
     if (this.q && this.q.post) {
       this.q.post.call(this.q, q);
     }
-    var from = this.q;
+    from = this.q;
     this.q = q;
     if (this.q.pre) {
       this.q.pre.call(this.q, from);
     }
-    ch.notify(this, "@move");
+    var dests = this.q.enemy ? [] :
+      Object.keys(this.q.dests).map(function (k) {
+        return [this.get_desc(this.q.dests[k]), k];
+      }, this).filter(function(d) {
+        return !!d[0];
+      });
+    ch.notify(this, "@move", { dests: dests });
+    if (this.q.enemy) {
+      // TODO fight
+      this.q.disabled = true;
+      this.states.$start.check_disabled();
+      this.move_to(this.states[this.q.win]);
+    }
   };
 
-  game.new_label = function (key, x) {
-    var i, n, d, l = Object.create(label);
-    l.label = key;
-    l.dests = {};
-    l.game = this;
+  // Add a state to the game from the original description
+  game.new_state = function (key, x) {
+    var i, n, s = Object.create(state);
+    s.label = key;
+    s.dests = {};
+    s.game = this;
     if (typeof x === "string") {
-      // Terminal label
-      l.desc = x;
+      // Terminal state, just a label
+      s.desc = x;
     } else if (x instanceof Array) {
       // List [description, dest, dest, ...]
-      l.desc = x[0];
+      s.desc = x[0];
       for (i = 1, n = x.length; i < n; i += 1) {
-        l.add_dest(x[i]);
+        s.add_dest(x[i]);
       }
     } else if (typeof x === "object") {
       // Object
-      ["desc", "pre", "post", "enemy"].forEach(function (k) {
-        if (x.hasOwnProperty(k)) {
-          l[k] = x[k];
-        }
-      });
+      ["desc", "disabled", "enemy", "posts", "pre", "win"]
+        .forEach(function (k) {
+          if (x.hasOwnProperty(k)) {
+            s[k] = x[k];
+          }
+        });
       if (x.dests) {
-        x.dests.forEach(l.add_dest.bind(l));
+        x.dests.forEach(s.add_dest.bind(s));
       }
     }
-    return l;
+    return s;
   };
 
   function moved(e) {
     var g = e.source,
       ul = document.querySelector("ul"),
-      li = ul.appendChild($("li.ch-dest")), u;
+      li = ul.appendChild($("li.ch-dest")),
+      u;
     if (li.previousSibling) {
       li.previousSibling.classList.remove("ch-dest");
       li.previousSibling.classList.add("ch-past");
@@ -235,17 +262,16 @@
       });
     }
     li.appendChild($("p.ch-desc", g.q.get_desc()));
-    if (Object.keys(g.q.dests).length > 0) {
+    if (e.dests) {
       u = $("ul.ch-list");
       li.appendChild(u);
-      Object.keys(g.q.dests).forEach(function (k) {
-        var li = u.appendChild($("li", g.get_desc(g.q.dests[k])));
+      e.dests.forEach(function (d) {
+        var li = u.appendChild($("li", d[0]));
         li.h = function (e) {
-          if (e.hasOwnProperty("button") && e.button !== 0) {
-            return;
+          if (!e.hasOwnProperty("button") || e.button === 0) {
+            e.preventDefault();
+            g.move_to(g.states[d[1]]);
           }
-          e.preventDefault();
-          g.move_to(g.labels[g.q.dests[k].label]);
         };
         li.addEventListener("click", li.h, false);
       });
@@ -254,12 +280,12 @@
 
   ch.init_game = function (desc) {
     var g = Object.create(game);
-    g.labels = {};
+    g.states = {};
     Object.keys(desc).forEach(function (key) {
-      g.labels[key] = g.new_label(key, desc[key]);
+      g.states[key] = g.new_state(key, desc[key]);
     });
     ch.listen(g, "@move", moved);
-    g.move_to(g.labels.$start);
+    g.move_to(g.states.$start);
   };
 
-}(choooose = {}));
+}(window.choooose = {}));
