@@ -5,8 +5,15 @@
     <meta charset="UTF-8">
     <meta http-equiv="cache-control" content="no-cache">
     <style>
-      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
-      a { text-decoration: none; color: #ff4040; }
+      html, body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        background-image: -moz-linear-gradient(270deg, #000, #222);
+        background-image: -webkit-linear-gradient(270deg, #000, #222);
+      }
       .params { display: none; }
     </style>
   </head>
@@ -14,7 +21,11 @@
 
     <svg viewBox="0 0 1200 1200">
       <defs>
-        <circle r="5" fill="white" id="bullet"/>
+        <clipPath id="clip">
+          <rect id="bg" width="1200" height="1200"/>
+        </clipPath>
+        <circle r="4" fill="white" id="bullet"/>
+        <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
         <g id="ship-parts">
           <line id="ship-part-1" x1="20" y1="0" x2="-20" y2="15"/>
           <line id="ship-part-2" x1="-20" y1="15" x2="-10" y2="0"/>
@@ -22,12 +33,15 @@
           <line id="ship-part-4" x1="-20" y1="-15" x2="20" y2="0"/>
         </g>
       </defs>
-      <rect fill="black" id="bg"/>
-      <g id="stars" fill="white"/>
-      <g stroke-linejoin="round" stroke-linecap="round" stroke-width="8"
-        stroke="white" fill="none">
-        <g id="asteroids"/>
-        <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
+      <g clip-path="url(#clip)">
+        <text id="message" text-anchor="middle" x="600" y="800"
+          font-size="200" fill="white"/>
+        <g id="stars" fill="white"/>
+        <g id="level" stroke-linejoin="round" stroke-linecap="round"
+          stroke-width="8" stroke="white" fill="none">
+          <g id="asteroids"/>
+          <g id="lives"/>
+        </g>
       </g>
     </svg>
 
@@ -35,18 +49,23 @@
       <li data-param="ASTEROID_V_MIN" data-num="50">
       <li data-param="ASTEROID_V_MAX" data-num="100">
       <li data-param="ASTEROID_VA_RATE" data-num="7">
-      <li data-param="ASTEROID_3_R" data-num="50">
+      <li data-param="ASTEROID_3_R" data-num="60">
       <li data-param="ASTEROID_3_R_AMP" data-num="5">
       <li data-param="ASTEROID_3_SECTORS" data-num="16">
-      <li data-param="ASTEROID_2_R" data-num="30">
-      <li data-param="ASTEROID_2_R_AMP" data-num="4">
+      <li data-param="ASTEROID_2_R" data-num="35">
+      <li data-param="ASTEROID_2_R_AMP" data-num="5">
       <li data-param="ASTEROID_2_SECTORS" data-num="12">
       <li data-param="ASTEROID_1_R" data-num="20">
       <li data-param="ASTEROID_1_R_AMP" data-num="3">
       <li data-param="ASTEROID_1_SECTORS" data-num="12">
+      <li data-param="ASTEROIDS_MIN" data-num="4">
+      <li data-param="ASTEROIDS_MAX" data-num="12">
       <li data-param="BULLET_V" data-num="600">
       <li data-param="EXPLOSION_TTL" data-num="2">
-      <li data-param="N_ASTEROIDS" data-num="4">
+      <li data-param="GAME_OVER">Game Over</li>
+      <li data-param="LEVEL">Level {0}</li>
+      <li data-param="LEVEL_DELAY" data-num="2">
+      <li data-param="N_LIVES" data-num="3">
       <li data-param="SHIP_ACCEL" data-num="50">
       <li data-param="SHIP_DECEL" data-num="-5">
       <li data-param="SHIP_R" data-num="20">
