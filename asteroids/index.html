@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Asteroids</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <style>
+      body { font-family: Univers, "Helvetica Neue", Helvetica, sans-serif; }
+      a { text-decoration: none; color: #ff4040; }
+      .params { display: none; }
+    </style>
+  </head>
+  <body>
+
+    <svg viewBox="0 0 1200 1200">
+      <rect fill="black" id="bg"/>
+      <g id="stars" fill="white"/>
+      <g stroke-linejoin="round" stroke-width="4" stroke="white" fill="none">
+        <g id="asteroids"/>
+        <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
+      </g>
+    </svg>
+
+    <ul class="params">
+      <li data-param="ASTEROID_V_MIN" data-type="int">50</li>
+      <li data-param="ASTEROID_V_MAX" data-type="int">100</li>
+      <li data-param="ASTEROID_VA_RATE" data-type="int">7</li>
+      <li data-param="ASTEROID_L_R" data-type="int">50</li>
+      <li data-param="ASTEROID_L_R_AMP" data-type="int">5</li>
+      <li data-param="ASTEROID_L_SECTORS" data-type="int">12</li>
+      <li data-param="N_ASTEROIDS" data-type="int">4</li>
+      <li data-param="STAR_DENSITY" data-type="float">0.0005</li>
+      <li data-param="STAR_RADIUS" data-type="int">3</li>
+    </ul>
+
+    <script src="asteroids.js"></script>
+  </body>
+</html>
