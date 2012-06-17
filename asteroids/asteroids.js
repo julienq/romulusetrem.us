@@ -65,6 +65,9 @@
         .format(this));
     },
     update: function (dt) {
+      if (this.hasOwnProperty("vv")) {
+        this.vv += this.accel;
+      }
       this.position(this.x + this.vx * dt, this.y + this.vy * dt,
         this.a + this.va * dt);
       this.particles.forEach(function (p) {
@@ -115,6 +118,23 @@
     var m = make_movable(ship, vb);
     m.r = SHIP_R;
     m.r_collide = SHIP_R_COLLIDE;
+    m.accel = 0;
+    var vv = 0;
+    Object.defineProperty(m, "vv", { enumerable: true,
+      get: function () {
+        return vv;
+      }, set: function (v) {
+        if (v < 0) {
+          v = 0;
+          this.accel = 0;
+        } else if (v > SHIP_V_MAX) {
+          v = SHIP_V_MAX;
+        }
+        vv = v;
+        var th = this.a / 180 * Math.PI;
+        this.vx = v * Math.cos(th);
+        this.vy = v * Math.sin(th);
+      } });
     m.explode = function () {
       this.disabled = true;
       var parts = document.getElementById("ship-parts");
@@ -248,9 +268,14 @@
       } if (e.which === 37) {
         e.preventDefault();
         ship.va = -SHIP_VA;
+      } else if (e.which === 38) {
+        e.preventDefault();
+        ship.accel = SHIP_ACCEL;
       } else if (e.which === 39) {
         e.preventDefault();
         ship.va = SHIP_VA;
+      } else if (e.which === 40) {
+        e.preventDefault();
       }
     });
 
@@ -260,9 +285,17 @@
       } else if (e.which === 37) {
         e.preventDefault();
         ship.va = 0;
+      } else if (e.which === 38) {
+        e.preventDefault();
+        ship.accel = SHIP_DECEL;
       } else if (e.which === 39) {
         e.preventDefault();
         ship.va = 0;
+      } else if (e.which === 40) {
+        e.preventDefault();
+        // Hyperspace
+        ship.position(random_int(0, ship.vb.width),
+          random_int(0, ship.vb.height));
       }
     });
 
@@ -299,10 +332,8 @@
 
   // Get params and init game
   [].forEach.call(document.querySelectorAll("[data-param]"), function (p) {
-    if (p.dataset.type === "int") {
-      window[p.dataset.param] = parseInt(p.textContent, 10);
-    } else if (p.dataset.type === "float") {
-      window[p.dataset.param] = parseFloat(p.textContent);
+    if (p.dataset.hasOwnProperty("num")) {
+      window[p.dataset.param] = parseFloat(p.dataset.num);
     } else {
       window[p.dataset.param] = p.textContent;
     }

@@ -24,34 +24,38 @@
       </defs>
       <rect fill="black" id="bg"/>
       <g id="stars" fill="white"/>
-      <g stroke-linejoin="round" stroke-width="4" stroke="white" fill="none">
+      <g stroke-linejoin="round" stroke-linecap="round" stroke-width="8"
+        stroke="white" fill="none">
         <g id="asteroids"/>
         <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
       </g>
     </svg>
 
     <ul class="params">
-      <li data-param="ASTEROID_V_MIN" data-type="int">50</li>
-      <li data-param="ASTEROID_V_MAX" data-type="int">100</li>
-      <li data-param="ASTEROID_VA_RATE" data-type="int">7</li>
-      <li data-param="ASTEROID_3_R" data-type="int">50</li>
-      <li data-param="ASTEROID_3_R_AMP" data-type="int">5</li>
-      <li data-param="ASTEROID_3_SECTORS" data-type="int">16</li>
-      <li data-param="ASTEROID_2_R" data-type="int">30</li>
-      <li data-param="ASTEROID_2_R_AMP" data-type="int">4</li>
-      <li data-param="ASTEROID_2_SECTORS" data-type="int">12</li>
-      <li data-param="ASTEROID_1_R" data-type="int">20</li>
-      <li data-param="ASTEROID_1_R_AMP" data-type="int">3</li>
-      <li data-param="ASTEROID_1_SECTORS" data-type="int">12</li>
-      <li data-param="BULLET_V" data-type="int">400</li>
-      <li data-param="EXPLOSION_TTL" data-type="float">2</li>
-      <li data-param="N_ASTEROIDS" data-type="int">8</li>
-      <li data-param="SHIP_R" data-type="int">20</li>
-      <li data-param="SHIP_R_COLLIDE" data-type="int">10</li>
-      <li data-param="SHIP_VA" data-type="float">200</li>
-      <li data-param="SPEEDUP" data-type="float">1.25</li>
-      <li data-param="STAR_DENSITY" data-type="float">0.0005</li>
-      <li data-param="STAR_RADIUS" data-type="int">3</li>
+      <li data-param="ASTEROID_V_MIN" data-num="50">
+      <li data-param="ASTEROID_V_MAX" data-num="100">
+      <li data-param="ASTEROID_VA_RATE" data-num="7">
+      <li data-param="ASTEROID_3_R" data-num="50">
+      <li data-param="ASTEROID_3_R_AMP" data-num="5">
+      <li data-param="ASTEROID_3_SECTORS" data-num="16">
+      <li data-param="ASTEROID_2_R" data-num="30">
+      <li data-param="ASTEROID_2_R_AMP" data-num="4">
+      <li data-param="ASTEROID_2_SECTORS" data-num="12">
+      <li data-param="ASTEROID_1_R" data-num="20">
+      <li data-param="ASTEROID_1_R_AMP" data-num="3">
+      <li data-param="ASTEROID_1_SECTORS" data-num="12">
+      <li data-param="BULLET_V" data-num="600">
+      <li data-param="EXPLOSION_TTL" data-num="2">
+      <li data-param="N_ASTEROIDS" data-num="4">
+      <li data-param="SHIP_ACCEL" data-num="50">
+      <li data-param="SHIP_DECEL" data-num="-5">
+      <li data-param="SHIP_R" data-num="20">
+      <li data-param="SHIP_R_COLLIDE" data-num="10">
+      <li data-param="SHIP_V_MAX" data-num="400">
+      <li data-param="SHIP_VA" data-num="200">
+      <li data-param="SPEEDUP" data-num="1.25">
+      <li data-param="STAR_DENSITY" data-num="0.0005">
+      <li data-param="STAR_RADIUS" data-num="3">
     </ul>
 
     <script src="asteroids.js"></script>
