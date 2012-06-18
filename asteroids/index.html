@@ -11,8 +11,8 @@
       body {
         margin: 0;
         font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
-        background-image: -moz-linear-gradient(270deg, #000, #222);
-        background-image: -webkit-linear-gradient(270deg, #000, #222);
+        background-image: -moz-linear-gradient(270deg, #000, #272727);
+        background-image: -webkit-linear-gradient(270deg, #000, #272727);
       }
       .params { display: none; }
     </style>
@@ -21,6 +21,13 @@
 
     <svg viewBox="0 0 1200 1200">
       <defs>
+        <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="7.5" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
         <clipPath id="clip">
           <rect id="bg" width="1200" height="1200"/>
         </clipPath>
@@ -34,8 +41,11 @@
         </g>
       </defs>
       <g clip-path="url(#clip)">
+        <!--
+        <use xlink:href="#bg" fill="black"/>
+        -->
         <text id="message" text-anchor="middle" x="600" y="800"
-          font-size="200" fill="white"/>
+          font-size="200" fill="white" filter="url(#glow)"/>
         <g id="stars" fill="white"/>
         <g id="level" stroke-linejoin="round" stroke-linecap="round"
           stroke-width="8" stroke="white" fill="none">
@@ -78,7 +88,7 @@
       <li data-param="SHIP_R_COLLIDE" data-num="10">
       <li data-param="SHIP_V_MAX" data-num="400">
       <li data-param="SHIP_VA" data-num="200">
-      <li data-param="SPEEDUP" data-num="1.25">
+      <li data-param="SPEEDUP" data-num="1.5">
       <li data-param="STAR_DENSITY" data-num="0.0005">
       <li data-param="STAR_RADIUS" data-num="3">
     </ul>

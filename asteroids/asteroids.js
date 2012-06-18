@@ -5,13 +5,14 @@
   // [/] layout/SVG resize
   // [ ] plume for the ship
   // [x] debris for asteroids
-  // [ ] neon effect
+  // [x] glowing effect
   // [ ] score
   // [ ] text as destructible graphics
   // [ ] sound
   // [ ] better collisions
   // [ ] enemy ships
   // [ ] vortex
+  // [ ] don't respawn inside an asteroid!
 
   var SVG_NS = "http://www.w3.org/2000/svg";
   var XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -179,6 +180,7 @@
         m.vy = 0;
         m.va = 0;
         m.elem = elem;
+        m.elem.setAttribute("filter", "url(#glow)");
         elem.movable = m;
         this.movables.push(m);
         return m;
