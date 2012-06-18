@@ -1,6 +1,18 @@
 (function () {
   "use strict";
 
+  // TODO
+  // [/] layout/SVG resize
+  // [ ] plume for the ship
+  // [x] debris for asteroids
+  // [ ] neon effect
+  // [ ] score
+  // [ ] text as destructible graphics
+  // [ ] sound
+  // [ ] better collisions
+  // [ ] enemy ships
+  // [ ] vortex
+
   var SVG_NS = "http://www.w3.org/2000/svg";
   var XLINK_NS = "http://www.w3.org/1999/xlink";
 
@@ -126,7 +138,7 @@
       bullet.elem.setAttributeNS(XLINK_NS, "href", "#bullet");
       bullet.r = 0;
       bullet.r_collide = 0;
-      bullet.ttl = this.cosmos.d / BULLET_V;
+      bullet.ttl = BULLET_RANGE / BULLET_V;
       var th = this.a / 180 * Math.PI;
       bullet.x = this.x + this.r * Math.cos(th);
       bullet.y = this.y + this.r * Math.sin(th);
@@ -204,7 +216,8 @@
             var part = this.cosmos.make_movable(document.createElementNS(SVG_NS,
                 "use"));
             part.elem.setAttributeNS(XLINK_NS, "href", "#" + p.id);
-            part.ttl = EXPLOSION_TTL;
+            part.ttl = random_int(EXPLOSION_TTL - EXPLOSION_TTL_AMP,
+              EXPLOSION_TTL + EXPLOSION_TTL_AMP);
             part.x = this.x;
             part.y = this.y;
             part.vx = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX);
@@ -239,6 +252,23 @@
           return p.join(",");
         }).join("L")));
         asteroid.split = function () {
+          for (var i = 0, n = window["ASTEROID_{0}_SECTORS".fmt(size)]; i < n;
+              ++i) {
+            var debris = asteroid.cosmos
+              .make_movable(document.createElementNS(SVG_NS, "line"));
+            debris.elem.setAttribute("x2", DEBRIS_LENGTH);
+            var th = Math.random() * 2 * Math.PI;
+            debris.x = asteroid.x + asteroid.r_collide * Math.cos(th);
+            debris.y = asteroid.y + asteroid.r_collide * Math.sin(th);
+            debris.a = random_int(0, 360);
+            debris.vx = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX);
+            debris.vy = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX);
+            debris.va = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX) /
+              ASTEROID_VA_RATE;
+            debris.ttl = random_int(DEBRIS_TTL - DEBRIS_TTL_AMP,
+                DEBRIS_TTL + DEBRIS_TTL_AMP);
+            asteroid.elem.parentNode.parentNode.appendChild(debris.elem);
+          }
           if (size === 1) {
             return [];
           }
@@ -366,10 +396,14 @@
         var l = remove_life();
         if (l > 0) {
           setTimeout(function () {
-            cosmos.ship.position(cosmos.w / 2, cosmos.h / 2);
+            show_message(READY);
+          }, (EXPLOSION_TTL - EXPLOSION_TTL_AMP) * 1000);
+          setTimeout(function () {
+            show_message("");
+            cosmos.ship.position(cosmos.w / 2, cosmos.h / 2, 0);
             p.appendChild(cosmos.ship.elem);
             delete cosmos.ship.disabled;
-          }, EXPLOSION_TTL * 1000);
+          }, (EXPLOSION_TTL + EXPLOSION_TTL_AMP) * 1000);
         } else {
           show_message(GAME_OVER);
         }
