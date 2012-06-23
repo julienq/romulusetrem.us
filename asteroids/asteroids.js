@@ -418,24 +418,6 @@
     return cosmos;
   }
 
-  // TODO resize
-  /*
-  function resize() {
-    var svg = document.querySelector("svg");
-    var vb = svg.viewBox.
-    SVG.style.width = "{0}px".fmt(window.innerWidth);
-    SVG.style.height = "{0}px".fmt(window.innerHeight);
-    ratio = Math.min(window.innerWidth, window.innerHeight) / SZ;
-    w = window.innerWidth / ratio;
-    h = window.innerHeight / ratio;
-    SVG.setAttribute("viewBox", "{0} {1} {2} {3}".fmt(-w / 2, -h / 2, w, h));
-    make_stars();
-  }
-
-  window.addEventListener("resize", resize, false);
-  resize();
-  */
-
   // Get params and init game
   [].forEach.call(document.querySelectorAll("[data-param]"), function (p) {
     if (p.dataset.hasOwnProperty("num")) {

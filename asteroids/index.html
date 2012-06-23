@@ -4,56 +4,90 @@
     <title>Asteroids</title>
     <meta charset="UTF-8">
     <meta http-equiv="cache-control" content="no-cache">
+    <link href="http://fonts.googleapis.com/css?family=Codystar"
+      rel="stylesheet" type="text/css">
     <style>
       html, body {
         height: 100%;
       }
       body {
+        color: white;
+        width: 100%;
         margin: 0;
         font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        display: -moz-box;
+        -moz-box-orient: vertical;
         background-image: -moz-linear-gradient(270deg, #000, #272727);
         background-image: -webkit-linear-gradient(270deg, #000, #272727);
       }
+      a {
+        text-decoration: none;
+        color: #ff4040;
+      }
       .params { display: none; }
+      #game {
+        -webkit-box-flex: 1;
+        -moz-box-flex: 1;
+        position: relative;
+      }
+      svg {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+      }
+      header, footer {
+        text-align: center;
+      }
+      footer {
+        padding: 0.5em;
+      }
     </style>
   </head>
   <body>
 
-    <svg viewBox="0 0 1200 1200">
-      <defs>
-        <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="7.5" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <clipPath id="clip">
-          <rect id="bg" width="1200" height="1200"/>
-        </clipPath>
-        <circle r="4" fill="white" id="bullet"/>
-        <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
-        <g id="ship-parts">
-          <line id="ship-part-1" x1="20" y1="0" x2="-20" y2="15"/>
-          <line id="ship-part-2" x1="-20" y1="15" x2="-10" y2="0"/>
-          <line id="ship-part-3" x1="-10" y1="0" x2="-20" y2="-15"/>
-          <line id="ship-part-4" x1="-20" y1="-15" x2="20" y2="0"/>
+    <div id="game">
+      <svg viewBox="0 0 1600 1200" preserveAspectRatio="xMidYmid meet">
+        <defs>
+          <filter id="glow" x="-300%" y="-300%" width="700%" height="700%">
+            <feGaussianBlur stdDeviation="7.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <clipPath id="clip">
+            <rect id="bg" width="1600" height="1200"/>
+          </clipPath>
+          <circle r="4" fill="white" id="bullet"/>
+          <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
+          <g id="ship-parts">
+            <line id="ship-part-1" x1="20" y1="0" x2="-20" y2="15"/>
+            <line id="ship-part-2" x1="-20" y1="15" x2="-10" y2="0"/>
+            <line id="ship-part-3" x1="-10" y1="0" x2="-20" y2="-15"/>
+            <line id="ship-part-4" x1="-20" y1="-15" x2="20" y2="0"/>
+          </g>
+        </defs>
+        <g clip-path="url(#clip)">
+          <text font-family="Codystar, sans-serif" id="message"
+            text-anchor="middle" x="800" y="400" font-size="200" fill="white"
+            filter="url(#glow)"/>
+          <g id="stars" fill="white"/>
+          <g id="level" stroke-linejoin="round" stroke-linecap="round"
+            stroke-width="8" stroke="white" fill="none">
+            <g id="asteroids"/>
+            <g id="lives"/>
+          </g>
         </g>
-      </defs>
-      <g clip-path="url(#clip)">
-        <!--
-        <use xlink:href="#bg" fill="black"/>
-        -->
-        <text id="message" text-anchor="middle" x="600" y="800"
-          font-size="200" fill="white" filter="url(#glow)"/>
-        <g id="stars" fill="white"/>
-        <g id="level" stroke-linejoin="round" stroke-linecap="round"
-          stroke-width="8" stroke="white" fill="none">
-          <g id="asteroids"/>
-          <g id="lives"/>
-        </g>
-      </g>
-    </svg>
+      </svg>
+    </div>
+
+    <footer>
+      Copyright © <span class="roman">mmxii</span>,
+      <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+          href="https://github.com/julienq/romulusetrem.us/blob/master/asteroids">Github</a>
+    </footer>
 
     <ul class="params">
       <li data-param="ASTEROID_V_MIN" data-num="50">
