@@ -2,17 +2,21 @@
   "use strict";
 
   // TODO
-  // [/] layout/SVG resize
+  // [x] layout/SVG resize (fix in Firefox)
   // [ ] plume for the ship
   // [x] debris for asteroids
   // [x] glowing effect
   // [ ] score
   // [ ] text as destructible graphics
-  // [ ] sound
+  // [x] sound
   // [ ] better collisions
   // [ ] enemy ships
   // [ ] vortex
   // [ ] don't respawn inside an asteroid!
+  // [ ] press fire to start/restart
+  // [x] limit rate of fire
+  // [ ] pause
+  // [ ] toggle filters
 
   var SVG_NS = "http://www.w3.org/2000/svg";
   var XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -54,7 +58,6 @@
     }
   };
 
-
   function collide_against(m, ms) {
     if (m.disabled) {
       return;
@@ -83,12 +86,15 @@
     var lives = document.getElementById("lives");
     var n = lives.childNodes.length - 1;
     lives.childNodes[n].movable.explode();
-    // lives.removeChild(lives.childNodes[n]);
+    play_sound("explosion_ship_sound");
     return n;
   }
 
-  function show_message(msg) {
+  function show_message(msg, sound) {
     document.getElementById("message").textContent = msg;
+    if (msg) {
+      play_sound(sound || "message_sound");
+    }
   }
 
   // Prototype for moving objects
@@ -132,6 +138,11 @@
       if (this.disabled) {
         return;
       }
+      var now = Date.now();
+      if (now - this.last_shot < FIRE_RATE) {
+        return;
+      }
+      this.last_shot = now;
       var bullet =
         this.cosmos.make_movable(document.createElementNS(SVG_NS, "use"));
       bullet.parent = this;
@@ -146,6 +157,7 @@
       bullet.vx = BULLET_V * Math.cos(th);
       bullet.vy = BULLET_V * Math.sin(th);
       this.elem.parentNode.appendChild(bullet.elem);
+      play_sound("laser_sound");
     }
   };
 
@@ -192,6 +204,7 @@
         m.r = SHIP_R;
         m.r_collide = SHIP_R_COLLIDE;
         m.accel = 0;
+        m.last_shot = 0;
         var velocity = 0;
         Object.defineProperty(m, "velocity", { enumerable: true,
           get: function () {
@@ -362,7 +375,7 @@
         cosmos.ship.va = 0;
       } else if (e.which === 40) {
         e.preventDefault();
-        // Hyperspace
+        play_sound("hyperspace_sound");
         cosmos.ship.position(random_int(0, cosmos.w), random_int(0, cosmos.h));
       }
     });
@@ -386,6 +399,7 @@
             a.elem.parentNode.appendChild(aa.elem);
           });
           a.remove();
+          play_sound("explosion_asteroid_sound");
           if (document.getElementById("asteroids").childNodes.length === 0) {
             cosmos.init_level();
           }
@@ -407,7 +421,7 @@
             delete cosmos.ship.disabled;
           }, (EXPLOSION_TTL + EXPLOSION_TTL_AMP) * 1000);
         } else {
-          show_message(GAME_OVER);
+          show_message(GAME_OVER, "game_over_sound");
         }
       }
       last_t = t;
@@ -426,6 +440,33 @@
       window[p.dataset.param] = p.textContent;
     }
   });
+
+  // Init audio and bring the play_sound() function in the window namespace
+  window.play_sound = (function () {
+    var channels = [];
+    for (var i = 0; i < AUDIO_CHANNELS; ++i) {
+      channels[i] = new Audio();
+      channels[i]._done = -1;
+    }
+    return function (id, volume) {
+      var sound = document.getElementById(id);
+      if (volume >= 0 && volume <= 1) {
+        sound.volume = volume;
+      }
+      for (var i = 0; i < AUDIO_CHANNELS; ++i) {
+        var t = Date.now();
+        var channel = channels[i];
+        if (channel._done < t) {
+          channel._done = t + (sound.duration * 1000);
+          channel.audio = sound;
+          sound.load();
+          sound.play();
+          return;
+        }
+      }
+    }
+  }());
+
   var cosmos = init_cosmos();
   cosmos.init_level();
 

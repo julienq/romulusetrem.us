@@ -24,7 +24,10 @@
       }
       a {
         text-decoration: none;
-        color: #ff4040;
+        color: yellow;
+      }
+      .roman {
+        font-variant: small-caps;
       }
       .params { display: none; }
       #game {
@@ -37,18 +40,18 @@
         width: 100%;
         position: absolute;
       }
-      header, footer {
-        text-align: center;
-      }
       footer {
-        padding: 0.5em;
+        text-align: center;
+        font-size: smaller;
+        margin: auto;
+        max-width: 720px;
       }
     </style>
   </head>
   <body>
 
     <div id="game">
-      <svg viewBox="0 0 1600 1200" preserveAspectRatio="xMidYmid meet">
+      <svg viewBox="0 0 1600 1200">
         <defs>
           <filter id="glow" x="-300%" y="-300%" width="700%" height="700%">
             <feGaussianBlur stdDeviation="7.5" result="blur"/>
@@ -60,7 +63,7 @@
           <clipPath id="clip">
             <rect id="bg" width="1600" height="1200"/>
           </clipPath>
-          <circle r="4" fill="white" id="bullet"/>
+          <circle r="4" id="bullet"/>
           <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
           <g id="ship-parts">
             <line id="ship-part-1" x1="20" y1="0" x2="-20" y2="15"/>
@@ -71,7 +74,7 @@
         </defs>
         <g clip-path="url(#clip)">
           <text font-family="Codystar, sans-serif" id="message"
-            text-anchor="middle" x="800" y="400" font-size="200" fill="white"
+            text-anchor="middle" x="800" y="400" font-size="200" fill="yellow"
             filter="url(#glow)"/>
           <g id="stars" fill="white"/>
           <g id="level" stroke-linejoin="round" stroke-linecap="round"
@@ -84,8 +87,10 @@
     </div>
 
     <footer>
-      Copyright © <span class="roman">mmxii</span>,
-      <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+      Use arrow keys to rotate, up for thrust, space to fire, down for
+      hyperspace. Reload to restart. Sounds created with <a
+        href="http://www.bfxr.net/">bfxr</a>. Copyright © <span
+        class="roman">mmxii</span>, <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
           href="https://github.com/julienq/romulusetrem.us/blob/master/asteroids">Github</a>
     </footer>
 
@@ -104,6 +109,7 @@
       <li data-param="ASTEROID_1_SECTORS" data-num="12">
       <li data-param="ASTEROIDS_MIN" data-num="4">
       <li data-param="ASTEROIDS_MAX" data-num="12">
+      <li data-param="AUDIO_CHANNELS" data-num="32">
       <li data-param="BULLET_RANGE" data-num="600">
       <li data-param="BULLET_V" data-num="600">
       <li data-param="DEBRIS_LENGTH" data-num="10">
@@ -111,6 +117,7 @@
       <li data-param="DEBRIS_TTL_AMP" data-num=".5">
       <li data-param="EXPLOSION_TTL" data-num="2">
       <li data-param="EXPLOSION_TTL_AMP" data-num="0.5">
+      <li data-param="FIRE_RATE" data-num="200">
       <li data-param="GAME_OVER">Game Over</li>
       <li data-param="LEVEL">Level {0}</li>
       <li data-param="LEVEL_DELAY" data-num="2">
@@ -126,6 +133,15 @@
       <li data-param="STAR_DENSITY" data-num="0.0005">
       <li data-param="STAR_RADIUS" data-num="3">
     </ul>
+
+    <audio src="explosion_big.wav" preload="auto"
+      id="explosion_ship_sound"></audio>
+    <audio src="explosion_small.wav" preload="auto"
+      id="explosion_asteroid_sound"></audio>
+    <audio src="game_over.wav" preload="auto" id="game_over_sound"></audio>
+    <audio src="hyperspace.wav" preload="auto" id="hyperspace_sound"></audio>
+    <audio src="laser.wav" preload="auto" id="laser_sound"></audio>
+    <audio src="message.wav" preload="auto" id="message_sound"></audio>
 
     <script src="asteroids.js"></script>
   </body>
