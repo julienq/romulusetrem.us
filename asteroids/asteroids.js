@@ -4,7 +4,7 @@
   // TODO
   // [x] layout/SVG resize (fix in Firefox)
   // [ ] plume for the ship
-  // [x] debris for asteroids
+  // [x] debris for asteroids [] not showing up in FF?
   // [x] glowing effect
   // [ ] score
   // [ ] text as destructible graphics
@@ -17,6 +17,7 @@
   // [x] limit rate of fire
   // [ ] pause
   // [ ] toggle filters
+  // [ ] wait for audio to load?
 
   var SVG_NS = "http://www.w3.org/2000/svg";
   var XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -271,7 +272,7 @@
               ++i) {
             var debris = asteroid.cosmos
               .make_movable(document.createElementNS(SVG_NS, "line"));
-            debris.elem.setAttribute("x2", DEBRIS_LENGTH);
+            asteroid.elem.parentNode.parentNode.appendChild(debris.elem);
             var th = Math.random() * 2 * Math.PI;
             debris.x = asteroid.x + asteroid.r_collide * Math.cos(th);
             debris.y = asteroid.y + asteroid.r_collide * Math.sin(th);
@@ -282,7 +283,7 @@
               ASTEROID_VA_RATE;
             debris.ttl = random_int(DEBRIS_TTL - DEBRIS_TTL_AMP,
                 DEBRIS_TTL + DEBRIS_TTL_AMP);
-            asteroid.elem.parentNode.parentNode.appendChild(debris.elem);
+            debris.elem.setAttribute("x2", DEBRIS_LENGTH);
           }
           if (size === 1) {
             return [];
@@ -442,6 +443,7 @@
   });
 
   // Init audio and bring the play_sound() function in the window namespace
+  // This is adapted from Perlenspiel
   window.play_sound = (function () {
     var channels = [];
     for (var i = 0; i < AUDIO_CHANNELS; ++i) {
