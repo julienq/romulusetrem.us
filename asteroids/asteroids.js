@@ -18,6 +18,7 @@
   // [ ] pause
   // [ ] toggle filters
   // [ ] wait for audio to load?
+  // [ ] toggle bottom bar
 
   var SVG_NS = "http://www.w3.org/2000/svg";
   var XLINK_NS = "http://www.w3.org/1999/xlink";
@@ -93,7 +94,7 @@
 
   function show_message(msg, sound) {
     document.getElementById("message").textContent = msg;
-    if (msg) {
+    if (msg && sound !== false) {
       play_sound(sound || "message_sound");
     }
   }
@@ -200,6 +201,7 @@
       },
       make_ship: function (parent) {
         var m = this.make_movable(document.createElementNS(SVG_NS, "use"));
+        m.disabled = true;
         m.elem.setAttributeNS(XLINK_NS, "href", "#ship");
         parent.appendChild(m.elem);
         m.r = SHIP_R;
@@ -313,9 +315,31 @@
         }
         return lives;
       },
+
+      init_asteroids: function () {
+        var g = document.getElementById("asteroids");
+        remove_children(g);
+        var r = Math.floor(this.d / 4);
+        for (var i = 0; i < cosmos.n_asteroids; ++i) {
+          var asteroid = this.make_asteroid(3);
+          var th = Math.random() * 2 * Math.PI;
+          var rr = random_int(r, r * 2);
+          asteroid.position(this.w / 2 + rr * Math.cos(th),
+              this.h / 2 + rr * Math.sin(th));
+          asteroid.vx = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX);
+          asteroid.vy = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX);
+          asteroid.va = random_int_signed(ASTEROID_V_MIN, ASTEROID_V_MAX) /
+            ASTEROID_VA_RATE;
+          g.appendChild(asteroid.elem);
+        }
+      },
+
       // Initialize the level with n asteroids
       init_level: function () {
         this.ship.position(this.w / 2, this.h / 2);
+        this.ship.disabled = false;
+        this.ship.elem.removeAttribute("class");
+
         show_message(LEVEL.fmt(this.level));
         setTimeout(function () {
           show_message("");
@@ -446,15 +470,17 @@
   // This is adapted from Perlenspiel
   window.play_sound = (function () {
     var channels = [];
+    var default_volume = 0.25;
     for (var i = 0; i < AUDIO_CHANNELS; ++i) {
       channels[i] = new Audio();
       channels[i]._done = -1;
     }
     return function (id, volume) {
       var sound = document.getElementById(id);
-      if (volume >= 0 && volume <= 1) {
-        sound.volume = volume;
+      if (!(volume >= 0 && volume <= 1)) {
+        volume = default_volume;
       }
+      sound.volume = volume;
       for (var i = 0; i < AUDIO_CHANNELS; ++i) {
         var t = Date.now();
         var channel = channels[i];
@@ -469,7 +495,22 @@
     }
   }());
 
-  var cosmos = init_cosmos();
-  cosmos.init_level();
+  function init_title_screen(cosmos) {
+    show_message(TITLE, false);
+    var start = document.getElementById("start-message");
+    start.removeAttribute("class");
+    start.textContent =
+      document.documentElement.hasOwnProperty("ontouchstart") ?
+        TITLE_TOUCH : TITLE_KEY;
+    var h = function () {
+      start.setAttribute("class", "hidden");
+      document.removeEventListener("keyup", h, false);
+      cosmos.init_level();
+    };
+    document.addEventListener("keyup", h, false);
+    cosmos.init_asteroids();
+  }
+
+  init_title_screen(init_cosmos());
 
 }());

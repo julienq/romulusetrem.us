@@ -29,7 +29,9 @@
       .roman {
         font-variant: small-caps;
       }
-      .params { display: none; }
+      .params, .hidden {
+        display: none;
+      }
       #game {
         -webkit-box-flex: 1;
         -moz-box-flex: 1;
@@ -75,6 +77,9 @@
         <g clip-path="url(#clip)">
           <text font-family="Codystar, sans-serif" id="message"
             text-anchor="middle" x="800" y="400" font-size="200" fill="yellow"
+            filter="url(#glow)"/>
+          <text font-family="Codystar, sans-serif" id="start-message"
+            text-anchor="middle" x="800" y="800" font-size="100" fill="white"
             filter="url(#glow)"/>
           <g id="stars" fill="white"/>
           <g id="level" stroke-linejoin="round" stroke-linecap="round"
@@ -134,6 +139,9 @@
       <li data-param="SPEEDUP" data-num="1.5">
       <li data-param="STAR_DENSITY" data-num="0.0005">
       <li data-param="STAR_RADIUS" data-num="3">
+      <li data-param="TITLE">Asteroids</li>
+      <li data-param="TITLE_KEY">Press any key to start</li>
+      <li data-param="TITLE_TOUCH">Touch anywhere to start</li>
     </ul>
 
     <audio src="explosion_big.wav" preload="auto"
