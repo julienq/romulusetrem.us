@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+  xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 1300">
+  <defs>
+    <rect id="square" width="100" height="100"/>
+    <circle id="circle" cx="50" cy="50" r="50"/>
+    <polygon id="right-triangle" points="0,0 100,0 0,100"/>
+    <polygon id="triangle" points="0,0 50,86.60254037844386 100,0"/>
+    <path id="half-circle" d="M0,0 A50,50 180 0,0 100,0Z"/>
+    <path id="quarter" d="M0,0 L100,0 A100,100 90 0,1 0,100Z"/>
+    <g id="bars-4">
+      <rect width="12.5" height="100"/>
+      <rect width="12.5" height="100" x="25"/>
+      <rect width="12.5" height="100" x="50"/>
+      <rect width="12.5" height="100" x="75"/>
+    </g>
+    <g id="bars-2">
+      <rect width="25" height="100"/>
+      <rect width="25" height="100" x="50"/>
+    </g>
+    <rect id="bar" width="50" height="100"/>
+    <rect id="small-square" width="50" height="50"/>
+    <g id="squares-2">
+      <rect width="50" height="50"/>
+      <rect width="50" height="50" x="50" y="50"/>
+    </g>
+    <path id="angle" d="M0,0 H100 V100 H50 V50 H0 Z"/>
+  </defs>
+  <g id="palette" fill="#ccc"/>
+  <g transform="translate(0, 100)">
+    <g id="grid" stroke="#ccc" stroke-dasharray="10 10"/>
+    <g id="canvas" fill="black" stroke="black" stroke-width="2"
+      stroke-linejoin="round"/>
+  </g>
+  <script><![CDATA[
+
+(function () {
+  "use strict";
+
+  function svg_element(name, attrs) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", name);
+    if (attrs) {
+      for (var a in attrs) {
+        if (attrs.hasOwnProperty(a)) {
+          e.setAttribute(a, attrs[a]);
+        }
+      }
+    }
+    return e;
+  }
+
+  ["g", "line", "rect"].forEach(function (e) {
+    window[e] = svg_element.bind(this, e);
+  });
+
+  function use(href, attrs) {
+    var u = svg_element("use", attrs);
+    u.setAttributeNS("http://www.w3.org/1999/xlink", "href", href);
+    return u;
+  }
+
+  var tool;
+
+  function select_tool(elem) {
+    if (tool) {
+      tool.removeAttribute("fill");
+    }
+    tool = elem;
+    tool.setAttribute("fill", "#ff4040");
+  }
+
+  function encode(blocks) {
+    return blocks.map(function (b) {
+      return b < 26 ?
+        String.fromCharCode("A".charCodeAt(0) + b) :
+        b < 52 ?
+          String.fromCharCode("a".charCodeAt(0) + b - 26) :
+          b < 62 ?
+            String.fromCharCode("0".charCodeAt(0) + b - 52) :
+            b === 63 ?
+              "-" : "_";
+    }).join("");
+  }
+
+  function decode(string) {
+    var blocks = [];
+    for (var i = 0, n = string.length; i < n; ++i) {
+      var c = string.charCodeAt(i);
+      var d = c - "A".charCodeAt(0);
+      if (d >= 0 && d < 26) {
+        blocks.push(d);
+      } else {
+        d = c - "a".charCodeAt(0);
+        if (d >= 0 && d < 26) {
+          blocks.push(d + 26);
+        } else {
+          d = c - "0".charCodeAt(0);
+          if (d >= 0 && d < 10) {
+            blocks.push(d + 52);
+          } else if (string[i] === "-") {
+            blocks.push(62);
+          } else if (string[i] === "_") {
+            blocks.push(63);
+          } else {
+            blocks.push(0);
+          }
+        }
+      }
+    }
+    return blocks;
+  }
+
+  var blocks = [];
+  var tools = [];
+
+  function make_target(x, y) {
+    var elem;
+    var rotate;
+    var i = x + y * n;
+    x *= 100;
+    y *= 100;
+    var target = rect({ width: 100, height: 100, opacity: 0, x: x, y: y });
+    target.addEventListener("click", function () {
+      var prev = elem && elem.href.baseVal;
+      var next = tool.href.baseVal;
+      if (next === prev) {
+        if (rotate === 270) {
+          elem.parentNode.removeChild(elem);
+          elem = undefined;
+          blocks[i] = 0;
+        } else {
+          rotate += 90;
+          elem.setAttribute("transform", "rotate(" + rotate + ", " + (x + 50) +
+            "," + (y + 50) + ")");
+          blocks[i] = tool._block + ((rotate / 90) << 4);
+        }
+      } else {
+        if (elem) {
+          elem.parentNode.removeChild(elem);
+        }
+        elem = use(next, { x: x, y: y });
+        target.parentNode.insertBefore(elem, target);
+        rotate = 0;
+        blocks[i] = tool._block;
+      }
+      window.location.hash = encode(blocks);
+    }, false);
+    target.set_block = function (n) {
+      var i = (n & 15) - 1;
+      if (i >= 0 && i < 12) {
+        var r = 90 * (n >> 4);
+        if (r >= 0 && r < 360) {
+          if (elem) {
+            elem.parentNode.removeChild(elem);
+          }
+          elem = use(tools[i].href.baseVal, { x: x, y: y });
+          rotate = r;
+          elem.setAttribute("transform", "rotate(" + rotate + ", " + (x + 50) +
+            "," + (y + 50) + ")");
+        target.parentNode.insertBefore(elem, target);
+        }
+      }
+    }
+    return target;
+  }
+
+  var palette = document.getElementById("palette");
+  var defs = document.querySelectorAll("defs > *");
+  Array.prototype.forEach.call(defs, function (def, i) {
+    var u = use("#" + def.getAttribute("id"));
+    u._block = i + 1;
+    tools.push(u);
+    var target = rect({ width: 100, height: 100, opacity: 0 });
+    target.addEventListener("click", function () {
+      select_tool(u);
+    }, false);
+    var g_ = g({ transform: "translate(" + (100 * i) + ")" });
+    g_.appendChild(u);
+    g_.appendChild(target);
+    palette.appendChild(g_);
+  });
+  select_tool(palette.firstChild.firstChild);
+  var grid = document.getElementById("grid");
+  var canvas = document.getElementById("canvas");
+  for (var y = 0, n = defs.length, m = n * 100; y <= n; ++y) {
+    // grid.appendChild(line({ x2: m, y1: y * 100, y2: y * 100 }));
+    for (var x = 0; x <= n; ++x) {
+      // grid.appendChild(line({ x1: x * 100, x2: x * 100, y2: m }));
+      if (x < n && y < n) {
+        canvas.appendChild(make_target(x, y));
+        blocks.push(0);
+      }
+    }
+  }
+
+  if (window.location.hash) {
+    blocks = decode(window.location.hash.substr(1));
+    Array.prototype.forEach.call(canvas.querySelectorAll("rect"),
+      function (target, i) {
+        target.set_block(blocks[i]);
+      });
+  }
+
+}());
+
+  ]]></script>
+
+</svg>
