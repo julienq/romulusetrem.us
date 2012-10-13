@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+  <style>
+    .red { fill: #9b1422; stroke: #96b1422; }
+    .brown { fill: #482f26; stroke: #482f26; }
+    .orange { fill: #da5e27; stroke: #da5e27; }
+  </style>
+  <defs>
+    <polygon id="hexagon"
+      points="-120,-69.28 0,-138.56 120,-69.28 120,69.28 0,138.56 -120,69.28"/>
+    <pattern id="hexagons" viewBox="0 0 210 294.44" patternUnits="userSpaceOnUse"
+      width="210" height="294.44">
+      <g transform="translate(105, 112.58)">
+        <rect x="-75" y="112.58" width="150" height="74.28" class="brown"/>
+        <use xlink:href="#hexagon" transform="scale(1.5, 1.5)" class="brown"/>
+        <rect x="-45" y="112.58" width="90" height="74.28" class="orange"/>
+        <use xlink:href="#hexagon" transform="scale(1.25, 1.25)" class="orange"/>
+        <rect x="-15" y="112.58" width="30" height="74.28" class="brown"/>
+        <use xlink:href="#hexagon" class="brown"/>
+        <rect x="-75" y="-112.58" width="150" height="112.58" class="brown"/>
+        <use xlink:href="#hexagon" transform="scale(0.75, 0.75)" class="orange"/>
+        <rect x="-45" y="-112.58" width="90" height="112.58" class="orange"/>
+        <use xlink:href="#hexagon" transform="scale(0.5, 0.5)" class="brown"/>
+        <rect x="-15" y="-112.58" width="30" height="112.58" class="brown"/>
+        <use xlink:href="#hexagon" transform="scale(0.25, 0.25)" class="red"/>
+      </g>
+      <use xlink:href="#hexagon" transform="scale(0.25, 0.25)" class="red"/>
+      <use xlink:href="#hexagon" transform="translate(0, 294.44) scale(0.25, 0.25)" class="red"/>
+      <use xlink:href="#hexagon" transform="translate(210) scale(0.25, 0.25)" class="red"/>
+      <use xlink:href="#hexagon" transform="translate(210, 294.44) scale(0.25, 0.25)" class="red"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#hexagons)"/>
+</svg>

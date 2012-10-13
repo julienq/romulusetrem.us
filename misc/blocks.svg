@@ -68,17 +68,30 @@
     tool.setAttribute("fill", "#ff4040");
   }
 
+  function b64(b) {
+    return b < 26 ?
+      String.fromCharCode("A".charCodeAt(0) + b) :
+      b < 52 ?
+        String.fromCharCode("a".charCodeAt(0) + b - 26) :
+        b < 62 ?
+          String.fromCharCode("0".charCodeAt(0) + b - 52) :
+          b === 63 ?
+            "-" : "_";
+  }
+
+  function rle(string) {
+    return string.replace(/([A-Za-z0-9_-])\1\1+/g, function (m, c) {
+      var l = m.length;
+      if (l < 6) {
+        return b64(15 + ((l - 3) << 4)) + c;
+      } else {
+        return b64(63) + b64(l - 3) + c;
+      }
+    });
+  }
+
   function encode(blocks) {
-    return blocks.map(function (b) {
-      return b < 26 ?
-        String.fromCharCode("A".charCodeAt(0) + b) :
-        b < 52 ?
-          String.fromCharCode("a".charCodeAt(0) + b - 26) :
-          b < 62 ?
-            String.fromCharCode("0".charCodeAt(0) + b - 52) :
-            b === 63 ?
-              "-" : "_";
-    }).join("");
+    return blocks.map(b64).join("");
   }
 
   function decode(string) {
