@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Camera</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <script src="../flexo.js"></script>
+    <style>
+body {
+  font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+}
+.ok {
+  color: #8f0;
+}
+.error {
+  color: red;
+}
+
+    </style>
+  </head>
+  <body>
+    <p id="check">Checking for getUserMedia()... </p>
+    <p>
+      <button onclick="start_capture()">Start capture</button>
+      <button onclick="stop_capture()">Stop capture</button>
+      <button onclick="start_recording()">Start recording</button>
+      <button onclick="stop_recording()">Stop recording</button>
+    </p>
+    <video autoplay></video>
+    <canvas></canvas>
+    <img alt="Scan goes here" src="http://placekitten.com/200/300">
+    <script>
+
+var get_user_media = navigator.getUserMedia || navigator.webkitGetUserMedia ||
+  navigator.mozGetUserMedia || navigator.msGetUserMedia;
+var request_animation_frame = window.requestAnimationFrame ||
+  window.mozRequestAnimationFrame || window.msRequestAnimationFrame ||
+  window.oRequestAnimationFrame || window.webkitRequestAnimationFrame;
+var url = window.URL || window.webkitURL;
+
+var check = document.getElementById("check");
+if (typeof get_user_media === "function") {
+  check.appendChild(flexo.$("span.ok", "OK"));
+
+  var stream;
+  var slice;
+  var recording = false;
+  var video = document.querySelector("video");
+  var canvas = document.querySelector("canvas");
+  var context = canvas.getContext("2d");
+
+  var scan = function () {
+    if (!recording) {
+      return;
+    }
+    var data = context.getImageData(0, 0, canvas.width, canvas.height);
+    canvas.width = ++slice;
+    var h = video.offsetHeight;
+    canvas.height = h;
+    context.putImageData(data, 0, 0);
+    context.drawImage(video, video.offsetWidth / 2, 0, 1, h,
+      slice - 1, 0, 1, h);
+    request_id = request_animation_frame.call(window, scan);
+  }
+
+  var start_capture = function () {
+    get_user_media.call(navigator, { video: true }, function (s) {
+      stream = s;
+      video.src = url.createObjectURL(s);
+    }, function (e) {
+      check.parentNode.appendChild(flexo.$("p.error",
+      "Error getting user media:", e));
+    });
+  };
+
+  var stop_capture = function () {
+    if (stream) {
+      stream.stop();
+      stream = null;
+    }
+  }
+
+  var start_recording = function () {
+    if (stream) {
+      slice = 0;
+      recording = true;
+      request_id = request_animation_frame.call(window, scan);
+    }
+  };
+
+  var stop_recording = function () {
+    recording = false;
+    document.querySelector("img").src = canvas.toDataURL("image/png");
+  };
+
+} else {
+  check.appendChild(flexo.$("span.error", "not supported"));
+}
+
+
+    </script>
+  </body>
+</html>
+
