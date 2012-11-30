@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Memory</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../romulusetremus.css">
+    <link rel="stylesheet" href="memory.css">
+  </head>
+  <body>
+
+    <div class="text">
+      <ul class="scores"></ul>
+    </div>
+
+    <svg>
+      <defs>
+        <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
+          width="100" height="100">
+          <g stroke="#55bef2"/>
+        </pattern>
+        <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0"
+          width="110%" height="110%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+          <feOffset in="blur" dx="2" dy="2"/>
+        </filter>
+        <g id="back">
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
+        </g>
+        <g id="front">
+          <rect x="10" y="10" width="80" height="80" fill="white"
+            filter="url(#shadow)"/>
+          <rect x="10" y="10" width="80" height="80" fill="white"/>
+          <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
+        </g>
+        <rect id="mask" x="10" y="10" width="80" height="80" fill-opacity="0"/>
+        <g id="donut">
+          <use xlink:href="#front"/>
+          <circle cx="50" cy="50" r="30"/>
+          <circle cx="50" cy="50" r="12" fill="#fcfbe3"/>
+        </g>
+        <g id="square">
+          <use xlink:href="#front"/>
+        </g>
+        <g id="triangle">
+          <use xlink:href="#front"/>
+        </g>
+        <g id="hexagon">
+          <use xlink:href="#front"/>
+        </g>
+        <g id="star">
+          <use xlink:href="#front"/>
+        </g>
+        <g id="cross">
+          <use xlink:href="#front"/>
+          <polygon points="80,40 60,40 60,20 40,20 40,40 20,40 20,60 40,60
+            40,80 60,80 60,60 80,60"/>
+        </g>
+      </defs>
+      <g id="tiles"/>
+    </svg>
+
+    <footer>
+    Copyright © <span class="roman">mmxii</span>,
+    <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+        href="https://github.com/julienq/romulusetrem.us/blob/master/memory">Github</a>
+    </footer>
+
+    <script src="../flexo.js"></script>
+    <script src="memory.js"></script>
+    <script>
+
+      memory.make_shapes();
+
+      var args = flexo.get_args({ w: 6, h: 4, players: 2, reveal: "false" });
+      var w = parseInt(args.w, 10);
+      var h = parseInt(args.h, 10);
+      if (w < 1 || h < 1 || w * h % 2 !== 0 ||
+        w * h > memory.TILES.length * 2) {
+        alert("Incorrect game size!");
+        window.location = "index.html";
+      }
+      memory.game = memory.make_game(parseInt(args.players, 10));
+      var ul = document.querySelector("ul")
+      memory.game.scores.forEach(function(score, i) {
+          ul.appendChild(flexo.ez_elem("li",
+            "Player {0}: ".fmt(i + 1),
+            flexo.ez_elem("span.score", score.toString())));
+        });
+      memory.update_player(memory.game);
+      setTimeout(resize, 0);
+      var svg = document.querySelector("svg");
+      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
+
+      var g = document.getElementById("tiles");
+      var tiles = memory.setup_tiles(g, w, h);
+
+    </script>
+  </body>
+</html>

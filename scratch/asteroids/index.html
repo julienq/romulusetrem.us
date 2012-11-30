@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Asteroids</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <link href="http://fonts.googleapis.com/css?family=Codystar"
+      rel="stylesheet" type="text/css">
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        color: white;
+        margin: 0;
+        font-family: Univers, "Helvetica Neue", Helvetica, sans-serif;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        display: -moz-box;
+        -moz-box-orient: vertical;
+        background-image: -moz-linear-gradient(270deg, #000, #272727);
+        background-image: -webkit-linear-gradient(270deg, #000, #272727);
+      }
+      a {
+        text-decoration: none;
+        color: yellow;
+      }
+      .roman {
+        font-variant: small-caps;
+      }
+      .params, .hidden {
+        display: none;
+      }
+      #game {
+        -webkit-box-flex: 1;
+        -moz-box-flex: 1;
+        position: relative;
+      }
+      svg {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+      }
+      footer > div {
+        text-align: center;
+        font-size: smaller;
+        margin: auto;
+        max-width: 720px;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="game">
+      <svg viewBox="0 0 1600 1200">
+        <defs>
+          <filter id="glow" x="-300%" y="-300%" width="700%" height="700%">
+            <feGaussianBlur stdDeviation="7.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <clipPath id="clip">
+            <rect id="bg" width="1600" height="1200"/>
+          </clipPath>
+          <circle r="4" id="bullet"/>
+          <path id="ship" d="M20,0L-20,15L-10,0L-20,-15Z"/>
+          <g id="ship-parts">
+            <line id="ship-part-1" x1="20" y1="0" x2="-20" y2="15"/>
+            <line id="ship-part-2" x1="-20" y1="15" x2="-10" y2="0"/>
+            <line id="ship-part-3" x1="-10" y1="0" x2="-20" y2="-15"/>
+            <line id="ship-part-4" x1="-20" y1="-15" x2="20" y2="0"/>
+          </g>
+        </defs>
+        <g clip-path="url(#clip)">
+          <text font-family="Codystar, sans-serif" id="message"
+            text-anchor="middle" x="800" y="400" font-size="200" fill="yellow"
+            filter="url(#glow)"/>
+          <text font-family="Codystar, sans-serif" id="start-message"
+            text-anchor="middle" x="800" y="800" font-size="100" fill="white"
+            filter="url(#glow)"/>
+          <g id="stars" fill="white"/>
+          <g id="level" stroke-linejoin="round" stroke-linecap="round"
+            stroke-width="8" stroke="white" fill="none">
+            <g id="asteroids"/>
+            <g id="lives"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <footer>
+    <div>
+      Use arrow keys to rotate, up for thrust, space to fire, down for
+      hyperspace. Reload to restart. Sounds created with <a
+        href="http://www.bfxr.net/">bfxr</a>. Copyright © <span
+        class="roman">mmxii</span>, <a href="http://romulusetrem.us/">romulusetrem.us</a> ☄ Find it on <a
+          href="https://github.com/julienq/romulusetrem.us/blob/master/asteroids">Github</a>
+        </div>
+    </footer>
+
+    <ul class="params">
+      <li data-param="ASTEROID_V_MIN" data-num="50">
+      <li data-param="ASTEROID_V_MAX" data-num="100">
+      <li data-param="ASTEROID_VA_RATE" data-num="7">
+      <li data-param="ASTEROID_3_R" data-num="60">
+      <li data-param="ASTEROID_3_R_AMP" data-num="5">
+      <li data-param="ASTEROID_3_SECTORS" data-num="16">
+      <li data-param="ASTEROID_2_R" data-num="35">
+      <li data-param="ASTEROID_2_R_AMP" data-num="5">
+      <li data-param="ASTEROID_2_SECTORS" data-num="12">
+      <li data-param="ASTEROID_1_R" data-num="20">
+      <li data-param="ASTEROID_1_R_AMP" data-num="3">
+      <li data-param="ASTEROID_1_SECTORS" data-num="12">
+      <li data-param="ASTEROIDS_MIN" data-num="4">
+      <li data-param="ASTEROIDS_MAX" data-num="12">
+      <li data-param="AUDIO_CHANNELS" data-num="32">
+      <li data-param="BULLET_RANGE" data-num="600">
+      <li data-param="BULLET_V" data-num="600">
+      <li data-param="DEBRIS_LENGTH" data-num="10">
+      <li data-param="DEBRIS_TTL" data-num="1">
+      <li data-param="DEBRIS_TTL_AMP" data-num=".5">
+      <li data-param="EXPLOSION_TTL" data-num="2">
+      <li data-param="EXPLOSION_TTL_AMP" data-num="0.5">
+      <li data-param="FIRE_RATE" data-num="200">
+      <li data-param="GAME_OVER">Game Over</li>
+      <li data-param="LEVEL">Level {0}</li>
+      <li data-param="LEVEL_DELAY" data-num="2">
+      <li data-param="N_LIVES" data-num="3">
+      <li data-param="READY">Ready</li>
+      <li data-param="SHIP_ACCEL" data-num="50">
+      <li data-param="SHIP_DECEL" data-num="-5">
+      <li data-param="SHIP_R" data-num="20">
+      <li data-param="SHIP_R_COLLIDE" data-num="10">
+      <li data-param="SHIP_V_MAX" data-num="400">
+      <li data-param="SHIP_VA" data-num="200">
+      <li data-param="SPEEDUP" data-num="1.5">
+      <li data-param="STAR_DENSITY" data-num="0.0005">
+      <li data-param="STAR_RADIUS" data-num="3">
+      <li data-param="TITLE">Asteroids</li>
+      <li data-param="TITLE_KEY">Press any key to start</li>
+      <li data-param="TITLE_TOUCH">Touch anywhere to start</li>
+    </ul>
+
+    <audio src="explosion_big.wav" preload="auto"
+      id="explosion_ship_sound"></audio>
+    <audio src="explosion_small.wav" preload="auto"
+      id="explosion_asteroid_sound"></audio>
+    <audio src="game_over.wav" preload="auto" id="game_over_sound"></audio>
+    <audio src="hyperspace.wav" preload="auto" id="hyperspace_sound"></audio>
+    <audio src="laser.wav" preload="auto" id="laser_sound"></audio>
+    <audio src="message.wav" preload="auto" id="message_sound"></audio>
+
+    <script src="asteroids.js"></script>
+  </body>
+</html>

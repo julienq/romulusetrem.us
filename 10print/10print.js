@@ -14,6 +14,7 @@ var g = document.querySelector("g");
 
 var x = 0;
 var y = 0;
+var new_lines = 2;
 var row;
 
 function print(chr) {
@@ -26,8 +27,10 @@ function print(chr) {
     x = 0;
     y += chr_vb.height;
     if (y >= screen_vb.height) {
-      y -= chr_vb.height;
-      g.removeChild(g.firstChild);
+      y -= new_lines * chr_vb.height;
+      for (var i = 0; i < new_lines; ++i) {
+        g.removeChild(g.firstChild);
+      }
       for (var r = g.firstChild, ty = 0; r;
         r = r.nextSibling, ty += chr_vb.height) {
         r.setAttribute("transform", "translate(0, {0})".fmt(ty));
@@ -36,14 +39,20 @@ function print(chr) {
   }
 }
 
+var twice = false;
+
 function p() {
   print(Math.floor(205.5 + Math.random()));
+  if (twice) {
+    print(Math.floor(205.5 + Math.random()));
+  }
+  twice = !twice;
   req = request_animation_frame(p);
 }
 
 var req = request_animation_frame(p);
 
-document.addEventListener("click", function () {
+document.addEventListener("mouseup", function () {
   if (req) {
     cancel_animation_frame(req);
     req = null;
