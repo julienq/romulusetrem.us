@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-32 -32 384 264"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>10 PRINT CHR$(205.5+RND(1)); : GOTO 10</title>
+  <script xlink:href="../flexo.js"/>
+  <defs>
+    <polygon id="chr$205" points="0 0 2 0 8 6 8 8 6 8 0 2"/>
+    <polygon id="chr$206" points="6 0 8 0 8 2 2 8 0 8 0 6"/>
+  </defs>
+  <rect x="-32" y="-32" width="384" height="264" fill="#a3a3ff"/>
+  <rect id="screen" width="320" height="200" fill="#383bf0"/>
+  <g fill="#a3a3ff" stroke="#a3a3ff" stroke-width="0.2"/>
+  <script xlink:href="10print.js"/>
+</svg>
