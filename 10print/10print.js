@@ -1,13 +1,5 @@
 "use strict";
 
-var request_animation_frame = (window.requestAnimationFrame ||
-  window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
-  window.msRequestAnimationFrame || window.oRequestAnimationFrame).bind(window);
-
-var cancel_animation_frame = (window.cancelAnimationFrame ||
-  window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame ||
-  window.msCancelAnimationFrame || window.oCancelAnimationFrame).bind(window);
-
 var screen_vb = document.getElementById("screen").getBBox();
 var chr_vb = { width: 8, height: 8 };
 var g = document.querySelector("g");
@@ -47,17 +39,17 @@ function p() {
     print(Math.floor(205.5 + Math.random()));
   }
   twice = !twice;
-  req = request_animation_frame(p);
+  req = flexo.request_animation_frame(p);
 }
 
-var req = request_animation_frame(p);
+var req = flexo.request_animation_frame(p);
 
 document.addEventListener("mouseup", function () {
   if (req) {
-    cancel_animation_frame(req);
+    flexo.cancel_animation_frame(req);
     req = null;
   } else {
-    req = request_animation_frame(p);
+    req = flexo.request_animation_frame(p);
   }
 }, false);
 
