@@ -8,16 +8,24 @@
     <style>p { display: inline-block; margin: 0 1em; }</style>
   </head>
   <body>
+    <!--
     <audio controls preload="none">
       <source src="https://dl.dropbox.com/u/7465599/romulusetrem.us/media/audio/discosto/zaboom.mp3" type="audio/mp3">
       <source src="https://dl.dropbox.com/u/7465599/romulusetrem.us/media/audio/discosto/zaboom.ogg" type="audio/ogg">
     </audio>
+    -->
+
+    <video controls preload="none">
+      <source src="http://archive.org/download/superman_1941/superman_1941.ogv">
+      <source src="http://archive.org/download/superman_1941/superman_1941_512kb.mp4">
+    </video>
+
     <script src="../flexo.js"></script>
     <script>
 
 "use strict";
 
-var audio = document.querySelector("audio");
+var media = document.querySelector("video");
 var last = { type: "", count: 0 }
 function show_event(e) {
   if (e.type === last.type) {
@@ -32,17 +40,17 @@ function show_event(e) {
 "error", "loadeddata", "loadedmetadata", "loadstart", "pause", "play",
 "playing", "progress", "ratechange", "seeked", "seeking", "suspend",
 "timeupdate", "volumechange", "waiting"].forEach(function (ev) {
-  audio.addEventListener(ev, show_event, false);
+  media.addEventListener(ev, show_event, false);
 });
 show_event({ type: "ok" });
 
-Array.prototype.forEach.call(audio.querySelectorAll("source"), function (s) {
+Array.prototype.forEach.call(media.querySelectorAll("source"), function (s) {
   s.addEventListener("error", function (e) {
     document.body.appendChild(flexo.$("p.error", "Cannot load {0}".fmt(s.src)));
   }, false);
 });
 
-audio.load();
+media.load();
 
     </script>
   </body>
