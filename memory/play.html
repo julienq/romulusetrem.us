@@ -70,30 +70,29 @@
     <script src="memory.js"></script>
     <script>
 
-      memory.make_shapes();
+"use strict";
 
-      var args = flexo.get_args({ w: 6, h: 4, players: 2, reveal: "false" });
-      var w = parseInt(args.w, 10);
-      var h = parseInt(args.h, 10);
-      if (w < 1 || h < 1 || w * h % 2 !== 0 ||
-        w * h > memory.TILES.length * 2) {
-        alert("Incorrect game size!");
-        window.location = "index.html";
-      }
-      memory.game = memory.make_game(parseInt(args.players, 10));
-      var ul = document.querySelector("ul")
-      memory.game.scores.forEach(function(score, i) {
-          ul.appendChild(flexo.ez_elem("li",
-            "Player {0}: ".fmt(i + 1),
-            flexo.ez_elem("span.score", score.toString())));
-        });
-      memory.update_player(memory.game);
-      setTimeout(resize, 0);
-      var svg = document.querySelector("svg");
-      svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
+memory.make_shapes();
 
-      var g = document.getElementById("tiles");
-      var tiles = memory.setup_tiles(g, w, h);
+var args = flexo.get_args({ w: 6, h: 4, players: 2, reveal: "false" });
+var w = parseInt(args.w, 10);
+var h = parseInt(args.h, 10);
+if (w < 1 || h < 1 || w * h % 2 !== 0 || w * h > memory.TILES.length * 2) {
+  alert("Incorrect game size!");
+  window.location = "index.html";
+}
+memory.game = memory.make_game(parseInt(args.players, 10));
+var ul = document.querySelector("ul")
+memory.game.scores.forEach(function(score, i) {
+  ul.appendChild(flexo.$li("Player {0}: ".fmt(i + 1),
+    flexo.$("span.score", score.toString())));
+});
+memory.update_player(memory.game);
+var svg = document.querySelector("svg");
+svg.setAttribute("viewBox", "0 0 {0} {1}".fmt(w * 100, h * 100));
+
+var g = document.getElementById("tiles");
+var tiles = memory.setup_tiles(g, w, h);
 
     </script>
   </body>
