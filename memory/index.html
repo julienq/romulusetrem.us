@@ -4,46 +4,44 @@
     <title>Memory</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../romulusetremus.css">
+    <link rel="stylesheet" href="../svg.css">
     <link rel="stylesheet" href="memory.css">
   </head>
   <body>
 
-    <div class="text">
-      <h1>Memory</h1>
-      <ul>
-        <li>Turn a card in the top row to choose the number of players (from 1
-        to 4)</li>
-        <li>Turn a card in the middle row to choose the size of the game (small,
-        medium, large, extra large)</li>
-        <li>When you're ready, <a id="play-a" href="play.html">play</a>!</li>
-      </ul>
+    <div class="expand">
+      <svg viewBox="0 0 300 300">
+        <defs>
+          <g id="triangle"/>
+          <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
+            width="100" height="100">
+            <g stroke="#55bef2" stroke-width="2"/>
+          </pattern>
+          <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0"
+            width="110%" height="110%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+            <feOffset in="blur" dx="2" dy="2"/>
+          </filter>
+          <g id="back">
+            <rect x="10" y="10" width="80" height="80" fill="white"/>
+            <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
+          </g>
+          <g id="front">
+            <rect x="10" y="10" width="80" height="80" fill="white"
+              filter="url(#shadow)"/>
+            <rect x="10" y="10" width="80" height="80" fill="white"/>
+            <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
+          </g>
+          <rect id="mask" x="10" y="10" width="80" height="80"
+            fill-opacity="0"/>
+          <g id="player">
+            <circle cx="50" cy="32" r="12"/>
+            <path d="M38,80 L38,56 A12,12 180 0,1 62,56 L62,80 Z"/>
+          </g>
+        </defs>
+        <g id="tiles"/>
+      </svg>
     </div>
-
-    <svg viewBox="0 0 400 200">
-      <defs>
-        <pattern id="lines" patternUnits="userSpaceOnUse" x="0" y="0"
-          width="100" height="100">
-          <g stroke="#55bef2"/>
-        </pattern>
-        <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0"
-          width="110%" height="110%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
-          <feOffset in="blur" dx="2" dy="2"/>
-        </filter>
-        <g id="back">
-          <rect x="10" y="10" width="80" height="80" fill="white"/>
-          <rect x="12" y="12" width="76" height="76" fill="url(#lines)"/>
-        </g>
-        <g id="front">
-          <rect x="10" y="10" width="80" height="80" fill="white"
-            filter="url(#shadow)"/>
-          <rect x="10" y="10" width="80" height="80" fill="white"/>
-          <rect x="12" y="12" width="76" height="76" fill="#fcfbe3"/>
-        </g>
-        <rect id="mask" x="10" y="10" width="80" height="80" fill-opacity="0"/>
-      </defs>
-      <g id="tiles"/>
-    </svg>
 
     <footer>
     Copyright © <span class="roman">mmxii</span>,
@@ -55,47 +53,65 @@
     <script src="memory.js"></script>
     <script>
 
-      var tiles = document.getElementById("tiles");
-      var play_a = document.getElementById("play-a");
+"use strict";
 
-      var info = {};
-      var set_tile = function(tile, what)
-      {
-        if (info[what]) info[what].revealed = false;
-        info[what] = tile;
-        info[what].revealed = true;
-      };
+var tiles = document.getElementById("tiles");
 
-      [1, 2, 3, 4].forEach(function(n) {
-          var tile = memory.letter_tile(n.toString(),
-            flexo.random_element(memory.COLORS), n - 1, 0);
-          tiles.appendChild(tile);
-          flexo.listen(tile, "@reveal", function() {
-              set_tile(tile, "player");
-              info.players = n;
-              play_a.href = "play.html?players={0}&{1}"
-                .fmt(info.players, info.wh);
-            });
-          if (n === 2) flexo.notify(tile, "@reveal");
-        });
+var info = {};
+var set_tile = function (tile, what) {
+  if (info[what]) {
+    info[what].revealed = false;
+  }
+  info[what] = tile;
+  info[what].revealed = true;
+};
 
-      var sizes = { S: "w=4&h=4", M: "w=6&h=4", L: "w=6&h=6",
-        "!!!": "w=9&h=8" };
+// Play tile
+memory.make_poly("triangle", 3, 2 * Math.PI / 3);
+var play = memory.make_tile_one_sided(flexo.$use({ "xlink:href": "#triangle",
+  fill: flexo.random_element(memory.colors) }), 2, 2);
+tiles.appendChild(play);
+flexo.listen(play, "@click", function (e) {
+  window.location = "play.html?players={0}&{1}".fmt(info.players, info.wh);
+});
 
-      ["S", "M", "L", "!!!"].forEach(function(sz, i) {
-          var tile = memory.letter_tile(sz, flexo.random_element(memory.COLORS),
-            i, 1);
-          tiles.appendChild(tile);
-          flexo.listen(tile, "@reveal", function() {
-            set_tile(tile, "size");
-            info.wh = sizes[sz];
-            play_a.href = "play.html?players={0}&{1}"
-              .fmt(info.players, info.wh);
-          });
-          if (sz === "M") flexo.notify(tile, "@reveal");
-        });
+// Make player tiles
+[1, 2, 3, 4].forEach(function (n, i) {
+  var icons = flexo.$g({ transform: "translate({0})".fmt(i * -6) });
+  var colors = flexo.shuffle_array(memory.colors);
+  for (var j = n - 1; j >= 0; --j) {
+    icons.appendChild(flexo.$use({ "xlink:href": "#player",
+      transform: "translate({0})".fmt(j * 12), fill: colors[j] }));
+  }
+  var tile = memory.make_tile(icons, i % 3, Math.floor(i / 3));
+  tiles.appendChild(tile);
+  flexo.listen(tile, "@reveal", function () {
+    set_tile(tile, "player");
+    info.players = n;
+  });
+  if (n === 2) {
+    flexo.notify(tile, "@reveal");
+  }
+});
+
+var sizes = { S: "w=4&h=4", M: "w=6&h=4", L: "w=6&h=6", "!!!": "w=9&h=8" };
+
+// Make size tiles
+["S", "M", "L", "!!!"].forEach(function (sz, i) {
+  var i_ = i + 4;
+  var tile = memory.letter_tile(sz, flexo.random_element(memory.colors), i_ % 3,
+    Math.floor(i_ / 3));
+  tiles.appendChild(tile);
+  flexo.listen(tile, "@reveal", function () {
+    set_tile(tile, "size");
+    info.wh = sizes[sz];
+    // play_a.href = "play.html?players={0}&{1}".fmt(info.players, info.wh);
+  });
+  if (sz === "M") {
+    flexo.notify(tile, "@reveal");
+  }
+});
 
     </script>
   </body>
 </html>
-
